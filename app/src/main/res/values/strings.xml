@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">WPrimeExtension</string>
+    <string name="extension_name">W Prime Extension</string>
+    <string name="datatype_power">Potencia (W)</string>
+    <string name="datatype_power_desc">Potencia instantánea recibida</string>
+    <string name="datatype_wprime">W Prime (J)</string>
+    <string name="datatype_wprime_desc">Balance de energía anaeróbica disponible</string>
+</resources>

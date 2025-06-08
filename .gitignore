@@ -1,0 +1,65 @@
+# Gradle files
+.gradle/
+build/
+gradle-app.setting
+
+# Android Studio / IntelliJ
+*.iml
+.idea/
+/.idea/
+.navigation/
+captures/
+out/
+
+# Android build outputs
+/build/
+/app/build/
+/app/release/
+*.apk
+*.ap_
+*.aab
+
+# Local configuration
+local.properties
+/local.properties
+
+# Generated files
+*.dex
+*.class
+bin/
+gen/
+
+# External native build
+.externalNativeBuild/
+.cxx/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Keystore files
+*.jks
+*.keystore
+
+# Log files
+*.log
+
+# Google Services
+google-services.json
+
+# Freeline
+freeline.py
+freeline/
+freeline_project_description.json
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+fastlane/readme.md
