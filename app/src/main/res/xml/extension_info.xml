@@ -1,25 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ExtensionInfo
     displayName="@string/extension_name"
-    icon="@drawable/ic_launcher_foreground"
+    icon="@mipmap/ic_launcher"
     id="wprime-id"
     scansDevices="false">
-
-    <DataType
-        typeId="com.itl.wprimeextension.POWER"
-        displayName="@string/datatype_power"
-        description="@string/datatype_power_desc"
-        graphical="true"
-        icon="@drawable/ic_launcher_foreground"
-        unit="W"
-        dependsOn="BIKE_POWER_WATTS" />
 
     <DataType
         typeId="com.itl.wprimeextension.WPRIME"
         displayName="@string/datatype_wprime"
         description="@string/datatype_wprime_desc"
         graphical="true"
-        icon="@drawable/ic_launcher_foreground"
+        icon="@mipmap/ic_launcher"
         unit="J"
         dependsOn="BIKE_POWER_WATTS" />
 </ExtensionInfo>

@@ -1,26 +1,40 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
-    alias(libs.plugins.jetbrains.kotlin.compose)
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
     namespace = "com.itl.wprimeextension"
-    compileSdk = 34
+    compileSdk = 34  // Necesario para dependencias AndroidX
 
     defaultConfig {
         applicationId = "com.itl.wprimeextension"
         minSdk = 23
-        targetSdk = 34
-        versionCode = 8
-        versionName = "2.3"
+        targetSdk = 34  // Updated to match latest template
+        versionCode = 9
+        versionName = "1.0.1"
+
+        // Configurar nombre del archivo APK
+        setProperty("archivesBaseName", "WPrimeKarooExtension-v${versionName}")
     }
 
     buildTypes {
-        release {
-            signingConfig = signingConfigs.getByName("debug")
+        debug {
+            isDebuggable = true
+            applicationIdSuffix = ".debug"
             isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Desactivar optimizaciones que pueden causar problemas
+            isShrinkResources = false
+            proguardFiles(getDefaultProguardFile("proguard-android.txt"))
+        }
+        release {
+            isMinifyEnabled = false
+            isDebuggable = false
+            isShrinkResources = false
+            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+            // Usamos debug signing para evitar problemas de firma
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
