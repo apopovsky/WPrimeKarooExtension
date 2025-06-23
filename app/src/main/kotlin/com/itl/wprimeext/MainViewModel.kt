@@ -16,7 +16,7 @@
 
 @file:OptIn(FlowPreview::class)
 
-package io.hammerhead.sampleext
+package com.itl.wprimeext
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

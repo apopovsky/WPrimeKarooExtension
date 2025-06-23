@@ -14,15 +14,18 @@
  * limitations under the License.
  */
 
-package io.hammerhead.sampleext.extension
+package com.itl.wprimeext
 
-import io.hammerhead.karooext.extension.DataTypeImpl
+import android.app.Application
+import dagger.hilt.android.HiltAndroidApp
+import timber.log.Timber
 
-class BespokeDataType(extension: String) : DataTypeImpl(extension, TYPE_ID) {
-    // No view or stream implementations are necessary because
-    // streaming data comes from the source and the view is standard numeric view
+@HiltAndroidApp
+class SampleApplication : Application() {
 
-    companion object {
-        const val TYPE_ID = "bespoke"
+    override fun onCreate() {
+        super.onCreate()
+        Timber.plant(Timber.DebugTree())
+        Timber.d("Starting sample")
     }
 }

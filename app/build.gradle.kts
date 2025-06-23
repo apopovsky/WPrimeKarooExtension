@@ -8,15 +8,16 @@ plugins {
 }
 
 android {
-    namespace = "io.hammerhead.sampleext"
+    namespace = "com.itl.wprimeext"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "io.hammerhead.sampleext"
+        applicationId = "com.itl.wprimeext"
         minSdk = 23
         targetSdk = 34
         versionCode = 8
         versionName = "2.3"
+        setProperty("archivesBaseName", "WPrimeExtension-v${versionName}")
     }
 
     buildTypes {

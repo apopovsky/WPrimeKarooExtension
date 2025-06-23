@@ -20,5 +20,5 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--keep class io.hammerhead.sampleext.extension.** { *; }
+-keep class com.itl.wprimeext.extension.** { *; }
 -keep class io.hammerhead.karooext.** { *; }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.hammerhead.sampleext
+package com.itl.wprimeext
 
 import android.Manifest
 import android.annotation.SuppressLint

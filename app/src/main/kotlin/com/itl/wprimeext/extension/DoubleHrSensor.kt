@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.hammerhead.sampleext.extension
+package com.itl.wprimeext.extension
 
 import android.annotation.SuppressLint
 import io.hammerhead.karooext.internal.Emitter

@@ -1,4 +1,4 @@
-package io.hammerhead.sampleext
+package com.itl.wprimeext
 
 import android.content.Context
 import dagger.Module

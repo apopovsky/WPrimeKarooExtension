@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.hammerhead.sampleext
+package com.itl.wprimeext
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column

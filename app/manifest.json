@@ -1,6 +1,6 @@
 {
   "label": "karoo-ext Sample",
-  "packageName": "io.hammerhead.sampleext",
+  "packageName": "com.itl.wprimeext",
   "iconUrl": "https://github.com/hammerheadnav/karoo-ext/releases/latest/download/karoo-ext-sample.png",
   "latestApkUrl": "https://github.com/hammerheadnav/karoo-ext/releases/latest/download/karoo-ext-sample.apk",
   "latestVersion": "2.3",

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.hammerhead.sampleext.extension
+package com.itl.wprimeext.extension
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -24,6 +24,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
+import com.itl.wprimeext.R
 import com.mapbox.geojson.Point
 import com.mapbox.geojson.utils.PolylineUtils
 import com.mapbox.turf.TurfConstants
@@ -38,10 +39,8 @@ import io.hammerhead.karooext.models.Device
 import io.hammerhead.karooext.models.DeviceEvent
 import io.hammerhead.karooext.models.FieldValue
 import io.hammerhead.karooext.models.FitEffect
-import io.hammerhead.karooext.models.InRideAlert
 import io.hammerhead.karooext.models.KarooEffect
 import io.hammerhead.karooext.models.MapEffect
-import io.hammerhead.karooext.models.MarkLap
 import io.hammerhead.karooext.models.OnLocationChanged
 import io.hammerhead.karooext.models.OnMapZoomLevel
 import io.hammerhead.karooext.models.ReleaseBluetooth
@@ -52,11 +51,9 @@ import io.hammerhead.karooext.models.ShowSymbols
 import io.hammerhead.karooext.models.StreamState
 import io.hammerhead.karooext.models.Symbol
 import io.hammerhead.karooext.models.SystemNotification
-import io.hammerhead.karooext.models.UserProfile
 import io.hammerhead.karooext.models.WriteEventMesg
 import io.hammerhead.karooext.models.WriteToRecordMesg
 import io.hammerhead.karooext.models.WriteToSessionMesg
-import io.hammerhead.sampleext.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -64,9 +61,6 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
@@ -272,41 +266,10 @@ class SampleExtension : KarooExtension("sample", "1.0") {
                             "sample-started",
                             message,
                             action = "See it",
-                            actionIntent = "io.hammerhead.sampleext.MAIN",
+                            actionIntent = "com.itl.wprimeext.MAIN",
                         ),
                     )
                 }
-            }
-            launch {
-                // Mark a lap and show an in-ride alert every mile/km
-                val userProfile = karooSystem.consumerFlow<UserProfile>().first()
-                karooSystem.streamDataFlow(DataType.Type.DISTANCE)
-                    .mapNotNull { (it as? StreamState.Streaming)?.dataPoint?.singleValue }
-                    // meters to user's preferred unit system (mi or km)
-                    .map {
-                        when (userProfile.preferredUnit.distance) {
-                            UserProfile.PreferredUnit.UnitType.METRIC -> it / 1000
-                            UserProfile.PreferredUnit.UnitType.IMPERIAL -> it / 1609.345
-                        }.toInt()
-                    }
-                    // each unique kilometer
-                    .distinctUntilChanged()
-                    // only emit on change (exclude initial value)
-                    .drop(1)
-                    .collect {
-                        karooSystem.dispatch(
-                            InRideAlert(
-                                id = "distance-marker",
-                                icon = R.drawable.ic_sample,
-                                title = getString(R.string.alert_title),
-                                detail = getString(R.string.alert_detail, it),
-                                autoDismissMs = 10_000,
-                                backgroundColor = R.color.green,
-                                textColor = R.color.light_green,
-                            ),
-                        )
-                        karooSystem.dispatch(MarkLap)
-                    }
             }
             launch {
                 // Handle actions that can't be shown in MainActivity because

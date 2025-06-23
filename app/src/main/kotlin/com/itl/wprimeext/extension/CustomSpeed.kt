@@ -1,4 +1,4 @@
-package io.hammerhead.sampleext.extension
+package com.itl.wprimeext.extension
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -15,8 +15,8 @@ import androidx.glance.layout.size
 import androidx.glance.preview.ExperimentalGlancePreviewApi
 import androidx.glance.preview.Preview
 import androidx.glance.unit.ColorProvider
+import com.itl.wprimeext.R
 import io.hammerhead.karooext.models.ViewConfig
-import io.hammerhead.sampleext.R
 
 @OptIn(ExperimentalGlancePreviewApi::class)
 @Preview(widthDp = 200, heightDp = 150)

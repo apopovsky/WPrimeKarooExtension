@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package io.hammerhead.sampleext.extension
+package com.itl.wprimeext.extension
 
-import io.hammerhead.karooext.internal.Emitter
-import io.hammerhead.karooext.models.Device
-import io.hammerhead.karooext.models.DeviceEvent
+import io.hammerhead.karooext.extension.DataTypeImpl
 
-sealed interface SampleDevice {
-    val source: Device
-    fun connect(emitter: Emitter<DeviceEvent>)
+class BespokeDataType(extension: String) : DataTypeImpl(extension, TYPE_ID) {
+    // No view or stream implementations are necessary because
+    // streaming data comes from the source and the view is standard numeric view
+
+    companion object {
+        const val TYPE_ID = "bespoke"
+    }
 }

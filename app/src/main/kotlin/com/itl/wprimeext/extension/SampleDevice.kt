@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-package io.hammerhead.sampleext
+package com.itl.wprimeext.extension
 
-import android.app.Application
-import dagger.hilt.android.HiltAndroidApp
-import timber.log.Timber
+import io.hammerhead.karooext.internal.Emitter
+import io.hammerhead.karooext.models.Device
+import io.hammerhead.karooext.models.DeviceEvent
 
-@HiltAndroidApp
-class SampleApplication : Application() {
-
-    override fun onCreate() {
-        super.onCreate()
-        Timber.plant(Timber.DebugTree())
-        Timber.d("Starting sample")
-    }
+sealed interface SampleDevice {
+    val source: Device
+    fun connect(emitter: Emitter<DeviceEvent>)
 }
