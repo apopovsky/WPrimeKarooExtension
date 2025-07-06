@@ -1,219 +1,309 @@
-# Karoo Extensions
+# W Prime Extension para Hammerhead Karoo
 
-Karoo Extensions (karoo-ext library) is an [Android library](https://developer.android.com/studio/projects/android-library) for use on [Hammerhead](https://www.hammerhead.io/)
-cycling computers.
+Una extensión para Hammerhead Karoo basada en el nuevo framework **karoo-ext** que implementará el modelo de W Prime (W') para el seguimiento de la energía anaeróbica durante el entrenamiento y las carreras.
 
-Like other Android libraries, it can be included as a gradle dependency to provide APIs for use in Kotlin and Java code.
+## Estado Actual del Proyecto
 
-## Community
+### ✅ En Desarrollo Avanzado (Configuración e Integración Completa)
 
-To join the conversation about Extensions on Karoo, get help from other developers, or post feature requests, visit [Hammerhead Extensions Developers](https://support.hammerhead.io/hc/en-us/community/topics/31298804001435-Hammerhead-Extensions-Developers).
+Este proyecto ha integrado exitosamente la configuración persistente de W Prime con el cálculo en tiempo real:
 
-## Documentation
+- **✅ Base del proyecto**: Template oficial karoo-ext funcional
+- **✅ Estructura de extensión**: `WPrimeExtension` heredando de `KarooExtension`
+- **✅ Campo de datos W Prime**: `WPrimeDataType` calculando W Prime en tiempo real
+- **✅ Configuración persistente**: DataStore integrado para CP, W' y Tau
+- **✅ Interfaz de configuración**: UI completa con ConfigurationScreen y ViewModel
+- **✅ Cálculo matemático**: WPrimeCalculator implementado con modelo completo
+- **✅ Integración completa**: Configuración persistente vinculada con cálculo en tiempo real
+- **✅ Compilación exitosa**: APK generado exitosamente (WPrimeExtension-v1.0-debug.apk)
+- **🔄 En progreso**: Pruebas en dispositivo y validación
+- **⏳ Pendiente**: RemoteViews para visualización personalizada
+- **⏳ Pendiente**: Integración con archivos FIT
+- **⏳ Pendiente**: Optimización y ajustes basados en pruebas
 
-Comprehensive documentation for karoo-ext is available [here](https://hammerheadnav.github.io/karoo-ext/index.html).
+## ¿Qué es W Prime (W')?
 
-## Getting started
+W Prime (W') es un modelo fisiológico que cuantifica la capacidad de trabajo anaeróbico de un ciclista:
 
-### Setting up the dependency
+- **Potencia Crítica (CP)**: El máximo esfuerzo sostenible teóricamente indefinido
+- **W Prime (W')**: La cantidad finita de trabajo que se puede realizar por encima de CP
+- **Recuperación**: W' se recupera exponencialmente cuando la potencia está por debajo de CP
 
-The first step is to include karoo-ext into your project, for example, as a gradle compile dependency:
+### 🧮 Modelo Matemático a Implementar
 
-```kotlin
-implementation("io.hammerhead:karoo-ext:1.x.y")
+1. **Depleción**: Cuando potencia > CP
+   ```
+   W'(t) = W'(t-1) - (Potencia - CP) × ΔTiempo
+   ```
+
+2. **Recuperación**: Cuando potencia < CP
+   ```
+   W'(t) = W'(t-1) + (W'máx - W'(t-1)) × (1 - e^(-ΔTiempo/Tau))
+   ```
+
+3. **Equilibrio**: Cuando potencia = CP
+   ```
+   W'(t) = W'(t-1) (sin cambio)
+   ```
+
+## Framework Karoo Extensions
+
+Este proyecto utiliza el **nuevo framework karoo-ext** (no el SDK deprecado), que ofrece:
+
+- **Proceso separado**: Las extensiones corren en su propio proceso para mayor estabilidad
+- **API clara**: Interacción mediante eventos y efectos serializables
+- **Data Types**: Sistema para crear campos de datos personalizados
+- **RemoteViews**: Para vistas personalizadas seguras entre procesos
+- **Integración moderna**: Compatible con Jetpack Compose y arquitecturas modernas
+
+## Instalación y Desarrollo
+
+### Requisitos
+
+1. **Android Studio** con Kotlin support
+2. **Java 8+** para la compilación
+3. **Acceso a GitHub Packages** para karoo-ext dependency
+4. **Hammerhead Karoo** device para testing
+
+### Configuración Inicial
+
+1. Clona el repositorio:
+   ```bash
+   git clone <tu-repo>
+   cd WPrimeExtension
+   ```
+
+2. Configura credenciales para GitHub Packages en `local.properties`:
+   ```
+   gpr.user=tu-usuario-github
+   gpr.key=tu-token-github
+   ```
+
+3. Compila el proyecto:
+   ```bash
+   ./gradlew assembleDebug
+   ```
+
+4. Instala en tu Karoo:
+   ```bash
+   adb install app/build/outputs/apk/debug/WPrimeExtension-v1.0-debug.apk
+   ```
+
+## Estructura del Proyecto Actual
+
+```
+WPrimeExtension/
+├── app/                                    # Aplicación Android principal
+│   ├── src/main/kotlin/com/itl/wprimeext/
+│   │   ├── MainActivity.kt                 # Activity principal (del template)
+│   │   ├── MainViewModel.kt               # ViewModel principal (del template)
+│   │   ├── TabLayout.kt                   # UI layout (del template)
+│   │   ├── ConfigurationScreen.kt         # ✅ Pantalla de configuración W Prime
+│   │   ├── ui/
+│   │   │   ├── viewmodel/
+│   │   │   │   └── WPrimeConfigViewModel.kt  # ✅ ViewModel para configuración
+│   │   │   └── components/
+│   │   │       └── ConfigurationCard.kt   # ✅ Componente UI para parámetros
+│   │   └── extension/
+│   │       ├── WPrimeExtension.kt         # ✅ Extensión principal (completa)
+│   │       ├── WPrimeDataType.kt          # ✅ Campo de datos W Prime (integrado)
+│   │       ├── WPrimeCalculator.kt        # ✅ Motor de cálculo (implementado)
+│   │       └── WPrimeSettings.kt          # ✅ Configuración con DataStore
+│   ├── src/main/res/xml/
+│   │   └── extension_info.xml             # Definición de la extensión
+│   └── manifest.json                      # Metadatos de la app
+├── lib/                                   # Librería karoo-ext (código fuente)
+├── build.gradle.kts                      # Configuración de build
+└── README.md                             # Este archivo
 ```
 
-(Replace `x` and `y` with the latest version numbers: [Latest karoo-ext](https://github.com/hammerheadnav/karoo-ext/packages/2175616))
+### Archivos Clave Implementados
 
-Add the package repository to your buildscript. karoo-ext is publicly available however Github Packages always requires authentication.
-Ultimately, it'll look something like this:
+- **`WPrimeExtension.kt`**: ✅ Clase principal que hereda de `KarooExtension`
+- **`WPrimeDataType.kt`**: ✅ Implementa `DataTypeImpl` con cálculo integrado
+- **`WPrimeCalculator.kt`**: ✅ Algoritmo completo de W Prime con depleción/recuperación
+- **`WPrimeSettings.kt`**: ✅ Configuración persistente usando Android DataStore
+- **`ConfigurationScreen.kt`**: ✅ UI para configurar CP, W' y Tau
+- **`WPrimeConfigViewModel.kt`**: ✅ ViewModel que conecta UI con configuración persistente
+- **`extension_info.xml`**: Define los data types disponibles para Karoo OS
+- **`manifest.json`**: Metadatos para instalación via Karoo Companion App
 
-```kotlin
-dependencyResolutionManagement {
-    // ...
-    repositories {
-        // ...
-        // karoo-ext from Github Packages
-        maven {
-            url = uri("https://maven.pkg.github.com/hammerheadnav/karoo-ext")
-            credentials {
-                username = providers.gradleProperty("gpr.user").getOrElse(System.getenv("USERNAME"))
-                password = providers.gradleProperty("gpr.key").getOrElse(System.getenv("TOKEN"))
-            }
-        }
-    }
-}
-```
+## Tecnologías y Dependencias
 
-You can store `gpr.user` and `gpr.key` in your `local.properties` or use environment variables to provide your credentials.
+### Framework Principal
+- **Hammerhead karoo-ext 1.1.5** - Framework oficial para extensiones
+- **Kotlin** - Lenguaje principal
+- **Android API Level 23-35** - Compatibilidad con Karoo devices
 
-Full instructions from [Github](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-gradle-registry#using-a-published-package).
+### UI y Arquitectura
+- **Jetpack Compose** - UI moderna y reactiva (del template)
+- **Hilt** - Inyección de dependencias (del template)
+- **Coroutines** - Programación asíncrona
+- **ViewModel** - Arquitectura MVVM
 
-### Hello Karoo
+### Funcionalidades Karoo
+- **DataTypeImpl** - Para crear campos de datos personalizados
+- **KarooSystemService** - Interfaz con el sistema Karoo
+- **StreamState** - Para recibir datos de sensores en tiempo real
+- **RemoteViews** - Para vistas personalizadas (por usar)
 
-With the dependency in-place, all of the library symbols will be available within your Android application after a gradle sync.
+### Build Tools
+- **Gradle Kotlin DSL** - Build configuration
+- **Spotless** - Code formatting
+- **GitHub Packages** - Para dependencia karoo-ext
 
-To do a simple "hello world" to Karoo, add this code to your Android activity:
+## Estado de Implementación
 
-```kotlin
-import io.hammerhead.karooext.KarooSystemService
+| Componente | Estado | Notas |
+|------------|--------|-------|
+| Configuración base | ✅ Completo | Template oficial funcionando |
+| Extensión registrada | ✅ Completo | `WPrimeExtension` hereda de `KarooExtension` |
+| Data type básico | ✅ Completo | `WPrimeDataType` retransmite potencia |
+| Modelo W Prime | ⏳ Por hacer | Necesita implementar cálculos matemáticos |
+| Configuración UI | ⏳ Por hacer | Pantalla para CP, W', Tau |
+| Almacenamiento | ⏳ Por hacer | DataStore o SharedPreferences |
+| Vista personalizada | ⏳ Por hacer | RemoteViews para mostrar W Prime |
+| FIT file integration | ⏳ Por hacer | Guardar W Prime en archivos FIT |
 
-class HelloActivity : Activity() {
-    private val karooSystem by lazy { KarooSystemService(this) }
+## Próximos Pasos
 
-    override fun onStart() {
-        super.onStart()
-        karooSystem.connect {
-            println("karoo system connected")
-        }
-    }
+### ✅ Implementación Completada
 
-    override fun onStop() {
-        karooSystem.disconnect()
-        super.onStop()
-    }
-}
-```
+1. **✅ WPrimeCalculator implementado**:
+   ```kotlin
+   class WPrimeCalculator(
+       private var criticalPower: Double,
+       private var anaerobicCapacity: Double,
+       private var tauRecovery: Double,
+   ) {
+       fun updatePower(power: Double, timestamp: Long): Double
+       fun getWPrimePercentage(): Double
+       fun getTimeToExhaustion(currentPower: Double): Double?
+   }
+   ```
 
-This example demonstrates the minimal code to connecting to your application to Karoo. Once connected, you can use `karooSystem` to
-consume events or dispatch effects.
+2. **✅ WPrimeDataType actualizado**:
+   - ✅ Integra WPrimeCalculator para cálculos en tiempo real
+   - ✅ Carga configuración desde DataStore al inicializar
+   - ✅ Proporciona datos W Prime reales a Karoo OS
 
-Register to consume events with:
+3. **✅ Interfaz de configuración completa**:
+   - ✅ ConfigurationScreen con Compose UI para CP, W', Tau
+   - ✅ WPrimeConfigViewModel con gestión de estado
+   - ✅ Almacenamiento persistente con Android DataStore
 
-```kotlin
-val consumerId = karooSystem.addConsumer { rideState: RideState ->
-    println("Ride state is now $rideState")
-}
-```
+4. **✅ Data type correctamente definido**:
+   - ✅ extension_info.xml configurado con `typeId="wprime"`
+   - ✅ Descripciones y metadatos actualizados para W Prime
 
-Unregistering and cleanup can then be done with:
+### Desarrollo Pendiente
 
-```kotlin
-karooSystem.removeConsumer(consumerId)
-```
+- **RemoteViews personalizadas** para mostrar W Prime balance gráficamente
+- **Integración con FIT files** para guardar datos W Prime en archivos de actividad
+- **Alertas en tiempo real** cuando W Prime está bajo (configurables)
+- **Validación con datos reales** en dispositivo Karoo
+- **Optimización de rendimiento** y ajustes basados en pruebas de usuario
 
-Dispatch effects to the system with:
+## Diferencias con el Proyecto Anterior
 
-```kotlin
-karooSystem.dispatch(PerformHardwareAction.ControlCenterComboPress)
-```
+Este proyecto **SÍ usa el framework correcto**:
 
-Read the docs for more details about the [events](https://hammerheadnav.github.io/karoo-ext/karoo-ext/io.hammerhead.karooext.models/-karoo-event/index.html) and 
-[effects](https://hammerheadnav.github.io/karoo-ext/karoo-ext/io.hammerhead.karooext.models/-karoo-effect/index.html) exposed by karoo-ext as well
-as the documentation of [KarooSystemService](https://hammerheadnav.github.io/karoo-ext/karoo-ext/io.hammerhead.karooext/-karoo-system-service/index.html) itself.
+- ✅ **karoo-ext**: Framework moderno y soportado oficialmente
+- ✅ **Proceso separado**: Más estable que el SDK deprecado
+- ✅ **Template oficial**: Base sólida del repositorio oficial de Hammerhead
+- ❌ **karoo-sdk**: El proyecto anterior usaba el SDK deprecado
 
-### Hello Extension
+## Testing
 
-Interaction with Karoo from your application is the starting point but the real value provided by Karoo Extensions is,
-by definition, extending the capabilities and experience of Karoo.
-
-To do this, Karoo OS (the apps and services on the device out-of-the-box) need to know about and communicate with your application.
-
-First, create a class that is derived from [KarooExtension](https://hammerheadnav.github.io/karoo-ext/karoo-ext/io.hammerhead.karooext.extension/-karoo-extension/index.html) and
-defining the extension ID and version:
-
-```kotlin
-class HelloExtension : KarooExtension("hello", "5")
-```
-
-Next, register your extension with the Karoo System, by including it as a `<service>` in your `AndroidManifest.xml` like this:
-
-```xml
-
-<service android:name=".HelloExtension">
-    <intent-filter>
-        <action android:name="io.hammerhead.karooext.KAROO_EXTENSION" />
-    </intent-filter>
-    <meta-data
-        android:name="io.hammerhead.karooext.EXTENSION_INFO"
-        android:resource="@xml/extension_info" />
-</service>
-```
-
-Importantly, the intent-filter for "io.hammerhead.karooext.KAROO_EXTENSION" identifies this service as a Karoo Extension.
-
-Secondly, the `extension_info` referenced points to an XML resources defining the capabilities your extension provides.
-
-Extension Info XML resource (`extension_info.xml`):
-
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<ExtensionInfo
-    id="hello"
-    displayName="@string/extension_name"
-    icon="@drawable/X"
-    scansDevices="true">
-    <DataType
-        typeId="<type id>"
-        description="@string/X"
-        displayName="@string/X"
-        graphical="true"
-        icon="@drawable/X" />
-    ...
-    <DataType... />
-</ExtensionInfo>
-```
-
-### Template
-
-If you're starting from scratch, to create a new Android app with necessary dependencies
-and stubbed extension, start from the template repository: [karoo-ext-template](https://github.com/hammerheadnav/karoo-ext-template).
-
-1. **Use the Template**: Go to the template repository, click **"Use this template"**, and create your new repository.
-2. **Customize**: Clone your new repository and start writing your app and extensions.
-
-## Sample App
-
-Within [app/](app/), a sample application with Karoo Extensions is provided with examples for various integrations with Karoo. While this sample app uses
-Jetpack Compose, Hilt, ViewModels, and Glance, these are not strict dependencies or requirements to be able to use the karoo-ext library.
-
-Main activity demonstrates:
-
-1. HW actions
-2. Beeper control
-3. Subscribing to system events
-
-The functionality demonstrated in [MainActivity](app/src/main/kotlin/io/hammerhead/sampleext/MainActivity.kt) can also
-be used in extensions to create more advanced in-ride behavior.
-
-To install the basic sample app:
-
+### En Desarrollo Local
 ```bash
-./gradlew app:installDebug
+./gradlew assembleDebug
+adb install app/build/outputs/apk/debug/WPrimeExtension-v1.0-debug.apk
 ```
 
-The `app` depends on the `lib` module directly, allowing for quick testing of library changes. A prebuilt sample app can also be found in release artifacts.
+### En Karoo Device
+1. Habilitar Developer Options en Karoo
+2. Conectar via ADB
+3. Instalar APK
+4. Configurar campos de datos en ride screens
 
-### Sample Extension
+## 🧪 Pruebas y Instalación
 
-The sample app includes an [Extension](app/src/main/kotlin/io/hammerhead/sampleext/extension)
-This is a good starting point or reference if you have an existing Android app written in Kotlin.
+### APK Listo para Probar
 
-The sample extension demonstrates:
+El APK de desarrollo está disponible en: `app/build/outputs/apk/debug/WPrimeExtension-v1.0-debug.apk`
 
-1. Defining the extension info in XML to match the extension service
-2. Scanning for devices (fake HR sensors)
-3. Connecting to and updating a device
-4. Defining a data type (Power-HR and Custom Speed)
-5. Streaming data for a data type
-6. Adding a custom view for a data type (Custom Speed view)
-7. Publishing system notifications
-8. Pushing in-ride alerts based on streaming ride data
+### Instalación en Karoo
 
-## Methodologies
+1. **Habilitar instalación desde fuentes desconocidas** en tu Karoo
+2. **Transferir el APK** al dispositivo via ADB o tarjeta SD:
+   ```bash
+   adb install app/build/outputs/apk/debug/WPrimeExtension-v1.0-debug.apk
+   ```
+3. **Abrir la app** desde el launcher de Karoo
+4. **Configurar parámetros W Prime**:
+   - Potencia Crítica (CP): Tu FTP × 0.95 (aprox)
+   - Capacidad Anaeróbica (W'): 12000-25000 J (típico)
+   - Constante de Recuperación (Tau): 200-600 s
 
-Karoo Extensions aim to make developing for Karoo and K2 seamless. While some hardware differences exist, this library
-largely abstracts them. If an implementation requires distinguishing products, [KarooInfo](https://hammerheadnav.github.io/karoo-ext/karoo-ext/io.hammerhead.karooext.models/-karoo-info/index.html)
-can be used to switch on the available hardware types.
+### Funcionalidades Disponibles
 
-This library exists separately from [karoo-sdk](https://github.com/hammerheadnav/karoo-sdk) in order to allow the legacy SDK to
-continue to be supported and included alongside karoo-ext without class conflicts. While the ideal is for all Karoo development to move
-toward karoo-ext usage, there may be time where including both karoo-sdk and karoo-ext is necessary.
+#### ✅ Configuración
+- Interfaz completa para configurar CP, W' y Tau
+- Persistencia automática de configuración usando DataStore
+- Valores por defecto sensatos para empezar
 
-In order to provide a robust and stable experience, unlike the legacy SDK, all third-party code is now run within the third-party's own application process.
-This separation provides a clear API and singular touch-points from third-party to Karoo OS and vice-versus.
+#### ✅ Cálculo en Tiempo Real
+- W Prime se calcula en tiempo real basado en la potencia actual
+- Depleción cuando potencia > CP
+- Recuperación exponencial cuando potencia < CP
+- Datos disponibles como data type para pantallas de Karoo
 
-The large majority of interactions with `KarooSystem` are done through consumers and dispatching. This allows the API to remain stable and make it
-easier to add new events and effects. While most operations are encapsulated in `@Serializable` data structures, views and resources can't easily be captured.
-Where third-party views are needed by Karoo OS, [RemoteViews](https://developer.android.com/reference/android/widget/RemoteViews), used by Android platform for
-widgets, allow describing a view hierarchy that can safely be displayed in another process.
+#### ✅ Data Type para Karoo OS
+- Campo de datos "W Prime" disponible en perfiles de riding
+- Muestra el valor actual de W Prime en julios
+- Se integra nativamente con el sistema de data fields de Karoo
+
+### Próximos Pasos de Prueba
+
+1. **Configurar parámetros** usando la interfaz de la app
+2. **Añadir el data field** W Prime a un perfil de riding en Karoo
+3. **Realizar un entrenamiento** con variaciones de potencia
+4. **Verificar** que W Prime depleta/recupera según esperado
+5. **Ajustar parámetros** según experiencia práctica
+
+## 📚 Referencias
+
+### Documentación Oficial
+- [Karoo Extensions Documentation](https://hammerheadnav.github.io/karoo-ext/index.html)
+- [karoo-ext GitHub Repository](https://github.com/hammerheadnav/karoo-ext)
+- [Template Repository](https://github.com/hammerheadnav/karoo-ext-template)
+
+### Community
+- [Hammerhead Extensions Developers Forum](https://support.hammerhead.io/hc/en-us/community/topics/31298804001435-Hammerhead-Extensions-Developers)
+
+### Conceptos W Prime
+- [The Science of Training with Power](https://www.trainingpeaks.com/blog/what-is-w-prime/) - TrainingPeaks
+- [Critical Power and W' Research](https://www.cyclinganalytics.com/blog/2018/06/how-does-w-balance-work) - Cycling Analytics
+
+## Licencia
+
+```
+Copyright (c) 2025 SRAM LLC.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
+
+---
+
+**Nota**: Este proyecto está basado en el template oficial de Hammerhead Karoo Extensions y está siendo adaptado para implementar funcionalidad W Prime. El código actual es principalmente del template con modificaciones menores para W Prime.

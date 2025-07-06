@@ -17,7 +17,7 @@ android {
         targetSdk = 34
         versionCode = 8
         versionName = "1.0"
-        setProperty("archivesBaseName", "WPrimeExtension-v${versionName}")
+        base.archivesName.set("WPrimeExtension-v${versionName}")
     }
 
     buildTypes {
@@ -84,6 +84,9 @@ dependencies {
     // coroutines
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.rx2)
+
+    // datastore
+    implementation(libs.androidx.datastore.preferences)
 
     implementation("no.nordicsemi.kotlin.ble:client-android:2.0.0-alpha02")
 

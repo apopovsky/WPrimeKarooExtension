@@ -26,6 +26,6 @@ class WPrimeApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         Timber.plant(Timber.DebugTree())
-        Timber.d("Starting sample")
+        Timber.d("Starting W Prime Extension")
     }
 }

@@ -1,0 +1,52 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="128dp"
+    android:height="200dp"
+    android:viewportWidth="128"
+    android:viewportHeight="200">
+
+    <path
+        android:pathData="M32,22 h64 a18,18 0 0 1 18,18 v140 a18,18 0 0 1 -18,18 h-64 a18,18 0 0 1 -18,-18 v-140 a18,18 0 0 1 18,-18z"
+        android:fillColor="#fff"
+        android:strokeColor="#222"
+        android:strokeWidth="10"/>
+
+    <path
+        android:pathData="M52,7 h24 a6,6 0 0 1 6,6 v8 a6,6 0 0 1 -6,6 h-24 a6,6 0 0 1 -6,-6 v-8 a6,6 0 0 1 6,-6z"
+        android:fillColor="#222"/>
+
+    <path
+        android:pathData="M36,38 h56 a6,6 0 0 1 6,6 v12 a6,6 0 0 1 -6,6 h-56 a6,6 0 0 1 -6,-6 v-12 a6,6 0 0 1 6,-6z"
+        android:fillColor="#57CA3B"/>
+    <path
+        android:pathData="M36,38 Q30,38 30,44 V56 Q30,62 36,62 H66 V38 H36Z"
+        android:fillColor="#7DDF77"/>
+
+    <path
+        android:pathData="M36,68 h56 a6,6 0 0 1 6,6 v12 a6,6 0 0 1 -6,6 h-56 a6,6 0 0 1 -6,-6 v-12 a6,6 0 0 1 6,-6z"
+        android:fillColor="#D6E84B"/>
+    <path
+        android:pathData="M36,68 Q30,68 30,74 V86 Q30,92 36,92 H66 V68 H36Z"
+        android:fillColor="#E5EF87"/>
+
+    <path
+        android:pathData="M36,98 h56 a6,6 0 0 1 6,6 v12 a6,6 0 0 1 -6,6 h-56 a6,6 0 0 1 -6,-6 v-12 a6,6 0 0 1 6,-6z"
+        android:fillColor="#F9C233"/>
+    <path
+        android:pathData="M36,98 Q30,98 30,104 V116 Q30,122 36,122 H66 V98 H36Z"
+        android:fillColor="#FFE170"/>
+
+    <path
+        android:pathData="M36,128 h56 a6,6 0 0 1 6,6 v12 a6,6 0 0 1 -6,6 h-56 a6,6 0 0 1 -6,-6 v-12 a6,6 0 0 1 6,-6z"
+        android:fillColor="#FC8923"/>
+    <path
+        android:pathData="M36,128 Q30,128 30,134 V146 Q30,152 36,152 H66 V128 H36Z"
+        android:fillColor="#FFBC7C"/>
+
+    <path
+        android:pathData="M36,158 h56 a6,6 0 0 1 6,6 v12 a6,6 0 0 1 -6,6 h-56 a6,6 0 0 1 -6,-6 v-12 a6,6 0 0 1 6,-6z"
+        android:fillColor="#EF2A2A"/>
+    <path
+        android:pathData="M36,158 Q30,158 30,164 V176 Q30,182 36,182 H66 V158 H36Z"
+        android:fillColor="#FF6161"/>
+
+    </vector>

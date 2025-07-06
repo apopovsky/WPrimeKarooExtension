@@ -1,4 +1,4 @@
-package com.itl.wprimeextension.ui.components
+package com.itl.wprimeext.ui.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row

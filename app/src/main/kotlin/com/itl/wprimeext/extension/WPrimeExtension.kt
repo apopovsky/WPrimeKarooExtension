@@ -53,7 +53,7 @@ import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
 @AndroidEntryPoint
-class WPrimeExtension : KarooExtension("sample", "1.0") {
+class WPrimeExtension : KarooExtension("wprime", "1.0") {
     @Inject
     lateinit var karooSystem: KarooSystemService
 
@@ -61,7 +61,7 @@ class WPrimeExtension : KarooExtension("sample", "1.0") {
 
     override val types by lazy {
         listOf(
-            WPrimeDataType(karooSystem, extension),
+            WPrimeDataType(karooSystem, this, extension),
         )
     }
 
@@ -137,9 +137,9 @@ class WPrimeExtension : KarooExtension("sample", "1.0") {
                 if (connected) {
                     karooSystem.dispatch(
                         SystemNotification(
-                            "sample-started",
-                            "Sample Extension Started",
-                            action = "See it",
+                            "wprime-started",
+                            "W Prime Extension Started",
+                            action = "Configure",
                             actionIntent = "com.itl.wprimeext.MAIN",
                         ),
                     )
@@ -150,11 +150,11 @@ class WPrimeExtension : KarooExtension("sample", "1.0") {
                 // they are for in-ride scenarios. Receiving these intents is like
                 // if an extension got a command from a sensor or API that maps to the in-ride actions.
                 //
-                // Test with: adb shell am broadcast -a io.hammerhead.sample.IN_RIDE_ACTION --es action io.hammerhead.karooext.models.MarkLap
+                // Test with: adb shell am broadcast -a io.hammerhead.wprime.IN_RIDE_ACTION --es action io.hammerhead.karooext.models.MarkLap
                 // Works with any KarooEffect that has no required parameters:
                 //  - MarkLap, PauseRide, ResumeRide, ShowMapPage, ZoomPage, TurnScreenOff, TurnScreenOn, and PerformHardwareActions
                 callbackFlow {
-                    val intentFilter = IntentFilter("io.hammerhead.sample.IN_RIDE_ACTION")
+                    val intentFilter = IntentFilter("io.hammerhead.wprime.IN_RIDE_ACTION")
                     val receiver = object : BroadcastReceiver() {
                         override fun onReceive(context: Context, intent: Intent) {
                             trySend(intent)

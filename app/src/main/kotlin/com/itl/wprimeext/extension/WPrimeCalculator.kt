@@ -1,4 +1,4 @@
-package com.itl.wprimeextension.wprime
+package com.itl.wprimeext.extension
 
 import kotlin.math.exp
 import kotlin.math.max

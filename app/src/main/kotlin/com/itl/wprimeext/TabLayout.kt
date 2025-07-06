@@ -276,9 +276,9 @@ fun RequestsTab(
             onClick = {
                 dispatchEffect(
                     SystemNotification(
-                        "sample-clicked",
+                        "wprime-notification",
                         notificationMessage,
-                        "You clicked the notify button in the sample.",
+                        "W Prime Extension notification.",
                     ),
                 )
             },

@@ -1,4 +1,4 @@
-package com.itl.wprimeextension.screens
+package com.itl.wprimeext
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,10 +22,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.itl.wprimeextension.data.WPrimeSettings
-import com.itl.wprimeextension.ui.components.ConfigurationCard
-import com.itl.wprimeextension.ui.viewmodel.WPrimeConfigViewModel
-import com.itl.wprimeextension.ui.viewmodel.WPrimeConfigViewModelFactory
+import com.itl.wprimeext.extension.WPrimeSettings
+import com.itl.wprimeext.ui.components.ConfigurationCard
+import com.itl.wprimeext.ui.viewmodel.WPrimeConfigViewModel
+import com.itl.wprimeext.ui.viewmodel.WPrimeConfigViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

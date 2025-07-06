@@ -1,4 +1,4 @@
-package com.itl.wprimeextension.data
+package com.itl.wprimeext.extension
 
 import android.content.Context
 import androidx.datastore.core.DataStore

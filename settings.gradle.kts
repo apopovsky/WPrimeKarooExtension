@@ -34,6 +34,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "karoo-ext"
+rootProject.name = "WPrimeExtension"
 include(":lib", ":app")
- 

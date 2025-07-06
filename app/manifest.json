@@ -1,11 +1,11 @@
 {
-  "label": "karoo-ext Sample",
+  "label": "W Prime Extension",
   "packageName": "com.itl.wprimeext",
-  "iconUrl": "https://github.com/hammerheadnav/karoo-ext/releases/latest/download/karoo-ext-sample.png",
-  "latestApkUrl": "https://github.com/hammerheadnav/karoo-ext/releases/latest/download/karoo-ext-sample.apk",
-  "latestVersion": "2.3",
+  "iconUrl": "https://github.com/itl/wprime-extension/releases/latest/download/wprime-icon.png",
+  "latestApkUrl": "https://github.com/itl/wprime-extension/releases/latest/download/wprime-extension.apk",
+  "latestVersion": "1.0",
   "latestVersionCode": 8,
-  "developer": "Hammerhead",
-  "description": "Hammerhead's Sample app from github.com/hammerheadnav/karoo-ext which demonstrates the capabilities of Karoo Extensions.\nIt won't provide much use to riders but can be a quick way to get started developing for Karoo.",
-  "releaseNotes": "Added additional events."
+  "developer": "ITL",
+  "description": "W Prime Extension for Hammerhead Karoo that calculates anaerobic energy balance in real-time during rides.",
+  "releaseNotes": "Initial W Prime implementation with persistent configuration and real-time calculations."
 }

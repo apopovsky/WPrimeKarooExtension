@@ -1,10 +1,10 @@
-package com.itl.wprimeextension.ui.viewmodel
+package com.itl.wprimeext.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.itl.wprimeextension.data.WPrimeConfiguration
-import com.itl.wprimeextension.data.WPrimeSettings
+import com.itl.wprimeext.extension.WPrimeConfiguration
+import com.itl.wprimeext.extension.WPrimeSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
