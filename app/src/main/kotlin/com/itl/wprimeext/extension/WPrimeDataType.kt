@@ -28,33 +28,32 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-class PowerHrDataType(
+class WPrimeDataType(
     private val karooSystem: KarooSystemService,
     extension: String,
-) : DataTypeImpl(extension, "power-hr") {
+) : DataTypeImpl(extension, "wprime") {
     override fun startStream(emitter: Emitter<StreamState>) {
-        Timber.d("start powerhr stream")
+        Timber.d("start power stream")
         val job = CoroutineScope(Dispatchers.IO).launch {
-            val hrFlow = karooSystem.streamDataFlow(DataType.Type.HEART_RATE)
             val powerFlow = karooSystem.streamDataFlow(DataType.Type.POWER)
-            combine(hrFlow, powerFlow) { hr, power ->
-                if (hr is StreamState.Streaming && power is StreamState.Streaming) {
-                    val powerHr = hr.dataPoint.singleValue!!.toDouble() * power.dataPoint.singleValue!!.toDouble() / 100.0
-                    StreamState.Streaming(
-                        DataPoint(
-                            dataTypeId,
-                            values = mapOf(DataType.Field.SINGLE to powerHr),
-                        ),
+            powerFlow.collect { power ->
+                if (power is StreamState.Streaming) {
+                    val powerValue = power.dataPoint.singleValue?.toDouble() ?: 0.0
+                    emitter.onNext(
+                        StreamState.Streaming(
+                            DataPoint(
+                                dataTypeId,
+                                values = mapOf(DataType.Field.SINGLE to powerValue),
+                            ),
+                        )
                     )
                 } else {
-                    StreamState.NotAvailable
+                    emitter.onNext(StreamState.NotAvailable)
                 }
-            }.collect {
-                emitter.onNext(it)
             }
         }
         emitter.setCancellable {
-            Timber.d("stop powerhr stream")
+            Timber.d("stop power stream")
             job.cancel()
         }
     }

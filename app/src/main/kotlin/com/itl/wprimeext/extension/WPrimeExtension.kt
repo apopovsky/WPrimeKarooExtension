@@ -16,40 +16,22 @@
 
 package com.itl.wprimeext.extension
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
-import androidx.core.app.ActivityCompat
-import com.itl.wprimeext.R
-import com.mapbox.geojson.Point
-import com.mapbox.geojson.utils.PolylineUtils
-import com.mapbox.turf.TurfConstants
-import com.mapbox.turf.TurfMeasurement
 import dagger.hilt.android.AndroidEntryPoint
 import io.hammerhead.karooext.KarooSystemService
 import io.hammerhead.karooext.extension.KarooExtension
 import io.hammerhead.karooext.internal.Emitter
 import io.hammerhead.karooext.models.DataType
 import io.hammerhead.karooext.models.DeveloperField
-import io.hammerhead.karooext.models.Device
-import io.hammerhead.karooext.models.DeviceEvent
 import io.hammerhead.karooext.models.FieldValue
 import io.hammerhead.karooext.models.FitEffect
 import io.hammerhead.karooext.models.KarooEffect
-import io.hammerhead.karooext.models.MapEffect
-import io.hammerhead.karooext.models.OnLocationChanged
-import io.hammerhead.karooext.models.OnMapZoomLevel
-import io.hammerhead.karooext.models.ReleaseBluetooth
-import io.hammerhead.karooext.models.RequestBluetooth
 import io.hammerhead.karooext.models.RideState
-import io.hammerhead.karooext.models.ShowPolyline
-import io.hammerhead.karooext.models.ShowSymbols
 import io.hammerhead.karooext.models.StreamState
-import io.hammerhead.karooext.models.Symbol
 import io.hammerhead.karooext.models.SystemNotification
 import io.hammerhead.karooext.models.WriteEventMesg
 import io.hammerhead.karooext.models.WriteToRecordMesg
@@ -58,16 +40,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
@@ -76,113 +53,16 @@ import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
 @AndroidEntryPoint
-class SampleExtension : KarooExtension("sample", "1.0") {
+class WPrimeExtension : KarooExtension("sample", "1.0") {
     @Inject
     lateinit var karooSystem: KarooSystemService
 
-    @Inject
-    lateinit var bleManager: BleManager
-
     private var serviceJob: Job? = null
-    private val devices = ConcurrentHashMap<String, SampleDevice>()
 
     override val types by lazy {
         listOf(
-            PowerHrDataType(karooSystem, extension),
-            CustomSpeedDataType(karooSystem, extension),
-            BespokeDataType(extension),
-            DoubleHrDataType(extension),
+            WPrimeDataType(karooSystem, extension),
         )
-    }
-
-    override fun startScan(emitter: Emitter<Device>) {
-        // Find a new sources every 5 seconds
-        val job = CoroutineScope(Dispatchers.IO).launch {
-            val staticSources = flow {
-                delay(1000)
-                repeat(Int.MAX_VALUE) {
-                    val hr = StaticHrSource(extension, 100 + it * 10)
-                    emit(hr)
-                    delay(1000)
-                    val shift = IncrementalShiftingSource(extension, it)
-                    emit(shift)
-                    delay(1000)
-                    val bespoke = BespokeDataSource(extension, it)
-                    emit(bespoke)
-                    delay(1000)
-                }
-            }
-            val bleSources = bleManager.scan(listOf(DoubleHrSensor.HRS_SERVICE_UUID)).map { (address, name) ->
-                Timber.i("BLE Scanned found $address: $name")
-                DoubleHrSensor(bleManager, extension, address, name)
-            }
-            merge(staticSources, bleSources).collect { device ->
-                devices.putIfAbsent(device.source.uid, device)
-                emitter.onNext(device.source)
-            }
-        }
-        emitter.setCancellable {
-            job.cancel()
-        }
-    }
-
-    override fun connectDevice(uid: String, emitter: Emitter<DeviceEvent>) {
-        Timber.d("Connect to $uid")
-        devices.getOrPut(uid) {
-            val id = uid.substringAfterLast("-").toIntOrNull()
-            if (uid.contains(IncrementalShiftingSource.PREFIX) && id != null) {
-                IncrementalShiftingSource(extension, id)
-            } else if (uid.contains(StaticHrSource.PREFIX) && id != null) {
-                StaticHrSource(extension, id)
-            } else if (uid.contains(BespokeDataSource.PREFIX) && id != null) {
-                BespokeDataSource(extension, id)
-            } else if (uid.contains(DoubleHrSensor.PREFIX)) {
-                DoubleHrSensor(bleManager, extension, uid.substringAfterLast("-"), null)
-            } else {
-                throw IllegalArgumentException("unknown type for $uid")
-            }
-        }.connect(emitter)
-    }
-
-    override fun startMap(emitter: Emitter<MapEffect>) {
-        val job = CoroutineScope(Dispatchers.IO).launch {
-            combine(karooSystem.consumerFlow<OnLocationChanged>(), karooSystem.consumerFlow<OnMapZoomLevel>()) { location, mapZoom ->
-                Pair(location, mapZoom)
-            }
-                .collect { (location, mapZoom) ->
-                    val source = Point.fromLngLat(location.lng, location.lat)
-                    val totalDistance = when {
-                        mapZoom.zoomLevel >= 15.0 -> 100.0
-                        mapZoom.zoomLevel >= 12.0 -> 200.0
-                        else -> 300.0
-                    }
-                    val dest = TurfMeasurement.destination(source, totalDistance, 45.0, TurfConstants.UNIT_METERS)
-                    val half = TurfMeasurement.destination(source, totalDistance / 2, 45.0, TurfConstants.UNIT_METERS)
-                    emitter.onNext(
-                        ShowSymbols(
-                            listOf(
-                                Symbol.POI(
-                                    id = "away",
-                                    lat = dest.latitude(),
-                                    lng = dest.longitude(),
-                                ),
-                                Symbol.Icon(
-                                    id = "half",
-                                    lat = half.latitude(),
-                                    lng = half.longitude(),
-                                    orientation = 0f,
-                                    iconRes = R.drawable.ic_arrow,
-                                ),
-                            ),
-                        ),
-                    )
-                    val polyline = PolylineUtils.encode(listOf(source, dest), 5)
-                    emitter.onNext(ShowPolyline("45", polyline, getColor(R.color.colorPrimary), 4))
-                }
-        }
-        emitter.setCancellable {
-            job.cancel()
-        }
     }
 
     private val doughnutsField by lazy {
@@ -255,16 +135,10 @@ class SampleExtension : KarooExtension("sample", "1.0") {
         serviceJob = CoroutineScope(Dispatchers.IO).launch {
             karooSystem.connect { connected ->
                 if (connected) {
-                    karooSystem.dispatch(RequestBluetooth(extension))
-                    val message = if (ActivityCompat.checkSelfPermission(this@SampleExtension, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED) {
-                        "Sample extension started (permissions granted)"
-                    } else {
-                        "Sample extension started (needs permissions)"
-                    }
                     karooSystem.dispatch(
                         SystemNotification(
                             "sample-started",
-                            message,
+                            "Sample Extension Started",
                             action = "See it",
                             actionIntent = "com.itl.wprimeext.MAIN",
                         ),
@@ -310,7 +184,6 @@ class SampleExtension : KarooExtension("sample", "1.0") {
     override fun onDestroy() {
         serviceJob?.cancel()
         serviceJob = null
-        karooSystem.dispatch(ReleaseBluetooth(extension))
         karooSystem.disconnect()
         super.onDestroy()
     }

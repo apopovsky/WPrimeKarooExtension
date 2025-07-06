@@ -21,7 +21,7 @@ import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 
 @HiltAndroidApp
-class SampleApplication : Application() {
+class WPrimeApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()

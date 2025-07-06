@@ -16,7 +16,7 @@ android {
         minSdk = 23
         targetSdk = 34
         versionCode = 8
-        versionName = "2.3"
+        versionName = "1.0"
         setProperty("archivesBaseName", "WPrimeExtension-v${versionName}")
     }
 
