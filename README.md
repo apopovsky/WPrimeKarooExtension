@@ -16,6 +16,7 @@ Este proyecto ha integrado exitosamente la configuración persistente de W Prime
 - **✅ Cálculo matemático**: WPrimeCalculator implementado con modelo completo
 - **✅ Integración completa**: Configuración persistente vinculada con cálculo en tiempo real
 - **✅ Compilación exitosa**: APK generado exitosamente (WPrimeExtension-v1.0-debug.apk)
+- **✅ Sistema de logging unificado**: Implementado sistema estructurado para debugging (ver [LOGGING.md](LOGGING.md))
 - **🔄 En progreso**: Pruebas en dispositivo y validación
 - **⏳ Pendiente**: RemoteViews para visualización personalizada
 - **⏳ Pendiente**: Integración con archivos FIT
@@ -109,11 +110,15 @@ WPrimeExtension/
 │   │       ├── WPrimeDataType.kt          # ✅ Campo de datos W Prime (integrado)
 │   │       ├── WPrimeCalculator.kt        # ✅ Motor de cálculo (implementado)
 │   │       └── WPrimeSettings.kt          # ✅ Configuración con DataStore
+│   ├── utils/                             # ✅ Utilidades del proyecto
+│   │   ├── WPrimeLogger.kt               # ✅ Sistema de logging unificado
+│   │   └── LogConstants.kt               # ✅ Constantes para logging
 │   ├── src/main/res/xml/
 │   │   └── extension_info.xml             # Definición de la extensión
 │   └── manifest.json                      # Metadatos de la app
 ├── lib/                                   # Librería karoo-ext (código fuente)
 ├── build.gradle.kts                      # Configuración de build
+├── LOGGING.md                            # ✅ Documentación del sistema de logging
 └── README.md                             # Este archivo
 ```
 
@@ -285,6 +290,33 @@ El APK de desarrollo está disponible en: `app/build/outputs/apk/debug/WPrimeExt
 ### Conceptos W Prime
 - [The Science of Training with Power](https://www.trainingpeaks.com/blog/what-is-w-prime/) - TrainingPeaks
 - [Critical Power and W' Research](https://www.cyclinganalytics.com/blog/2018/06/how-does-w-balance-work) - Cycling Analytics
+
+## Debugging y Logging
+
+Este proyecto incluye un sistema de logging unificado y estructurado para facilitar el debugging. Ver [LOGGING.md](LOGGING.md) para detalles completos.
+
+### Comandos útiles para debugging:
+
+```bash
+# Ver todos los logs de W Prime
+adb logcat | grep "WPrime:"
+
+# Ver solo errores y warnings
+adb logcat | grep -E "WPrime:.*(ERROR|WARN)"
+
+# Ver actividad del calculador
+adb logcat | grep "WPrime:Calculator"
+
+# Monitorear configuración
+adb logcat | grep "WPrime:Settings"
+```
+
+### Logging por módulos:
+- **Extension**: Ciclo de vida principal
+- **DataType**: Streaming de datos en tiempo real
+- **Calculator**: Algoritmo de W Prime
+- **Settings**: Configuración persistente
+- **UI/ViewModel**: Interfaz de usuario
 
 ## Licencia
 

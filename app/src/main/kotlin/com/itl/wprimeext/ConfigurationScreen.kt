@@ -1,19 +1,27 @@
 package com.itl.wprimeext
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -54,59 +62,81 @@ fun ConfigurationScreen() {
             )
         },
     ) { paddingValues ->
-        if (!isLoading) {
-            Column(
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (!isLoading) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                ) {
+                    Text(
+                        text = "Parámetros W Prime",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    ConfigurationCard(
+                        title = "Potencia Crítica (CP)",
+                        description = "Potencia máxima sostenible",
+                        value = configuration.criticalPower,
+                        unit = "W",
+                        onValueChange = viewModel::updateCriticalPower,
+                    )
+
+                    ConfigurationCard(
+                        title = "Capacidad Anaeróbica (W')",
+                        description = "Energía disponible sobre CP",
+                        value = configuration.anaerobicCapacity,
+                        unit = "J",
+                        onValueChange = viewModel::updateAnaerobicCapacity,
+                    )
+
+                    ConfigurationCard(
+                        title = "Tau Recuperación",
+                        description = "Velocidad de recuperación de W'",
+                        value = configuration.tauRecovery,
+                        unit = "s",
+                        onValueChange = viewModel::updateTauRecovery,
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Text(
+                        text = "✓ Guardado automático",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium,
+                    )
+
+                    Spacer(modifier = Modifier.height(80.dp))
+                }
+            }
+
+            // FAB posicionado como en ki2: esquina inferior izquierda con margen
+            FloatingActionButton(
+                onClick = {
+                    (context as? MainActivity)?.simulateBackPress()
+                },
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(16.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .align(Alignment.BottomStart)
+                    .padding(start = 0.dp, bottom = 10.dp)
+                    .size(50.dp),
+                shape = RoundedCornerShape(
+                    topStart = 0.dp,
+                    topEnd = 25.dp,
+                    bottomStart = 0.dp,
+                    bottomEnd = 25.dp
+                ),
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
             ) {
-                Text(
-                    text = "Parámetros del modelo W Prime",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                )
-
-                Text(
-                    text = "Configura los parámetros para el cálculo de W Prime basado en tu perfil de potencia.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                ConfigurationCard(
-                    title = "Potencia Crítica (CP)",
-                    description = "La potencia máxima que puedes mantener en estado estable. Típicamente determinada por un test de 20 minutos multiplicado por 0.95.",
-                    value = configuration.criticalPower,
-                    unit = "W",
-                    onValueChange = viewModel::updateCriticalPower,
-                )
-
-                ConfigurationCard(
-                    title = "Capacidad Anaeróbica (W')",
-                    description = "La cantidad de energía anaeróbica disponible por encima de la potencia crítica. Valor típico entre 10000-25000 julios.",
-                    value = configuration.anaerobicCapacity,
-                    unit = "J",
-                    onValueChange = viewModel::updateAnaerobicCapacity,
-                )
-
-                ConfigurationCard(
-                    title = "Constante de Recuperación (Tau)",
-                    description = "La constante de tiempo que determina la velocidad de recuperación de W'. Valores típicos entre 200-600 segundos.",
-                    value = configuration.tauRecovery,
-                    unit = "s",
-                    onValueChange = viewModel::updateTauRecovery,
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "💡 Consejo: Para obtener valores precisos, considera realizar un test de laboratorio o usar datos de entrenamientos recientes.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Volver"
                 )
             }
         }

@@ -26,6 +26,7 @@ class WPrimeApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         Timber.plant(Timber.DebugTree())
-        Timber.d("Starting W Prime Extension")
+        Timber.i("W Prime Extension Application Starting...")
+        android.util.Log.i("WPrimeApp", "W Prime Extension initialized successfully")
     }
 }

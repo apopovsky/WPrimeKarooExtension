@@ -45,6 +45,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import com.itl.wprimeext.utils.WPrimeLogger
+import com.itl.wprimeext.utils.LogConstants
 import javax.inject.Inject
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
@@ -90,17 +92,17 @@ class WPrimeExtension : KarooExtension("wprime", "1.0") {
                         // When paused, write to SessionMesg so it's committed infrequently
                         // Last set will be saved at end of activity
                         is RideState.Paused -> {
-                            Timber.d("Doughnuts session now $doughnuts")
+                            WPrimeLogger.logDataFlow(WPrimeLogger.Module.EXTENSION, "FIT session write", "doughnuts: $doughnuts")
                             emitter.onNext(WriteToSessionMesg(doughnutsField))
                         }
                         // When recording, write doughnuts and power to record messages
                         is RideState.Recording -> {
-                            Timber.d("Doughnuts now $doughnuts")
+                            WPrimeLogger.logDataFlow(WPrimeLogger.Module.EXTENSION, "FIT record write", "doughnuts: $doughnuts")
                             emitter.onNext(WriteToRecordMesg(doughnutsField))
 
                             // Power: saw-tooth [100, 200]
                             val fakePower = 100 + seconds.mod(200.0).minus(100).absoluteValue
-                            Timber.d("Power now $fakePower")
+                            WPrimeLogger.logDataFlow(WPrimeLogger.Module.EXTENSION, "Fake power generated", "${fakePower}W at ${seconds}s")
                             emitter.onNext(
                                 WriteToRecordMesg(
                                     /**
@@ -114,6 +116,7 @@ class WPrimeExtension : KarooExtension("wprime", "1.0") {
                     }
                     if (seconds == 42.0) {
                         // Off-course marker at 42 seconds with doughnuts included
+                        WPrimeLogger.i(WPrimeLogger.Module.EXTENSION, LogConstants.FIT_EVENT_WRITTEN + " - Off-course marker at 42s")
                         emitter.onNext(
                             WriteEventMesg(
                                 event = 7, // OFF_COURSE((short)7),
@@ -132,9 +135,11 @@ class WPrimeExtension : KarooExtension("wprime", "1.0") {
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate() {
         super.onCreate()
+        WPrimeLogger.i(WPrimeLogger.Module.EXTENSION, LogConstants.EXTENSION_STARTED + " - Version 1.0")
         serviceJob = CoroutineScope(Dispatchers.IO).launch {
             karooSystem.connect { connected ->
                 if (connected) {
+                    WPrimeLogger.i(WPrimeLogger.Module.EXTENSION, LogConstants.SERVICE_CONNECTED)
                     karooSystem.dispatch(
                         SystemNotification(
                             "wprime-started",
@@ -143,6 +148,9 @@ class WPrimeExtension : KarooExtension("wprime", "1.0") {
                             actionIntent = "com.itl.wprimeext.MAIN",
                         ),
                     )
+                    WPrimeLogger.i(WPrimeLogger.Module.EXTENSION, LogConstants.NOTIFICATION_SENT + " - Extension started notification")
+                } else {
+                    WPrimeLogger.w(WPrimeLogger.Module.EXTENSION, "Failed to connect to Karoo service")
                 }
             }
             launch {
@@ -165,16 +173,18 @@ class WPrimeExtension : KarooExtension("wprime", "1.0") {
                 }
                     .mapNotNull {
                         it.extras?.getString("action")?.let { action ->
+                            WPrimeLogger.d(WPrimeLogger.Module.EXTENSION, LogConstants.INTENT_RECEIVED + " - Action: $action")
                             try {
                                 val clazz = Class.forName(action).kotlin
                                 (clazz.objectInstance ?: clazz.createInstance()) as? KarooEffect
                             } catch (e: Exception) {
-                                Timber.w(e, "Unknown action $action")
+                                WPrimeLogger.w(WPrimeLogger.Module.EXTENSION, e, "Unknown action $action")
                                 null
                             }
                         }
                     }
                     .collect { effect ->
+                        WPrimeLogger.d(WPrimeLogger.Module.EXTENSION, "Dispatching KarooEffect: ${effect::class.simpleName}")
                         karooSystem.dispatch(effect)
                     }
             }
@@ -182,9 +192,11 @@ class WPrimeExtension : KarooExtension("wprime", "1.0") {
     }
 
     override fun onDestroy() {
+        WPrimeLogger.i(WPrimeLogger.Module.EXTENSION, LogConstants.EXTENSION_STOPPED)
         serviceJob?.cancel()
         serviceJob = null
         karooSystem.disconnect()
+        WPrimeLogger.i(WPrimeLogger.Module.EXTENSION, LogConstants.SERVICE_DISCONNECTED)
         super.onDestroy()
     }
 }
