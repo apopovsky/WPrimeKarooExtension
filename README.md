@@ -4,23 +4,27 @@ Una extensión para Hammerhead Karoo basada en el nuevo framework **karoo-ext** 
 
 ## Estado Actual del Proyecto
 
-### ✅ En Desarrollo Avanzado (Configuración e Integración Completa)
+### ✅ FUNCIONAL Y LISTO PARA PRUEBAS EN DISPOSITIVO
 
-Este proyecto ha integrado exitosamente la configuración persistente de W Prime con el cálculo en tiempo real:
+Este proyecto tiene una implementación **COMPLETA Y FUNCIONAL** del modelo W Prime:
 
 - **✅ Base del proyecto**: Template oficial karoo-ext funcional
 - **✅ Estructura de extensión**: `WPrimeExtension` heredando de `KarooExtension`
 - **✅ Campo de datos W Prime**: `WPrimeDataType` calculando W Prime en tiempo real
 - **✅ Configuración persistente**: DataStore integrado para CP, W' y Tau
 - **✅ Interfaz de configuración**: UI completa con ConfigurationScreen y ViewModel
-- **✅ Cálculo matemático**: WPrimeCalculator implementado con modelo completo
+- **✅ Cálculo matemático**: WPrimeCalculator implementado con modelo completo y robusto
 - **✅ Integración completa**: Configuración persistente vinculada con cálculo en tiempo real
 - **✅ Compilación exitosa**: APK generado exitosamente (WPrimeExtension-v1.0-debug.apk)
-- **✅ Sistema de logging unificado**: Implementado sistema estructurado para debugging (ver [LOGGING.md](LOGGING.md))
-- **🔄 En progreso**: Pruebas en dispositivo y validación
-- **⏳ Pendiente**: RemoteViews para visualización personalizada
-- **⏳ Pendiente**: Integración con archivos FIT
-- **⏳ Pendiente**: Optimización y ajustes basados en pruebas
+- **✅ Sistema de logging unificado**: Implementado sistema estructurado para debugging
+- **✅ Visualización de zonas de potencia**: Background color coding basado en % de CP
+- **✅ Suavizado de datos**: Power smoothing de 5 segundos para estabilidad
+- **✅ Simulación para testing**: TestPowerDataSource con patrones realistas de ciclismo
+- **✅ Datos para Karoo OS**: W Prime disponible como data field nativo
+- **🔄 En progreso**: Pruebas en dispositivo y validación de usuario
+- **⏳ Pendiente**: RemoteViews para visualización gráfica personalizada
+- **⏳ Pendiente**: Integración con archivos FIT para histórico
+- **⏳ Pendiente**: Alertas configurables cuando W Prime está bajo
 
 ## ¿Qué es W Prime (W')?
 
@@ -30,22 +34,32 @@ W Prime (W') es un modelo fisiológico que cuantifica la capacidad de trabajo an
 - **W Prime (W')**: La cantidad finita de trabajo que se puede realizar por encima de CP
 - **Recuperación**: W' se recupera exponencialmente cuando la potencia está por debajo de CP
 
-### 🧮 Modelo Matemático a Implementar
+### 🧮 Modelo Matemático IMPLEMENTADO
+
+El proyecto incluye un **WPrimeCalculator robusto** que implementa:
 
 1. **Depleción**: Cuando potencia > CP
    ```
    W'(t) = W'(t-1) - (Potencia - CP) × ΔTiempo
    ```
 
-2. **Recuperación**: Cuando potencia < CP
+2. **Recuperación**: Cuando potencia < CP (con recuperación adaptativa)
    ```
-   W'(t) = W'(t-1) + (W'máx - W'(t-1)) × (1 - e^(-ΔTiempo/Tau))
+   W'(t) = W'(t-1) + (W'máx - W'(t-1)) × (1 - e^(-ΔTiempo/τ_efectivo))
+   τ_efectivo = τ / (1 + intensidad_recuperación × 0.5)
    ```
 
 3. **Equilibrio**: Cuando potencia = CP
    ```
    W'(t) = W'(t-1) (sin cambio)
    ```
+
+**Características avanzadas implementadas**:
+- Validación de entrada robusta (potencia 0-2000W, tiempo delta máximo)
+- Recuperación adaptativa basada en intensidad del déficit de potencia
+- Logging de cambios significativos y milestones de recuperación
+- Funciones auxiliares: tiempo hasta agotamiento, tiempo hasta recuperación completa
+- Suavizado de potencia de 5 segundos para estabilidad
 
 ## Framework Karoo Extensions
 
@@ -96,8 +110,10 @@ Este proyecto utiliza el **nuevo framework karoo-ext** (no el SDK deprecado), qu
 WPrimeExtension/
 ├── app/                                    # Aplicación Android principal
 │   ├── src/main/kotlin/com/itl/wprimeext/
-│   │   ├── MainActivity.kt                 # ✅ Activity principal
+│   │   ├── MainActivity.kt                 # ✅ Activity principal con TabLayout
 │   │   ├── ConfigurationScreen.kt         # ✅ Pantalla de configuración W Prime
+│   │   ├── WPrimeApplication.kt           # ✅ Application class con Hilt y Timber
+│   │   ├── ViewModelModule.kt             # ✅ Módulo de inyección de dependencias
 │   │   ├── ui/
 │   │   │   ├── viewmodel/
 │   │   │   │   └── WPrimeConfigViewModel.kt  # ✅ ViewModel para configuración
@@ -106,14 +122,17 @@ WPrimeExtension/
 │   │   ├── extension/
 │   │   │   ├── WPrimeExtension.kt         # ✅ Extensión principal (completa)
 │   │   │   ├── WPrimeDataType.kt          # ✅ Campo de datos W Prime (integrado)
-│   │   │   ├── WPrimeCalculator.kt        # ✅ Motor de cálculo (mejorado y robusto)
-│   │   │   └── WPrimeSettings.kt          # ✅ Configuración con DataStore
+│   │   │   ├── WPrimeCalculator.kt        # ✅ Motor de cálculo (robusto y completo)
+│   │   │   ├── WPrimeSettings.kt          # ✅ Configuración con DataStore
+│   │   │   ├── TestPowerDataSource.kt     # ✅ Simulador de datos para testing
+│   │   │   ├── Extensions.kt              # ✅ Funciones auxiliares
+│   │   │   └── ServiceModule.kt           # ✅ Módulo de servicios Hilt
 │   │   └── utils/                         # ✅ Utilidades del proyecto
 │   │       ├── WPrimeLogger.kt           # ✅ Sistema de logging unificado
 │   │       └── LogConstants.kt           # ✅ Constantes para logging
 │   ├── src/main/res/xml/
-│   │   └── extension_info.xml             # Definición de la extensión
-│   └── manifest.json                      # Metadatos de la app
+│   │   └── extension_info.xml             # ✅ Definición de la extensión
+│   └── manifest.json                      # ✅ Metadatos de la app
 ├── lib/                                   # Librería karoo-ext (código fuente)
 ├── build.gradle.kts                      # Configuración de build
 ├── LOGGING.md                            # ✅ Documentación del sistema de logging
@@ -123,13 +142,16 @@ WPrimeExtension/
 ### Archivos Clave Implementados
 
 - **`WPrimeExtension.kt`**: ✅ Clase principal que hereda de `KarooExtension`
-- **`WPrimeDataType.kt`**: ✅ Implementa `DataTypeImpl` con cálculo integrado
-- **`WPrimeCalculator.kt`**: ✅ Algoritmo completo de W Prime con depleción/recuperación
+- **`WPrimeDataType.kt`**: ✅ Implementa `DataTypeImpl` con cálculo integrado y visualización por zonas
+- **`WPrimeCalculator.kt`**: ✅ Algoritmo completo y robusto de W Prime con depleción/recuperación adaptativa
 - **`WPrimeSettings.kt`**: ✅ Configuración persistente usando Android DataStore
-- **`ConfigurationScreen.kt`**: ✅ UI para configurar CP, W' y Tau
+- **`ConfigurationScreen.kt`**: ✅ UI completa para configurar CP, W' y Tau con validation
 - **`WPrimeConfigViewModel.kt`**: ✅ ViewModel que conecta UI con configuración persistente
-- **`extension_info.xml`**: Define los data types disponibles para Karoo OS
-- **`manifest.json`**: Metadatos para instalación via Karoo Companion App
+- **`TestPowerDataSource.kt`**: ✅ Simulador de datos de potencia realistas para testing
+- **`WPrimeLogger.kt`**: ✅ Sistema de logging modular y estructurado
+- **`WPrimeApplication.kt`**: ✅ Application class con Hilt y Timber initialization
+- **`extension_info.xml`**: ✅ Define los data types disponibles para Karoo OS
+- **`manifest.json`**: ✅ Metadatos para instalación via Karoo Companion App
 
 ## Tecnologías y Dependencias
 
@@ -139,16 +161,19 @@ WPrimeExtension/
 - **Android API Level 23-35** - Compatibilidad con Karoo devices
 
 ### UI y Arquitectura
-- **Jetpack Compose** - UI moderna y reactiva (del template)
-- **Hilt** - Inyección de dependencias (del template)
-- **Coroutines** - Programación asíncrona
-- **ViewModel** - Arquitectura MVVM
+- **Jetpack Compose** - UI moderna y reactiva
+- **Hilt** - Inyección de dependencias para módulos y ViewModels
+- **Coroutines + Flow** - Programación asíncrona y streaming de datos
+- **ViewModel** - Arquitectura MVVM para UI
+- **DataStore** - Almacenamiento persistente de configuración
 
 ### Funcionalidades Karoo
-- **DataTypeImpl** - Para crear campos de datos personalizados
-- **KarooSystemService** - Interfaz con el sistema Karoo
+- **DataTypeImpl** - Para crear campos de datos personalizados integrados
+- **KarooSystemService** - Interfaz con el sistema Karoo para streaming de datos
 - **StreamState** - Para recibir datos de sensores en tiempo real
-- **RemoteViews** - Para vistas personalizadas (por usar)
+- **ViewEmitter** - Para visualización personalizada con background colors
+- **Power Zone Colors** - Coding visual basado en % de Critical Power
+- **RemoteViews** - Para vistas personalizadas avanzadas (futuro)
 
 ### Build Tools
 - **Gradle Kotlin DSL** - Build configuration
@@ -161,18 +186,25 @@ WPrimeExtension/
 |------------|--------|-------|
 | Configuración base | ✅ Completo | Template oficial funcionando |
 | Extensión registrada | ✅ Completo | `WPrimeExtension` hereda de `KarooExtension` |
-| Data type básico | ✅ Completo | `WPrimeDataType` retransmite potencia |
-| Modelo W Prime | ⏳ Por hacer | Necesita implementar cálculos matemáticos |
-| Configuración UI | ⏳ Por hacer | Pantalla para CP, W', Tau |
-| Almacenamiento | ⏳ Por hacer | DataStore o SharedPreferences |
-| Vista personalizada | ⏳ Por hacer | RemoteViews para mostrar W Prime |
-| FIT file integration | ⏳ Por hacer | Guardar W Prime en archivos FIT |
+| Data type W Prime | ✅ Completo | `WPrimeDataType` con cálculo real de W Prime |
+| Modelo W Prime | ✅ Completo | `WPrimeCalculator` implementado y robusto |
+| Configuración UI | ✅ Completo | ConfigurationScreen con Compose completa |
+| Almacenamiento | ✅ Completo | DataStore persistente con validación |
+| Logging sistema | ✅ Completo | WPrimeLogger modular y estructurado |
+| Visualización zonas | ✅ Completo | Background colors por % de Critical Power |
+| Simulación testing | ✅ Completo | TestPowerDataSource con patrones realistas |
+| Suavizado de datos | ✅ Completo | Power smoothing 5 segundos |
+| Vista personalizada | ⏳ Pendiente | RemoteViews para gauge W Prime |
+| FIT file integration | ⏳ Pendiente | Guardar W Prime en archivos FIT |
+| Alertas configurables | ⏳ Pendiente | Notificaciones cuando W Prime bajo |
 
 ## Próximos Pasos
 
 ### ✅ Implementación Completada
 
-1. **✅ WPrimeCalculator implementado**:
+**El proyecto está FUNCIONAL y listo para pruebas en dispositivo**
+
+1. **✅ WPrimeCalculator robusto implementado**:
    ```kotlin
    class WPrimeCalculator(
        private var criticalPower: Double,
@@ -182,30 +214,40 @@ WPrimeExtension/
        fun updatePower(power: Double, timestamp: Long): Double
        fun getWPrimePercentage(): Double
        fun getTimeToExhaustion(currentPower: Double): Double?
+       fun getTimeToFullRecovery(currentPower: Double): Double?
+       fun reset()
    }
    ```
 
-2. **✅ WPrimeDataType actualizado**:
+2. **✅ WPrimeDataType completamente funcional**:
    - ✅ Integra WPrimeCalculator para cálculos en tiempo real
    - ✅ Carga configuración desde DataStore al inicializar
-   - ✅ Proporciona datos W Prime reales a Karoo OS
+   - ✅ Proporciona datos W Prime reales como porcentaje a Karoo OS
+   - ✅ Visualización por zonas de potencia con background colors
+   - ✅ Suavizado de potencia de 5 segundos para estabilidad
+   - ✅ Modo preview con simulación realista
 
 3. **✅ Interfaz de configuración completa**:
-   - ✅ ConfigurationScreen con Compose UI para CP, W', Tau
+   - ✅ ConfigurationScreen con Compose UI moderna
    - ✅ WPrimeConfigViewModel con gestión de estado
    - ✅ Almacenamiento persistente con Android DataStore
+   - ✅ Validación de entrada y valores por defecto sensatos
 
-4. **✅ Data type correctamente definido**:
+4. **✅ Sistema completo integrado**:
    - ✅ extension_info.xml configurado con `typeId="wprime"`
-   - ✅ Descripciones y metadatos actualizados para W Prime
+   - ✅ Hilt dependency injection para módulos
+   - ✅ WPrimeApplication con inicialización Timber
+   - ✅ TestPowerDataSource para testing sin sensor real
+   - ✅ Sistema de logging modular y estructurado
 
-### Desarrollo Pendiente
+### Desarrollo Pendiente (Mejoras Opcionales)
 
-- **RemoteViews personalizadas** para mostrar W Prime balance gráficamente
+- **RemoteViews personalizadas** para mostrar W Prime balance con gauge gráfico
 - **Integración con FIT files** para guardar datos W Prime en archivos de actividad
-- **Alertas en tiempo real** cuando W Prime está bajo (configurables)
-- **Validación con datos reales** en dispositivo Karoo
-- **Optimización de rendimiento** y ajustes basados en pruebas de usuario
+- **Alertas en tiempo real** cuando W Prime está bajo (configurables por usuario)
+- **Análisis histórico** de patrones de W Prime en entrenamientos
+- **Optimización de rendimiento** basada en testing extensivo en dispositivo
+- **Personalización avanzada** de visualización y alertas
 
 ## Diferencias con el Proyecto Anterior
 
@@ -252,28 +294,57 @@ El APK de desarrollo está disponible en: `app/build/outputs/apk/debug/WPrimeExt
 ### Funcionalidades Disponibles
 
 #### ✅ Configuración
-- Interfaz completa para configurar CP, W' y Tau
+- Interfaz completa para configurar CP, W' y Tau con validación
 - Persistencia automática de configuración usando DataStore
-- Valores por defecto sensatos para empezar
+- Valores por defecto sensatos para empezar (CP: 250W, W': 12000J, Tau: 300s)
+- ViewModel con gestión de estado reactiva
 
 #### ✅ Cálculo en Tiempo Real
-- W Prime se calcula en tiempo real basado en la potencia actual
-- Depleción cuando potencia > CP
-- Recuperación exponencial cuando potencia < CP
-- Datos disponibles como data type para pantallas de Karoo
+- W Prime se calcula en tiempo real basado en la potencia actual del sensor
+- Depleción lineal cuando potencia > CP
+- Recuperación exponencial adaptativa cuando potencia < CP
+- Suavizado de potencia de 5 segundos para estabilidad
+- Validación robusta de entrada y manejo de errores
+- Logging detallado de cambios significativos
 
 #### ✅ Data Type para Karoo OS
 - Campo de datos "W Prime" disponible en perfiles de riding
-- Muestra el valor actual de W Prime en julios
+- Muestra el porcentaje actual de W Prime (formato PERCENT_MAX_FTP)
 - Se integra nativamente con el sistema de data fields de Karoo
+- Visualización por zonas de potencia con background colors
+- Modo preview con simulación realista para testing
+
+#### ✅ Simulación y Testing
+- TestPowerDataSource con patrones realistas de ciclismo
+- Warmup, intervals, recovery, sprint patterns programados
+- Permite testing completo sin sensor de potencia real
+- Datos variados para validar todos los aspectos del algoritmo
 
 ### Próximos Pasos de Prueba
 
-1. **Configurar parámetros** usando la interfaz de la app
-2. **Añadir el data field** W Prime a un perfil de riding en Karoo
-3. **Realizar un entrenamiento** con variaciones de potencia
-4. **Verificar** que W Prime depleta/recupera según esperado
-5. **Ajustar parámetros** según experiencia práctica
+1. **Configurar parámetros** usando la interfaz de la app:
+   - Critical Power (CP): Tu FTP × 0.95 aproximadamente
+   - Anaerobic Capacity (W'): 12000-25000J (típico para ciclistas)
+   - Tau Recovery: 200-600s (varía por individuo)
+
+2. **Añadir el data field** W Prime a un perfil de riding en Karoo:
+   - Ir a Settings → Ride Profiles → [Tu perfil]
+   - Añadir "W Prime" como data field en alguna pantalla
+
+3. **Realizar un entrenamiento** con variaciones de potencia:
+   - Observar depleción durante esfuerzos > CP
+   - Verificar recuperación durante descansos < CP
+   - Notar cambios de color de fondo según zona de potencia
+
+4. **Usar modo simulación** para testing inicial:
+   - La app incluye TestPowerDataSource con patrones realistas
+   - Warmup, intervals, sprints programados automáticamente
+   - Perfecto para validar algoritmo sin sensor real
+
+5. **Ajustar parámetros** según experiencia práctica:
+   - Observar comportamiento durante entrenamientos conocidos
+   - Comparar con sensación percibida de fatiga anaeróbica
+   - Refinar valores CP, W' y Tau según necesidad
 
 ## 📚 Referencias
 
@@ -336,4 +407,4 @@ limitations under the License.
 
 ---
 
-**Nota**: Este proyecto está basado en el template oficial de Hammerhead Karoo Extensions y está siendo adaptado para implementar funcionalidad W Prime. El código actual es principalmente del template con modificaciones menores para W Prime.
+**Nota**: Este proyecto implementa una **extensión W Prime completamente funcional** basada en el template oficial de Hammerhead Karoo Extensions. El código de W Prime es **original y funcional**, mientras que la base del proyecto utiliza el framework karoo-ext moderno y soportado oficialmente.

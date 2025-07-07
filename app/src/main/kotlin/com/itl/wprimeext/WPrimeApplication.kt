@@ -17,6 +17,7 @@
 package com.itl.wprimeext
 
 import android.app.Application
+import com.itl.wprimeext.utils.WPrimeLogger
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 
@@ -26,7 +27,7 @@ class WPrimeApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         Timber.plant(Timber.DebugTree())
-        Timber.i("W Prime Extension Application Starting...")
-        android.util.Log.i("WPrimeApp", "W Prime Extension initialized successfully")
+        WPrimeLogger.i(WPrimeLogger.Module.EXTENSION, "W Prime Extension Application Starting...")
+        WPrimeLogger.i(WPrimeLogger.Module.EXTENSION, "W Prime Extension initialized successfully")
     }
 }

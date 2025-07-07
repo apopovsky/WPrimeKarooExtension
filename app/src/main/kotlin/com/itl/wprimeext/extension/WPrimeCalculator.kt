@@ -1,12 +1,12 @@
 package com.itl.wprimeext.extension
 
-import com.itl.wprimeext.utils.WPrimeLogger
 import com.itl.wprimeext.utils.LogConstants
+import com.itl.wprimeext.utils.WPrimeLogger
+import kotlin.math.abs
 import kotlin.math.exp
+import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.ln
-import kotlin.math.abs
 
 class WPrimeCalculator(
     private var criticalPower: Double,
@@ -29,12 +29,7 @@ class WPrimeCalculator(
         require(anaerobicCapacity > 0) { "Anaerobic Capacity must be positive" }
         require(tauRecovery > 0) { "Tau Recovery must be positive" }
 
-        WPrimeLogger.logConfiguration(
-            WPrimeLogger.Module.CALCULATOR,
-            criticalPower,
-            anaerobicCapacity,
-            tauRecovery
-        )
+        WPrimeLogger.d(WPrimeLogger.Module.CALCULATOR,  "Updating configuration - CP: $criticalPower, W': $anaerobicCapacity, Tau: $tauRecovery")
 
         this.criticalPower = criticalPower
         this.anaerobicCapacity = anaerobicCapacity
@@ -42,7 +37,7 @@ class WPrimeCalculator(
         this.currentWPrime = anaerobicCapacity
 
         WPrimeLogger.i(WPrimeLogger.Module.CALCULATOR, LogConstants.WPRIME_CONFIG_UPDATED)
-    }    fun updatePower(power: Double, timestamp: Long): Double {
+    } fun updatePower(power: Double, timestamp: Long): Double {
         // Input validation
         if (power < MIN_POWER || power > MAX_POWER) {
             WPrimeLogger.w(WPrimeLogger.Module.CALCULATOR, "Invalid power value: $power. Using 0W")
@@ -142,7 +137,7 @@ class WPrimeCalculator(
                 WPrimeLogger.Module.CALCULATOR,
                 power,
                 currentWPrime,
-                getWPrimePercentage()
+                getWPrimePercentage(),
             )
         }
     }
@@ -182,6 +177,8 @@ class WPrimeCalculator(
     fun getWPrimeJoules(): Double = currentWPrime
 
     fun getWPrimeKilojoules(): Double = currentWPrime / 1000.0
+
+    fun getCriticalPower(): Double = criticalPower
 
     fun isFullyDepleted(): Boolean = currentWPrime < EPSILON
 

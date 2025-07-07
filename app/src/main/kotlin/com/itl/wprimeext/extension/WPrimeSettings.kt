@@ -6,8 +6,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
-import com.itl.wprimeext.utils.WPrimeLogger
 import com.itl.wprimeext.utils.LogConstants
+import com.itl.wprimeext.utils.WPrimeLogger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -40,7 +40,7 @@ class WPrimeSettings(private val context: Context) {
         } else {
             WPrimeLogger.d(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_LOADED)
         }
-        WPrimeLogger.logConfiguration(WPrimeLogger.Module.SETTINGS, config.criticalPower, config.anaerobicCapacity, config.tauRecovery)
+        WPrimeLogger.d(WPrimeLogger.Module.SETTINGS, "Loaded configuration - CP: ${config.criticalPower}, W': ${config.anaerobicCapacity}, Tau: ${config.tauRecovery}")
 
         config
     }
@@ -70,7 +70,7 @@ class WPrimeSettings(private val context: Context) {
     }
 
     suspend fun updateConfiguration(config: WPrimeConfiguration) {
-        WPrimeLogger.logConfiguration(WPrimeLogger.Module.SETTINGS, config.criticalPower, config.anaerobicCapacity, config.tauRecovery)
+        WPrimeLogger.d(WPrimeLogger.Module.SETTINGS, "Updating configuration - CP: ${config.criticalPower}, W': ${config.anaerobicCapacity}, Tau: ${config.tauRecovery}")
         context.dataStore.edit { preferences ->
             preferences[CRITICAL_POWER_KEY] = config.criticalPower
             preferences[ANAEROBIC_CAPACITY_KEY] = config.anaerobicCapacity

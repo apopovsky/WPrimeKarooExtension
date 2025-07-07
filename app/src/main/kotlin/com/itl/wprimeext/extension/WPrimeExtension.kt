@@ -21,6 +21,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import com.itl.wprimeext.utils.LogConstants
+import com.itl.wprimeext.utils.WPrimeLogger
 import dagger.hilt.android.AndroidEntryPoint
 import io.hammerhead.karooext.KarooSystemService
 import io.hammerhead.karooext.extension.KarooExtension
@@ -44,9 +46,6 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
-import timber.log.Timber
-import com.itl.wprimeext.utils.WPrimeLogger
-import com.itl.wprimeext.utils.LogConstants
 import javax.inject.Inject
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
@@ -55,7 +54,7 @@ import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
 @AndroidEntryPoint
-class WPrimeExtension : KarooExtension("wprime", "1.0") {
+class WPrimeExtension : KarooExtension("wprime-id", "1.0") {
     @Inject
     lateinit var karooSystem: KarooSystemService
 

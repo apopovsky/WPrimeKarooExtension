@@ -38,13 +38,12 @@ object WPrimeLogger {
         Timber.tag("$APP_TAG:$module").e(throwable, message)
     }
 
-    // Specific logging methods for common debugging scenarios
-    fun logConfiguration(module: String, cp: Double, wprime: Double, tau: Double) {
-        d(module, "Configuration - CP: ${cp}W, W': ${wprime}J, Tau: ${tau}s")
-    }
-
     fun logPowerUpdate(module: String, power: Double, currentWPrime: Double, percentRemaining: Double) {
         d(module, "Power: ${power}W -> W': ${currentWPrime.toInt()}J (${percentRemaining.toInt()}%)")
+    }
+
+    fun logDataTypeUpdate(module: String, dataSource: String, power: Double, smoothedPower: Double, currentWPrime: Double, percentRemaining: Double) {
+        d(module, "$dataSource Power: ${power}W (smoothed: ${"%.1f".format(smoothedPower)}W), W': ${currentWPrime.toInt()}J, W'%: ${"%.1f".format(percentRemaining)}%")
     }
 
     fun logStateChange(module: String, from: String, to: String) {
