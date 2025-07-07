@@ -96,23 +96,21 @@ Este proyecto utiliza el **nuevo framework karoo-ext** (no el SDK deprecado), qu
 WPrimeExtension/
 ├── app/                                    # Aplicación Android principal
 │   ├── src/main/kotlin/com/itl/wprimeext/
-│   │   ├── MainActivity.kt                 # Activity principal (del template)
-│   │   ├── MainViewModel.kt               # ViewModel principal (del template)
-│   │   ├── TabLayout.kt                   # UI layout (del template)
+│   │   ├── MainActivity.kt                 # ✅ Activity principal
 │   │   ├── ConfigurationScreen.kt         # ✅ Pantalla de configuración W Prime
 │   │   ├── ui/
 │   │   │   ├── viewmodel/
 │   │   │   │   └── WPrimeConfigViewModel.kt  # ✅ ViewModel para configuración
 │   │   │   └── components/
 │   │   │       └── ConfigurationCard.kt   # ✅ Componente UI para parámetros
-│   │   └── extension/
-│   │       ├── WPrimeExtension.kt         # ✅ Extensión principal (completa)
-│   │       ├── WPrimeDataType.kt          # ✅ Campo de datos W Prime (integrado)
-│   │       ├── WPrimeCalculator.kt        # ✅ Motor de cálculo (implementado)
-│   │       └── WPrimeSettings.kt          # ✅ Configuración con DataStore
-│   ├── utils/                             # ✅ Utilidades del proyecto
-│   │   ├── WPrimeLogger.kt               # ✅ Sistema de logging unificado
-│   │   └── LogConstants.kt               # ✅ Constantes para logging
+│   │   ├── extension/
+│   │   │   ├── WPrimeExtension.kt         # ✅ Extensión principal (completa)
+│   │   │   ├── WPrimeDataType.kt          # ✅ Campo de datos W Prime (integrado)
+│   │   │   ├── WPrimeCalculator.kt        # ✅ Motor de cálculo (mejorado y robusto)
+│   │   │   └── WPrimeSettings.kt          # ✅ Configuración con DataStore
+│   │   └── utils/                         # ✅ Utilidades del proyecto
+│   │       ├── WPrimeLogger.kt           # ✅ Sistema de logging unificado
+│   │       └── LogConstants.kt           # ✅ Constantes para logging
 │   ├── src/main/res/xml/
 │   │   └── extension_info.xml             # Definición de la extensión
 │   └── manifest.json                      # Metadatos de la app
