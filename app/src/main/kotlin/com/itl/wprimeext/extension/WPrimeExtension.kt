@@ -63,6 +63,7 @@ class WPrimeExtension : KarooExtension("wprime-id", "1.0") {
     override val types by lazy {
         listOf(
             WPrimeDataType(karooSystem, this, extension),
+            WPrimeKjDataType(karooSystem, this, extension),
         )
     }
 

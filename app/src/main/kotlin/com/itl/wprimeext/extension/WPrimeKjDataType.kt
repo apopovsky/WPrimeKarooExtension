@@ -17,21 +17,21 @@ import android.content.Context
 import io.hammerhead.karooext.KarooSystemService
 import io.hammerhead.karooext.models.DataType
 
-class WPrimeDataType(
+class WPrimeKjDataType(
         karooSystem: KarooSystemService,
         context: Context,
         extension: String,
-) : WPrimeDataTypeBase(karooSystem, context, extension, "wprime") {
+) : WPrimeDataTypeBase(karooSystem, context, extension, "wprime-kj") {
 
     override fun getDisplayValue(): Double {
-        return getCalculator().getWPrimePercentage()
+        return getCalculator().getCurrentWPrime() / 1000.0 // Convert from Joules to kJ
     }
 
     override fun getInitialValue(): Double {
-        return 100.0 // Initial value for W Prime percentage
+        return 12.0 // Initial value for W Prime in kJ (12000J = 12kJ)
     }
 
     override fun getFormatDataTypeId(): String {
-        return DataType.Type.PERCENT_MAX_FTP
+        return DataType.Type.POWER // Use power format for energy display
     }
 }

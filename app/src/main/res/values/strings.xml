@@ -3,6 +3,8 @@
     <string name="extension_name">W Prime EXT</string>
     <string name="wprime_display_name">W Prime (%)</string>
     <string name="wprime_description">W Prime anaerobic energy balance as percentage</string>
+    <string name="wprime_kj_display_name">W Prime (kJ)</string>
+    <string name="wprime_kj_description">W Prime anaerobic energy balance in kilojoules</string>
     <string name="alert_title">W Prime Alert</string>
     <string name="alert_detail">Your W Prime is at %1$s J.</string>
 </resources>
