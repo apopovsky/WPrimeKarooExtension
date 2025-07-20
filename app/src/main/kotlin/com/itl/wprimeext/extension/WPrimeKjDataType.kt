@@ -18,9 +18,9 @@ import io.hammerhead.karooext.KarooSystemService
 import io.hammerhead.karooext.models.DataType
 
 class WPrimeKjDataType(
-        karooSystem: KarooSystemService,
-        context: Context,
-        extension: String,
+    karooSystem: KarooSystemService,
+    context: Context,
+    extension: String,
 ) : WPrimeDataTypeBase(karooSystem, context, extension, "wprime-kj") {
 
     override fun getDisplayValue(): Double {
@@ -33,5 +33,13 @@ class WPrimeKjDataType(
 
     override fun getFormatDataTypeId(): String {
         return DataType.Type.POWER // Use power format for energy display
+    }
+
+    override fun getDisplayText(value: Double): String {
+        return String.format("%.1f", value)
+    }
+
+    override fun getUnitText(): String {
+        return "kJ"
     }
 }

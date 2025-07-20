@@ -18,9 +18,9 @@ import io.hammerhead.karooext.KarooSystemService
 import io.hammerhead.karooext.models.DataType
 
 class WPrimeDataType(
-        karooSystem: KarooSystemService,
-        context: Context,
-        extension: String,
+    karooSystem: KarooSystemService,
+    context: Context,
+    extension: String,
 ) : WPrimeDataTypeBase(karooSystem, context, extension, "wprime") {
 
     override fun getDisplayValue(): Double {
@@ -33,5 +33,13 @@ class WPrimeDataType(
 
     override fun getFormatDataTypeId(): String {
         return DataType.Type.PERCENT_MAX_FTP
+    }
+
+    override fun getDisplayText(value: Double): String {
+        return "${value.toInt()}"
+    }
+
+    override fun getUnitText(): String {
+        return "%"
     }
 }

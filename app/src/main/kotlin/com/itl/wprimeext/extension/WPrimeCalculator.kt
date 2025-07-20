@@ -29,7 +29,7 @@ class WPrimeCalculator(
         require(anaerobicCapacity > 0) { "Anaerobic Capacity must be positive" }
         require(tauRecovery > 0) { "Tau Recovery must be positive" }
 
-        WPrimeLogger.d(WPrimeLogger.Module.CALCULATOR,  "Updating configuration - CP: $criticalPower, W': $anaerobicCapacity, Tau: $tauRecovery")
+        WPrimeLogger.d(WPrimeLogger.Module.CALCULATOR, "Updating configuration - CP: $criticalPower, W': $anaerobicCapacity, Tau: $tauRecovery")
 
         this.criticalPower = criticalPower
         this.anaerobicCapacity = anaerobicCapacity

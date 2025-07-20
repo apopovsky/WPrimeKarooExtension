@@ -9,13 +9,13 @@
     <DataType
         description="@string/wprime_description"
         displayName="@string/wprime_display_name"
-        graphical="false"
+        graphical="true"
         icon="@drawable/ic_wprime"
         typeId="wprime" />
     <DataType
         description="@string/wprime_kj_description"
         displayName="@string/wprime_kj_display_name"
-        graphical="false"
+        graphical="true"
         icon="@drawable/ic_wprime"
         typeId="wprime-kj" />
 </ExtensionInfo>
