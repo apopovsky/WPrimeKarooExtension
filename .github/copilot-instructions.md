@@ -1,156 +1,82 @@
-# GitHub Copilot Instructions - W Prime Extension for Hammerhead Karoo
+# GitHub Copilot Custom Instructions for Karoo 3 Extension Development
 
-## Project Overview
+## Project Context and Goals
 
-This is a **W Prime (W') extension for Hammerhead Karoo** cycling computers, built using the official `karoo-ext` framework. W Prime is a physiological model that tracks anaerobic energy capacity during cycling.
+We are developing an **Android application (in Kotlin)** for the **Hammerhead Karoo 3 cycling computer**, using the official **karoo-ext** library. The goal is to create a **custom data field** that displays **W′ (W prime) remaining** in real-time during a ride. Future projects may include additional data fields or standalone apps (e.g., to improve phone notifications on the Karoo).
 
-### What is W Prime?
-- **Critical Power (CP)**: Maximum sustainable power output
-- **W Prime (W')**: Finite anaerobic energy available above CP (measured in Joules)
-- **Tau (τ)**: Recovery time constant (how fast W' recovers when power < CP)
+- **Platform:** Hammerhead Karoo 3 (Android-based device)
+- **Language:** Kotlin
+- **Library:** [karoo-ext](https://github.com/hammerheadnav/karoo-ext)
+- **Documentation:** [https://hammerheadnav.github.io/karoo-ext/](https://hammerheadnav.github.io/karoo-ext/)
+- **Sample Code:** [Sample Extension](https://github.com/hammerheadnav/karoo-ext/tree/master/app/src/main/kotlin/io/hammerhead/sampleext)
+- **Template:** [karoo-ext-template](https://github.com/hammerheadnav/karoo-ext-template)
+- **Community:** [r/Karoo subreddit](https://www.reddit.com/r/Karoo), [Hammerhead Forum](https://support.hammerhead.io/hc/en-us/community/topics/31298804001435-Hammerhead-Extensions-Developers)
 
-## Current Project Status
+## Coding Guidelines
 
-### ✅ COMPLETED (Ready for Testing)
-- **Core W Prime calculation engine** (`WPrimeCalculator.kt`)
-- **Real-time data streaming** to Karoo OS (`WPrimeDataType.kt`)
-- **Persistent configuration** using Android DataStore (`WPrimeSettings.kt`)
-- **Complete UI configuration** with Compose (`ConfigurationScreen.kt`)
-- **Successful compilation** and APK generation
-- **Full integration** between UI settings and real-time calculation
+- Use **modern Android best practices**:
+  - Kotlin idioms (`data class`, lambdas, coroutines)
+  - Architecture patterns (MVVM, DI with Hilt)
+  - Jetpack Compose (if UI is needed)
+  - Lifecycle awareness
 
-### 🔄 NEXT PRIORITIES
-1. **Device testing** on actual Karoo hardware
-2. **RemoteViews** for custom W Prime visualization
-3. **FIT file integration** to save W Prime data in activity files
-4. **Performance optimization** and user experience improvements
+- Ensure **clean and efficient code**:
+  - Clear naming and self-explanatory logic
+  - Comment only where necessary (e.g. W′ computation logic)
+  - Avoid main-thread blocking (use coroutines/background threads)
+  - Release resources when not needed (e.g., remove consumers)
 
-## Project Structure
+- **Performance matters** on Karoo:
+  - Optimize sensor subscriptions and dispatch frequency
+  - Minimize memory and battery usage
+  - Keep UI simple, high contrast, and readable
 
-```
-app/src/main/kotlin/com/itl/wprimeext/
-├── extension/
-│   ├── WPrimeExtension.kt          # Main extension class
-│   ├── WPrimeDataType.kt          # Real-time W Prime calculation & streaming
-│   ├── WPrimeCalculator.kt        # Core W Prime algorithm
-│   └── WPrimeSettings.kt          # Persistent configuration (DataStore)
-├── ui/
-│   ├── viewmodel/
-│   │   └── WPrimeConfigViewModel.kt  # Configuration state management
-│   └── components/
-│       └── ConfigurationCard.kt   # UI component for parameter input
-├── ConfigurationScreen.kt         # Main configuration UI
-├── MainActivity.kt                # Entry point (from template)
-└── TabLayout.kt                   # Main app layout
-```
+## Karoo Extension Integration
 
-## Key Implementation Details
+- Define a `KarooExtension` subclass (e.g. `MyWPrimeExtension`) with a unique `id` and version
+- Register the service in `AndroidManifest.xml`:
 
-### W Prime Algorithm
-The `WPrimeCalculator` implements the differential equation model:
-- **Depletion**: When power > CP, W' decreases linearly
-- **Recovery**: When power < CP, W' recovers exponentially with time constant τ
-
-### Data Flow
-1. User configures CP, W', τ via `ConfigurationScreen`
-2. Settings saved persistently via `WPrimeSettings` (DataStore)
-3. `WPrimeDataType` loads config at startup
-4. Real-time power data flows from Karoo → Calculator → Karoo data field
-
-### Integration Points
-- **Karoo data field**: Available as "W Prime" in ride profiles
-- **Configuration UI**: Accessible via main app interface
-- **Persistent storage**: Survives app restarts and device reboots
-
-## Development Guidelines
-
-### When Working on This Project
-
-1. **Always build first** to check current state:
-   ```bash
-   ./gradlew assembleDebug
-   ```
-
-2. **Key files to understand**:
-   - `WPrimeDataType.kt` - Core integration with Karoo
-   - `WPrimeCalculator.kt` - Mathematical model
-   - `WPrimeSettings.kt` - Persistent configuration
-
-3. **Common tasks**:
-   - Adding features → Start with `WPrimeCalculator.kt`
-   - UI changes → Start with `ConfigurationScreen.kt`
-   - Data integration → Start with `WPrimeDataType.kt`
-
-### Code Standards
-
-- **Kotlin style**: Follow existing patterns in the codebase
-- **Comments**: Minimal, focus on non-obvious logic
-- **Error handling**: Use Timber for logging, graceful degradation
-- **Coroutines**: Use `Dispatchers.IO` for DataStore operations
-
-### Dependencies in Use
-
-- **karoo-ext**: Official Hammerhead framework
-- **Compose UI**: Modern Android UI toolkit
-- **DataStore**: Persistent key-value storage
-- **Hilt**: Dependency injection
-- **Timber**: Logging
-
-## Testing & Deployment
-
-### Current APK
-- Location: `app/build/outputs/apk/debug/WPrimeExtension-v1.0-debug.apk`
-- Ready for installation on Karoo devices
-
-### Installation
-```bash
-adb install app/build/outputs/apk/debug/WPrimeExtension-v1.0-debug.apk
+```xml
+<service android:name=".MyWPrimeExtension">
+    <intent-filter>
+        <action android:name="io.hammerhead.karooext.KAROO_EXTENSION" />
+    </intent-filter>
+    <meta-data
+        android:name="io.hammerhead.karooext.EXTENSION_INFO"
+        android:resource="@xml/extension_info" />
+</service>
 ```
 
-### Configuration Values (for testing)
-- **CP**: ~250W (or user's FTP × 0.95)
-- **W'**: ~12000J (typical range: 10000-25000J)
-- **Tau**: ~300s (typical range: 200-600s)
+- Add `extension_info.xml` with `<DataType>` for W′, including attributes like `typeId`, `name`, `graphical="false"`
 
-## Common Issues & Solutions
+- Use `KarooSystemService`:
+  - Connect in `onStart()` and disconnect in `onStop()`
+  - Subscribe to events like `RideDataEvent` or `RideState`
+  - Remove consumers properly to avoid leaks
+  - Dispatch data to update DataType value (e.g. with `UpdateData`)
 
-### Build Issues
-- **File locks**: Kill Java processes: `taskkill /f /im java.exe`
-- **Clean build**: `./gradlew clean` then `./gradlew assembleDebug`
+- For **custom graphical fields**, implement `RemoteViews` layout updates
 
-### Integration Issues
-- **DataStore not loading**: Check Timber logs for configuration load errors
-- **Calculator not updating**: Verify `updateConfiguration()` is called in `WPrimeDataType`
-- **UI not persisting**: Check ViewModel → Settings flow
+## W′ Data Handling
 
-### When Making Changes
+- Use power data events to compute real-time W′ balance
+- Implement integration logic based on critical power and recovery
+- Dispatch updated W′ values to Karoo regularly (at reasonable intervals)
 
-1. **Always test compilation** after changes
-2. **Check for errors** in key files:
-   ```bash
-   # This project has tool support for error checking
-   ```
-3. **Update README.md** if adding major features
-4. **Test on device** when possible
+## Copilot Instructions Summary
 
-## Future Development Roadmap
+GitHub Copilot should:
 
-### Immediate Next Steps
-1. **Device validation** - Test on real Karoo hardware
-2. **RemoteViews** - Custom W Prime gauge visualization
-3. **FIT integration** - Save W Prime data in activity files
+- Prioritize karoo-ext API usage and correct integration patterns
+- Follow clean Kotlin and Android design principles
+- Reference official documentation and sample code when suggesting API usage
+- Avoid suggesting generic Android code when Karoo-specific solutions exist
+- Assist with modular design for future expansion (e.g., notifications)
 
-### Advanced Features
-- Real-time alerts when W' is low
-- Historical W' analysis
-- Integration with training platforms
-- Custom W' recovery models
+Copilot should behave like a **Karoo-aware Android assistant**, not a general Android suggester.
 
-## Important Notes
+Copilot should leverage the `README.md` file to stay aligned with the existing architecture and project structure. For example, when working on W′ calculations, configuration handling, or Karoo system integration, prioritize files like:
 
-- This project is **functional and ready for testing**
-- The core W Prime calculation is **mathematically correct**
-- Configuration persistence is **fully implemented**
-- APK generation is **working reliably**
-
-The main focus should be on **device testing and user experience improvements** rather than core functionality, which is already complete.
+- `WPrimeCalculator.kt`
+- `WPrimeDataType.kt`
+- `WPrimeSettings.kt`
