@@ -18,6 +18,7 @@ import android.widget.RemoteViews
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.itl.wprimeext.R
+import io.hammerhead.karooext.models.ViewConfig
 
 /**
  * Simple W' display using RemoteViews for colored background display
@@ -27,21 +28,19 @@ fun createWPrimeRemoteView(
     value: String,
     unit: String,
     backgroundColor: Color,
-    showUnit: Boolean = true
+    config: ViewConfig,
+    showUnit: Boolean = false,
+    fieldLabel: String = "W PRIME"
 ): RemoteViews {
     val remoteViews = RemoteViews(context.packageName, R.layout.wprime_display_layout)
+
+    // Set the field label text (e.g., "W PRIME" for percentage, "W PRIME" for kilojoules)
+    remoteViews.setTextViewText(R.id.wprimeLabel, fieldLabel)
 
     // Set the main value text
     remoteViews.setTextViewText(R.id.wprimeValue, value)
 
-    // Set the unit text (if shown)
-    if (showUnit) {
-        remoteViews.setTextViewText(R.id.wprimeUnit, unit)
-    } else {
-        remoteViews.setTextViewText(R.id.wprimeUnit, "")
-    }
-
-    // Set the background color
+    // Apply background color directly (like POWER field - black background with colored overlay)
     remoteViews.setInt(R.id.wprimeContainer, "setBackgroundColor", backgroundColor.toArgb())
 
     return remoteViews
@@ -50,18 +49,21 @@ fun createWPrimeRemoteView(
 /**
  * Color calculation functions for W' visualization
  */
-fun calculateWPrimeColor(wprimePercentage: Double): Color {
-    return when {
-        wprimePercentage >= 80.0 -> Color(0xFF4CAF50) // Verde brillante
-        wprimePercentage >= 60.0 -> Color(0xFF8BC34A) // Verde claro
-        wprimePercentage >= 40.0 -> Color(0xFFFFEB3B) // Amarillo
-        wprimePercentage >= 20.0 -> Color(0xFFFF9800) // Naranja
-        wprimePercentage >= 10.0 -> Color(0xFFFF5722) // Rojo naranja
-        else -> Color(0xFFF44336) // Rojo intenso
-    }
-}
+fun calculateWPrimeColor(smoothedPower3s: Double, criticalPower: Double): Color {
+    val powerRatio = smoothedPower3s / criticalPower
 
-fun calculateWPrimeColorForKj(wprimeKj: Double, maxWPrimeKj: Double): Color {
-    val percentage = (wprimeKj / maxWPrimeKj) * 100.0
-    return calculateWPrimeColor(percentage)
+    return when {
+        // Recovering (power below CP) - Green tones
+        powerRatio <= 0.50 -> Color(0xFF2E7D32) // Verde oscuro - recuperación muy rápida
+        powerRatio <= 0.70 -> Color(0xFF388E3C) // Verde medio - recuperación rápida
+        powerRatio <= 0.85 -> Color(0xFF4CAF50) // Verde - recuperación moderada
+        powerRatio <= 1.00 -> Color(0xFF66BB6A) // Verde claro - recuperación lenta
+
+        // Above CP (discharging W') - Yellow to Purple based on intensity
+        powerRatio <= 1.10 -> Color(0xFFFFEB3B) // Amarillo - ligeramente sobre CP
+        powerRatio <= 1.25 -> Color(0xFFFF9800) // Naranja - moderadamente sobre CP
+        powerRatio <= 1.50 -> Color(0xFFFF5722) // Rojo naranja - esfuerzo alto
+        powerRatio <= 2.00 -> Color(0xFFE91E63) // Rojo - esfuerzo muy alto
+        else -> Color(0xFF9C27B0) // Violeta - esfuerzo extremo que agota W' muy rápido
+    }
 }

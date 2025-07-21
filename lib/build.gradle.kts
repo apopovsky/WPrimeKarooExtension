@@ -1,6 +1,5 @@
 import org.jetbrains.dokka.base.DokkaBase
 import org.jetbrains.dokka.base.DokkaBaseConfiguration
-import java.net.URL
 import java.time.LocalDateTime
 
 plugins {
@@ -22,7 +21,7 @@ buildscript {
 
 android {
     namespace = "io.hammerhead.karooext"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 23
@@ -37,11 +36,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
 
     buildFeatures {
@@ -77,7 +76,7 @@ tasks.dokkaHtml.configure {
             // https://github.com/Kotlin/dokka/issues/2876
             sourceLink {
                 localDirectory.set(projectDir.resolve("lib/src/main/kotlin"))
-                remoteUrl.set(URL("https://github.com/hammerheadnav/karoo-ext/blob/${libVersion}/lib"))
+                remoteUrl.set(uri("https://github.com/hammerheadnav/karoo-ext/blob/${libVersion}/lib").toURL())
                 remoteLineSuffix.set("#L")
             }
             skipEmptyPackages.set(true)

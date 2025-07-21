@@ -24,11 +24,11 @@ class WPrimeKjDataType(
 ) : WPrimeDataTypeBase(karooSystem, context, extension, "wprime-kj") {
 
     override fun getDisplayValue(): Double {
-        return getCalculator().getCurrentWPrime() / 1000.0 // Convert from Joules to kJ
+        return getCalculator().getCurrentWPrime() // Keep in Joules (remove /1000.0)
     }
 
     override fun getInitialValue(): Double {
-        return 12.0 // Initial value for W Prime in kJ (12000J = 12kJ)
+        return 12000.0 // Initial value for W Prime in J (12000J)
     }
 
     override fun getFormatDataTypeId(): String {
@@ -36,10 +36,14 @@ class WPrimeKjDataType(
     }
 
     override fun getDisplayText(value: Double): String {
-        return String.format("%.1f", value)
+        return String.format("%.0f", value) // Show as whole number since J are larger
     }
 
     override fun getUnitText(): String {
-        return "kJ"
+        return "J"
+    }
+
+    override fun getFieldLabel(): String {
+        return "W PRIME (J)"
     }
 }

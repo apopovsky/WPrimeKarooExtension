@@ -17,7 +17,6 @@ import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
 import com.itl.wprimeext.ui.calculateWPrimeColor
-import com.itl.wprimeext.ui.calculateWPrimeColorForKj
 import com.itl.wprimeext.ui.createWPrimeRemoteView
 import com.itl.wprimeext.utils.LogConstants
 import com.itl.wprimeext.utils.WPrimeLogger
@@ -80,6 +79,7 @@ abstract class WPrimeDataTypeBase(
     abstract fun getFormatDataTypeId(): String
     abstract fun getDisplayText(value: Double): String
     abstract fun getUnitText(): String
+    abstract fun getFieldLabel(): String
 
     override fun startStream(emitter: Emitter<StreamState>) {
         WPrimeLogger.d(WPrimeLogger.Module.DATA_TYPE, "Starting W Prime data stream for $typeId...")
@@ -214,7 +214,9 @@ abstract class WPrimeDataTypeBase(
                         value = displayText,
                         unit = unitText,
                         backgroundColor = backgroundColor,
-                        showUnit = true,
+                        config = config,
+                        showUnit = false, // No mostrar unidad separada para evitar duplicación
+                        fieldLabel = getFieldLabel()
                     )
 
                     emitter.updateView(remoteView)
@@ -237,7 +239,7 @@ abstract class WPrimeDataTypeBase(
             // Simulate W' calculation for preview
             wprimeCalculator.updatePower(previewPower, System.currentTimeMillis())
             val displayValue = getDisplayValue()
-            val backgroundColor = calculateDisplayColor(displayValue)
+            val backgroundColor = calculateDisplayColor(displayValue, previewPower)
 
             emit(
                 WPrimeDisplayData(
@@ -259,7 +261,7 @@ abstract class WPrimeDataTypeBase(
                     val powerValue = power.dataPoint.singleValue?.toDouble() ?: 0.0
                     wprimeCalculator.updatePower(powerValue, System.currentTimeMillis())
                     val displayValue = getDisplayValue()
-                    val backgroundColor = calculateDisplayColor(displayValue)
+                    val backgroundColor = calculateDisplayColor(displayValue, powerValue)
 
                     emit(
                         WPrimeDisplayData(
@@ -271,7 +273,7 @@ abstract class WPrimeDataTypeBase(
                 is StreamState.NotAvailable, is StreamState.Searching -> {
                     // Use default/initial values when power data not available
                     val displayValue = getInitialValue()
-                    val backgroundColor = calculateDisplayColor(displayValue)
+                    val backgroundColor = calculateDisplayColor(displayValue, 0.0)
 
                     emit(
                         WPrimeDisplayData(
@@ -283,7 +285,7 @@ abstract class WPrimeDataTypeBase(
                 else -> {
                     // Handle other cases with safe defaults
                     val displayValue = getInitialValue()
-                    val backgroundColor = calculateDisplayColor(displayValue)
+                    val backgroundColor = calculateDisplayColor(displayValue, 0.0)
 
                     emit(
                         WPrimeDisplayData(
@@ -296,22 +298,12 @@ abstract class WPrimeDataTypeBase(
         }
     }
 
-    private fun calculateDisplayColor(displayValue: Double): Color {
-        return when (typeId) {
-            "wprime" -> {
-                // For percentage-based W' (0-100%)
-                calculateWPrimeColor(displayValue)
-            }
-            "wprime-kj" -> {
-                // For kJ-based W' - use a reasonable default max capacity
-                val maxCapacityKj = 12.0 // Default 12kJ
-                calculateWPrimeColorForKj(displayValue, maxCapacityKj)
-            }
-            else -> {
-                // Default color for unknown types
-                calculateWPrimeColor(50.0) // Neutral color
-            }
-        }
+    private fun calculateDisplayColor(displayValue: Double, currentPower: Double = 0.0): Color {
+        // Get current configuration for critical power
+        val criticalPower = wprimeCalculator.getCriticalPower()
+
+        // Use current power (3s smoothed would be ideal, but we'll use current power for now)
+        return calculateWPrimeColor(currentPower, criticalPower)
     }
 
     private fun generatePreviewPowerData(simulationTime: Double, criticalPower: Double): Double {

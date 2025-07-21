@@ -42,4 +42,8 @@ class WPrimeDataType(
     override fun getUnitText(): String {
         return "%"
     }
+
+    override fun getFieldLabel(): String {
+        return "W PRIME (%W')"
+    }
 }
