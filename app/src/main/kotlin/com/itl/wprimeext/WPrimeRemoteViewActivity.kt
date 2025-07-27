@@ -2,16 +2,16 @@ package com.itl.wprimeext
 
 import android.app.Activity
 import android.os.Bundle
-import android.widget.RemoteViews
-import android.widget.FrameLayout
-import com.itl.wprimeext.extension.WPrimeKjDataType
-import com.itl.wprimeext.extension.WPrimeDataType
-import io.hammerhead.karooext.KarooSystemService
-import io.hammerhead.karooext.models.ViewConfig
-import io.hammerhead.karooext.internal.ViewEmitter
-import io.hammerhead.karooext.aidl.IHandler
 import android.os.IBinder
+import android.widget.FrameLayout
+import android.widget.RemoteViews
+import com.itl.wprimeext.extension.WPrimeDataType
+import com.itl.wprimeext.extension.WPrimeKjDataType
 import com.itl.wprimeext.utils.WPrimeLogger
+import io.hammerhead.karooext.KarooSystemService
+import io.hammerhead.karooext.aidl.IHandler
+import io.hammerhead.karooext.internal.ViewEmitter
+import io.hammerhead.karooext.models.ViewConfig
 
 class WPrimeRemoteViewActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,7 +61,7 @@ class WPrimeRemoteViewActivity : Activity() {
             gridSize = Pair(60, 15),
             viewSize = Pair(800, 200),
             textSize = 48,
-            preview = true
+            preview = true,
         )
 
         // Create a real ViewEmitter that will call our mock handler

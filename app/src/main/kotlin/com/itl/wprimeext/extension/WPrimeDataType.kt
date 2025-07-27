@@ -43,7 +43,11 @@ class WPrimeDataType(
         return "%"
     }
 
-    override fun getFieldLabel(): String {
-        return "W PRIME (%W')"
+    override fun getFieldLabel(wideMode: Boolean): String {
+        return if (wideMode) {
+            "W PRIME (%W')"
+        } else {
+            "W' (%W')"
+        }
     }
 }

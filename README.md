@@ -24,7 +24,7 @@ This is a **W Prime (W') extension for Hammerhead Karoo 3** cycling computers, b
 
 ### 🔄 NEXT PRIORITIES
 1. **Device testing** on actual Karoo 3 hardware
-2. **RemoteViews** for custom W Prime visualization (see [karoo-ext documentation](https://hammerheadnav.github.io/karoo-ext/))
+2. **Glance-based custom views** for modern W Prime visualization with rounded corners and dynamic colors
 3. **FIT file integration** to save W Prime data in activity files
 4. **Performance optimization** and user experience improvements
 

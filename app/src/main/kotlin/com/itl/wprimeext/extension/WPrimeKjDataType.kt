@@ -43,7 +43,11 @@ class WPrimeKjDataType(
         return "J"
     }
 
-    override fun getFieldLabel(): String {
-        return "W PRIME (J)"
+    override fun getFieldLabel(wideMode: Boolean): String {
+        return if (wideMode) {
+            "W PRIME (J)"
+        } else {
+            "W' (J)"
+        }
     }
 }

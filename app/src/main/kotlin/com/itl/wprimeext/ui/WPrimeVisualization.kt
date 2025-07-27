@@ -30,7 +30,7 @@ fun createWPrimeRemoteView(
     backgroundColor: Color,
     config: ViewConfig,
     showUnit: Boolean = false,
-    fieldLabel: String = "W PRIME"
+    fieldLabel: String = "W PRIME",
 ): RemoteViews {
     val remoteViews = RemoteViews(context.packageName, R.layout.wprime_display_layout)
 

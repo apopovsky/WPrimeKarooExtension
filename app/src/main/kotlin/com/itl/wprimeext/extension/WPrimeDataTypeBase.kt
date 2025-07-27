@@ -16,8 +16,12 @@ package com.itl.wprimeext.extension
 import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
+import androidx.glance.appwidget.ExperimentalGlanceRemoteViewsApi
+import androidx.glance.appwidget.GlanceRemoteViews
+import androidx.glance.unit.ColorProvider
+import com.itl.wprimeext.ui.WPrimeGlanceView
+import com.itl.wprimeext.ui.WPrimeNotAvailableGlanceView
 import com.itl.wprimeext.ui.calculateWPrimeColor
-import com.itl.wprimeext.ui.createWPrimeRemoteView
 import com.itl.wprimeext.utils.LogConstants
 import com.itl.wprimeext.utils.WPrimeLogger
 import io.hammerhead.karooext.KarooSystemService
@@ -40,12 +44,15 @@ import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.sin
 
+@OptIn(ExperimentalGlanceRemoteViewsApi::class)
 abstract class WPrimeDataTypeBase(
     private val karooSystem: KarooSystemService,
     private val context: Context,
     extension: String,
     typeId: String,
 ) : DataTypeImpl(extension, typeId) {
+
+    private val glance = GlanceRemoteViews()
 
     private val wprimeSettings = WPrimeSettings(context)
     private val wprimeCalculator =
@@ -79,7 +86,7 @@ abstract class WPrimeDataTypeBase(
     abstract fun getFormatDataTypeId(): String
     abstract fun getDisplayText(value: Double): String
     abstract fun getUnitText(): String
-    abstract fun getFieldLabel(): String
+    abstract fun getFieldLabel(wideMode: Boolean = true): String
 
     override fun startStream(emitter: Emitter<StreamState>) {
         WPrimeLogger.d(WPrimeLogger.Module.DATA_TYPE, "Starting W Prime data stream for $typeId...")
@@ -169,11 +176,14 @@ abstract class WPrimeDataTypeBase(
             "Starting W Prime view for $typeId... Preview mode: ${config.preview}",
         )
 
+        // Detect wide mode based on grid size (like karoo-headwind example)
+        val wideMode = config.gridSize.first == 60
+
         val configJob =
             CoroutineScope(Dispatchers.IO).launch {
                 WPrimeLogger.d(
                     WPrimeLogger.Module.DATA_TYPE,
-                    "Configuring W Prime view as graphical for $typeId",
+                    "Configuring W Prime view as graphical for $typeId (wideMode: $wideMode, textSize: ${config.textSize}, gridSize: ${config.gridSize})",
                 )
                 emitter.onNext(UpdateGraphicConfig(showHeader = false))
                 awaitCancellation()
@@ -181,50 +191,77 @@ abstract class WPrimeDataTypeBase(
 
         val viewJob =
             CoroutineScope(Dispatchers.IO).launch {
-                val configuration = wprimeSettings.configuration.first()
-
-                val dataFlow =
-                    if (config.preview) {
-                        WPrimeLogger.d(
-                            WPrimeLogger.Module.DATA_TYPE,
-                            "Using preview data flow for $typeId",
-                        )
-                        previewDataFlow(configuration)
-                    } else {
-                        WPrimeLogger.d(
-                            WPrimeLogger.Module.DATA_TYPE,
-                            "Using real data flow for $typeId",
-                        )
-                        streamRealWPrimeData()
+                try {
+                    // Show initial searching state
+                    if (!config.preview) {
+                        val initialRemoteViews = kotlinx.coroutines.withContext(Dispatchers.Main) {
+                            glance.compose(context, DpSize.Unspecified) {
+                                WPrimeNotAvailableGlanceView(
+                                    message = "Searching...",
+                                    isKaroo3 = karooSystem.hardwareType == io.hammerhead.karooext.models.HardwareType.KAROO,
+                                )
+                            }.remoteViews
+                        }
+                        kotlinx.coroutines.withContext(Dispatchers.Main) {
+                            emitter.updateView(initialRemoteViews)
+                        }
+                        delay(400L)
                     }
 
-                dataFlow.collect { wprimeData ->
-                    val displayValue = wprimeData.displayValue
-                    val displayText = getDisplayText(displayValue)
-                    val unitText = getUnitText()
-                    val backgroundColor = wprimeData.backgroundColor
+                    val configuration = wprimeSettings.configuration.first()
 
+                    val dataFlow =
+                        if (config.preview) {
+                            WPrimeLogger.d(
+                                WPrimeLogger.Module.DATA_TYPE,
+                                "Using preview data flow for $typeId",
+                            )
+                            previewDataFlow(configuration)
+                        } else {
+                            WPrimeLogger.d(
+                                WPrimeLogger.Module.DATA_TYPE,
+                                "Using real data flow for $typeId",
+                            )
+                            streamRealWPrimeData()
+                        }
+
+                    dataFlow.collect { data ->
+                        try {
+                            val newView = kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                glance.compose(context, DpSize.Unspecified) {
+                                    WPrimeGlanceView(
+                                        value = getDisplayText(data.displayValue),
+                                        fieldLabel = getFieldLabel(wideMode),
+                                        backgroundColor = ColorProvider(data.backgroundColor),
+                                        textSize = config.textSize,
+                                        alignment = config.alignment,
+                                    )
+                                }.remoteViews
+                            }
+
+                            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                emitter.updateView(newView)
+                            }
+
+                            // Add refresh delay to avoid overwhelming the system
+                            delay(500L)
+                        } catch (e: Exception) {
+                            WPrimeLogger.d(
+                                WPrimeLogger.Module.DATA_TYPE,
+                                "Error updating W Prime view for $typeId: ${e.message}",
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
                     WPrimeLogger.d(
                         WPrimeLogger.Module.DATA_TYPE,
-                        "View updating display for $typeId: $displayText $unitText (color: $backgroundColor)",
+                        "Error in W Prime view job for $typeId: ${e.message}",
                     )
-
-                    val remoteView = createWPrimeRemoteView(
-                        context = context,
-                        value = displayText,
-                        unit = unitText,
-                        backgroundColor = backgroundColor,
-                        config = config,
-                        showUnit = false, // No mostrar unidad separada para evitar duplicación
-                        fieldLabel = getFieldLabel()
-                    )
-
-                    emitter.updateView(remoteView)
                 }
             }
 
         emitter.setCancellable {
-            WPrimeLogger.d(WPrimeLogger.Module.DATA_TYPE, "Stopping W Prime view for $typeId...")
+            WPrimeLogger.d(WPrimeLogger.Module.DATA_TYPE, LogConstants.STREAM_STOPPED + " for $typeId view")
             configJob.cancel()
             viewJob.cancel()
         }
@@ -263,12 +300,7 @@ abstract class WPrimeDataTypeBase(
                     val displayValue = getDisplayValue()
                     val backgroundColor = calculateDisplayColor(displayValue, powerValue)
 
-                    emit(
-                        WPrimeDisplayData(
-                            displayValue = displayValue,
-                            backgroundColor = backgroundColor,
-                        ),
-                    )
+                    emit(WPrimeDisplayData(displayValue, backgroundColor))
                 }
                 is StreamState.NotAvailable, is StreamState.Searching -> {
                     // Use default/initial values when power data not available
