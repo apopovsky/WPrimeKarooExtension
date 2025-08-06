@@ -40,6 +40,7 @@ fun WPrimeGlanceView(
     backgroundColor: UnitColorProvider,
     textSize: Int = 56,
     alignment: ViewConfig.Alignment = ViewConfig.Alignment.RIGHT,
+    numberVerticalOffset: Int = -15
 ) {
     val (textAlign, horizontalAlignment) = when (alignment) {
         ViewConfig.Alignment.LEFT -> TextAlign.Start to Alignment.Start
@@ -63,7 +64,7 @@ fun WPrimeGlanceView(
 
             TitleRow(fieldLabel, textAlign, horizontalAlignment)
 
-            NumberRow(value, textAlign, horizontalAlignment, textSize)
+            NumberRow(value, textAlign, horizontalAlignment, textSize, numberVerticalOffset)
         }
     }
 }
@@ -104,11 +105,12 @@ private fun NumberRow(
     text: String,
     textAlign: TextAlign,
     horizontalAlignment: Alignment.Horizontal,
-    textSize: Int
+    textSize: Int,
+    numberVerticalOffset: Int
 ) {
     Row(
         modifier = GlanceModifier
-            .padding(top = (-textSize/3+4).dp)
+            .padding(top = numberVerticalOffset.dp)
             .fillMaxWidth(),
         horizontalAlignment = horizontalAlignment,
         verticalAlignment = Alignment.Top
@@ -172,6 +174,7 @@ fun WPrimeGlanceViewPreview() {
         fieldLabel = "W' (kJ)",
         backgroundColor = UnitColorProvider(Color.Gray),
         textSize = 69,
-        alignment = ViewConfig.Alignment.CENTER
+        alignment = ViewConfig.Alignment.CENTER,
+        numberVerticalOffset = -19
     )
 }

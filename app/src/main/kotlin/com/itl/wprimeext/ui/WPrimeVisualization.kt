@@ -13,38 +13,7 @@
  */
 package com.itl.wprimeext.ui
 
-import android.content.Context
-import android.widget.RemoteViews
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
-import com.itl.wprimeext.R
-import io.hammerhead.karooext.models.ViewConfig
-
-/**
- * Simple W' display using RemoteViews for colored background display
- */
-fun createWPrimeRemoteView(
-    context: Context,
-    value: String,
-    unit: String,
-    backgroundColor: Color,
-    config: ViewConfig,
-    showUnit: Boolean = false,
-    fieldLabel: String = "W PRIME",
-): RemoteViews {
-    val remoteViews = RemoteViews(context.packageName, R.layout.wprime_display_layout)
-
-    // Set the field label text (e.g., "W PRIME" for percentage, "W PRIME" for kilojoules)
-    remoteViews.setTextViewText(R.id.wprimeLabel, fieldLabel)
-
-    // Set the main value text
-    remoteViews.setTextViewText(R.id.wprimeValue, value)
-
-    // Apply background color directly (like POWER field - black background with colored overlay)
-    remoteViews.setInt(R.id.wprimeContainer, "setBackgroundColor", backgroundColor.toArgb())
-
-    return remoteViews
-}
 
 /**
  * Color calculation functions for W' visualization
