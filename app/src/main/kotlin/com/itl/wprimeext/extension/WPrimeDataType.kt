@@ -50,4 +50,7 @@ class WPrimeDataType(
             "W' (%W')"
         }
     }
+
+    override fun getNumberVerticalOffset(): Int = 0 // percent view baseline
+    override fun getFixedCharCount(): Int = 3 // Always size for 3 chars (e.g., 100)
 }

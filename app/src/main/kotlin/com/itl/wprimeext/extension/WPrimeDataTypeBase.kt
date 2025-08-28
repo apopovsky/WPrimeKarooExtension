@@ -13,6 +13,7 @@
  */
 package com.itl.wprimeext.extension
 
+import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
@@ -78,6 +79,9 @@ abstract class WPrimeDataTypeBase(
     data class WPrimeDisplayData(
         val displayValue: Double,
         val backgroundColor: Color,
+        val currentPower: Int,
+        val criticalPower: Int,
+        val wPrimePercentage: Float,
     )
 
     // Abstract methods to be implemented by subclasses
@@ -87,6 +91,11 @@ abstract class WPrimeDataTypeBase(
     abstract fun getDisplayText(value: Double): String
     abstract fun getUnitText(): String
     abstract fun getFieldLabel(wideMode: Boolean = true): String
+    open fun getNumberVerticalOffset(): Int = 0 // default offset for value text
+    open fun getTargetHeightFraction(): Float = 0.5f // default ~50% height usage
+    open fun getValueBottomPaddingExtra(): Int = 0 // extra bottom padding for value box
+    open fun getFixedCharCount(): Int? = null // new: fixed char width for sizing
+    open fun getSizeScale(): Float = 1f // new: scale multiplier for text after sizing
 
     override fun startStream(emitter: Emitter<StreamState>) {
         WPrimeLogger.d(WPrimeLogger.Module.DATA_TYPE, "Starting W Prime data stream for $typeId...")
@@ -170,6 +179,7 @@ abstract class WPrimeDataTypeBase(
         }
     }
 
+    @SuppressLint("RestrictedApi")
     override fun startView(context: Context, config: ViewConfig, emitter: ViewEmitter) {
         WPrimeLogger.d(
             WPrimeLogger.Module.DATA_TYPE,
@@ -233,8 +243,21 @@ abstract class WPrimeDataTypeBase(
                                         value = getDisplayText(data.displayValue),
                                         fieldLabel = getFieldLabel(wideMode),
                                         backgroundColor = ColorProvider(data.backgroundColor),
+                                        currentPower = data.currentPower,
+                                        criticalPower = data.criticalPower,
+                                        wPrimePercentage = data.wPrimePercentage,
                                         textSize = config.textSize,
                                         alignment = config.alignment,
+                                        numberVerticalOffset = getNumberVerticalOffset(),
+                                        targetHeightFraction = getTargetHeightFraction(),
+                                        valueBottomExtraPadding = getValueBottomPaddingExtra(),
+                                        debugDataTypeId = getTypeIdForLog(),
+                                        debugGridWidth = config.gridSize.first,
+                                        debugGridHeight = config.gridSize.second,
+                                        debugWideMode = wideMode,
+                                        debugPreview = config.preview,
+                                        fixedCharCount = getFixedCharCount(),
+                                        sizeScale = getSizeScale()
                                     )
                                 }.remoteViews
                             }
@@ -277,11 +300,15 @@ abstract class WPrimeDataTypeBase(
             wprimeCalculator.updatePower(previewPower, System.currentTimeMillis())
             val displayValue = getDisplayValue()
             val backgroundColor = calculateDisplayColor(displayValue, previewPower)
+            val wPrimePercentage = (displayValue / configuration.anaerobicCapacity).toFloat().coerceIn(0f, 1f)
 
             emit(
                 WPrimeDisplayData(
                     displayValue = displayValue,
                     backgroundColor = backgroundColor,
+                    currentPower = previewPower.toInt(),
+                    criticalPower = configuration.criticalPower.toInt(),
+                    wPrimePercentage = wPrimePercentage,
                 ),
             )
 
@@ -299,18 +326,33 @@ abstract class WPrimeDataTypeBase(
                     wprimeCalculator.updatePower(powerValue, System.currentTimeMillis())
                     val displayValue = getDisplayValue()
                     val backgroundColor = calculateDisplayColor(displayValue, powerValue)
+                    val criticalPower = wprimeCalculator.getCriticalPower()
+                    val anaerobicCapacity = wprimeCalculator.getAnaerobicCapacity()
+                    val wPrimePercentage = (displayValue / anaerobicCapacity).toFloat().coerceIn(0f, 1f)
 
-                    emit(WPrimeDisplayData(displayValue, backgroundColor))
+                    emit(WPrimeDisplayData(
+                        displayValue = displayValue,
+                        backgroundColor = backgroundColor,
+                        currentPower = powerValue.toInt(),
+                        criticalPower = criticalPower.toInt(),
+                        wPrimePercentage = wPrimePercentage,
+                    ))
                 }
                 is StreamState.NotAvailable, is StreamState.Searching -> {
                     // Use default/initial values when power data not available
                     val displayValue = getInitialValue()
                     val backgroundColor = calculateDisplayColor(displayValue, 0.0)
+                    val criticalPower = wprimeCalculator.getCriticalPower()
+                    val anaerobicCapacity = wprimeCalculator.getAnaerobicCapacity()
+                    val wPrimePercentage = (displayValue / anaerobicCapacity).toFloat().coerceIn(0f, 1f)
 
                     emit(
                         WPrimeDisplayData(
                             displayValue = displayValue,
                             backgroundColor = backgroundColor,
+                            currentPower = 0,
+                            criticalPower = criticalPower.toInt(),
+                            wPrimePercentage = wPrimePercentage,
                         ),
                     )
                 }
@@ -318,11 +360,17 @@ abstract class WPrimeDataTypeBase(
                     // Handle other cases with safe defaults
                     val displayValue = getInitialValue()
                     val backgroundColor = calculateDisplayColor(displayValue, 0.0)
+                    val criticalPower = wprimeCalculator.getCriticalPower()
+                    val anaerobicCapacity = wprimeCalculator.getAnaerobicCapacity()
+                    val wPrimePercentage = (displayValue / anaerobicCapacity).toFloat().coerceIn(0f, 1f)
 
                     emit(
                         WPrimeDisplayData(
                             displayValue = displayValue,
                             backgroundColor = backgroundColor,
+                            currentPower = 0,
+                            criticalPower = criticalPower.toInt(),
+                            wPrimePercentage = wPrimePercentage,
                         ),
                     )
                 }
@@ -352,4 +400,6 @@ abstract class WPrimeDataTypeBase(
 
     // Protected getter for calculator (for subclasses)
     protected fun getCalculator(): WPrimeCalculator = wprimeCalculator
+
+    protected fun getTypeIdForLog(): String = dataTypeId
 }

@@ -37,7 +37,9 @@ class WPrimeCalculator(
         this.currentWPrime = anaerobicCapacity
 
         WPrimeLogger.i(WPrimeLogger.Module.CALCULATOR, LogConstants.WPRIME_CONFIG_UPDATED)
-    } fun updatePower(power: Double, timestamp: Long): Double {
+    }
+
+    fun updatePower(power: Double, timestamp: Long): Double {
         // Input validation
         if (power < MIN_POWER || power > MAX_POWER) {
             WPrimeLogger.w(WPrimeLogger.Module.CALCULATOR, "Invalid power value: $power. Using 0W")
@@ -179,6 +181,8 @@ class WPrimeCalculator(
     fun getWPrimeKilojoules(): Double = currentWPrime / 1000.0
 
     fun getCriticalPower(): Double = criticalPower
+
+    fun getAnaerobicCapacity(): Double = anaerobicCapacity
 
     fun isFullyDepleted(): Boolean = currentWPrime < EPSILON
 

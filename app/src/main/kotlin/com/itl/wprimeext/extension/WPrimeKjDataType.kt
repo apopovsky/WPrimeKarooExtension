@@ -16,6 +16,7 @@ package com.itl.wprimeext.extension
 import android.content.Context
 import io.hammerhead.karooext.KarooSystemService
 import io.hammerhead.karooext.models.DataType
+import kotlin.math.roundToInt
 
 class WPrimeKjDataType(
     karooSystem: KarooSystemService,
@@ -35,13 +36,9 @@ class WPrimeKjDataType(
         return DataType.Type.POWER // Use power format for energy display
     }
 
-    override fun getDisplayText(value: Double): String {
-        return String.format("%.0f", value) // Show as whole number since J are larger
-    }
+    override fun getDisplayText(value: Double): String = value.roundToInt().toString()
 
-    override fun getUnitText(): String {
-        return "J"
-    }
+    override fun getUnitText(): String = "J"
 
     override fun getFieldLabel(wideMode: Boolean): String {
         return if (wideMode) {
@@ -50,4 +47,10 @@ class WPrimeKjDataType(
             "W' (J)"
         }
     }
+
+    override fun getNumberVerticalOffset(): Int = 0 // align baseline
+    override fun getTargetHeightFraction(): Float = 0.43f // smaller
+    override fun getValueBottomPaddingExtra(): Int = 1 // revert
+    override fun getFixedCharCount(): Int = 5 // size for 5 chars (e.g., 12000)
+    override fun getSizeScale(): Float = 0.85f // further shrink
 }

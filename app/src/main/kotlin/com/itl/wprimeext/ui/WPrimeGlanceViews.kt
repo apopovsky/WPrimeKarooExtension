@@ -1,12 +1,16 @@
 package com.itl.wprimeext.ui
 
+import android.annotation.SuppressLint
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalSize
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.background
 import androidx.glance.layout.Alignment
@@ -14,11 +18,13 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.absolutePadding
+import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
+import androidx.glance.layout.wrapContentWidth
 import androidx.glance.preview.ExperimentalGlancePreviewApi
 import androidx.glance.preview.Preview
 import androidx.glance.text.FontFamily
@@ -26,21 +32,38 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
+import androidx.glance.unit.ColorProvider
 import com.itl.wprimeext.R
 import androidx.glance.unit.ColorProvider as UnitColorProvider
 import io.hammerhead.karooext.models.ViewConfig
+import kotlin.math.roundToInt
+import com.itl.wprimeext.utils.WPrimeLogger
 
 /**
  * Glance composable for W' display - follows CustomDoubleTypeView pattern
  */
+@SuppressLint("RestrictedApi")
 @Composable
 fun WPrimeGlanceView(
     value: String,
     fieldLabel: String,
     backgroundColor: UnitColorProvider,
-    textSize: Int = 56,
+    currentPower: Int,
+    criticalPower: Int,
+    wPrimePercentage: Float,
+    textSize: Int = 56, // This will act as maxSp for dynamic sizing
     alignment: ViewConfig.Alignment = ViewConfig.Alignment.RIGHT,
-    numberVerticalOffset: Int = -15
+    maxPowerDeltaForFullRotation: Int = 150,
+    numberVerticalOffset: Int = 0, // new configurable vertical offset
+    targetHeightFraction: Float = 0.5f,
+    valueBottomExtraPadding: Int = 0,
+    debugDataTypeId: String? = null,
+    debugGridWidth: Int? = null,
+    debugGridHeight: Int? = null,
+    debugWideMode: Boolean? = null,
+    debugPreview: Boolean? = null,
+    fixedCharCount: Int? = null, // NEW
+    sizeScale: Float = 1f // NEW scale multiplier
 ) {
     val (textAlign, horizontalAlignment) = when (alignment) {
         ViewConfig.Alignment.LEFT -> TextAlign.Start to Alignment.Start
@@ -48,27 +71,126 @@ fun WPrimeGlanceView(
         ViewConfig.Alignment.RIGHT -> TextAlign.End to Alignment.End
     }
 
+    val powerDelta = currentPower - criticalPower
+    val wPrimeIsFull = wPrimePercentage >= 0.99f
+    val showArrow = !(currentPower < criticalPower && wPrimeIsFull)
+
+    val rotationDegrees = if (showArrow) {
+        val rawRotation = when {
+            powerDelta == 0 -> 0f
+            else -> {
+                val rotationRatio = (powerDelta.toFloat() / maxPowerDeltaForFullRotation).coerceIn(-1f, 1f)
+                rotationRatio * 90f
+            }
+        }
+        (rawRotation / 15f).roundToInt() * 15f
+    } else {
+        0f
+    }
+
+    // Dynamic text size calculation
+    val currentWidgetSize = LocalSize.current
+    val iconSizeDp = 28.dp // Consistent with icon display
+    val iconStartPaddingDp = 8.dp // Consistent with icon display
+    // Reserve space for sizing heuristic only if arrow will be shown
+    val sizingReservedHorizontal = if (showArrow) iconSizeDp + iconStartPaddingDp else 0.dp
+    // We no longer reserve horizontal space so text stays truly centered while arrow overlays
+    val reservedHorizontalDp = 0.dp
+
+    if (debugDataTypeId != null) {
+        WPrimeLogger.d(WPrimeLogger.Module.UI, "Compose start dt=$debugDataTypeId wide=$debugWideMode grid=${debugGridWidth}x${debugGridHeight} preview=$debugPreview value='$value' textSizeParam=$textSize fixedChars=$fixedCharCount")
+    }
+
+    val baseAutoSp = pickTextSizeSp(
+        value = value,
+        widgetWidth = currentWidgetSize.width,
+        widgetHeight = currentWidgetSize.height,
+        reservedHorizontal = sizingReservedHorizontal, // use reserved width only for sizing
+        maxSp = textSize, // revert to provided max
+        minSp = 24, // Default minimum, can be adjusted
+        targetHeightFraction = targetHeightFraction,
+        debugTag = debugDataTypeId,
+        fixedCharCount = fixedCharCount
+    )
+    val scaledAutoSp = (baseAutoSp * sizeScale).toInt().coerceAtLeast(8)
+    val autoTextSp = scaledAutoSp
+    if (debugDataTypeId != null) {
+        WPrimeLogger.d(WPrimeLogger.Module.UI, "Sized dt=$debugDataTypeId arrow=$showArrow reserved=${sizingReservedHorizontal.value}dp widget=${currentWidgetSize.width.value}x${currentWidgetSize.height.value}dp baseSp=$baseAutoSp scale=$sizeScale autoSp=$autoTextSp targetFrac=$targetHeightFraction bottomPadExtra=$valueBottomExtraPadding fixedChars=$fixedCharCount")
+    }
+
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
             .cornerRadius(8.dp)
             .background(backgroundColor),
-        contentAlignment = Alignment.TopCenter
+        contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = horizontalAlignment,
             verticalAlignment = Alignment.Top,
             modifier = GlanceModifier
-                .fillMaxSize()
+                .fillMaxHeight()
+                .wrapContentWidth()
         ) {
-
             TitleRow(fieldLabel, textAlign, horizontalAlignment)
 
-            NumberRow(value, textAlign, horizontalAlignment, textSize, numberVerticalOffset)
+            Box(
+                modifier = GlanceModifier
+                    .fillMaxWidth()
+                    .padding(top = (2 + numberVerticalOffset).dp, bottom = (2 + valueBottomExtraPadding).dp)
+            ) {
+                Text(
+                    text = value,
+                    modifier = GlanceModifier
+                        .fillMaxWidth(),
+                    style = TextStyle(
+                        color = UnitColorProvider(Color.White),
+                        fontSize = autoTextSp.sp, // Use dynamically calculated text size
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Normal,
+                        textAlign = TextAlign.Center
+                    ),
+                    maxLines = 1
+                )
+
+                if (showArrow) {
+                    // Overlay arrow without affecting text layout
+                    Row(
+                        modifier = GlanceModifier
+                            .padding(start = iconStartPaddingDp)
+                            .height(iconSizeDp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val arrowDrawableRes = when (rotationDegrees.roundToInt()) {
+                            -90 -> R.drawable.ic_direction_arrow_n90
+                            -75 -> R.drawable.ic_direction_arrow_n75
+                            -60 -> R.drawable.ic_direction_arrow_n60
+                            -45 -> R.drawable.ic_direction_arrow_n45
+                            -30 -> R.drawable.ic_direction_arrow_n30
+                            -15 -> R.drawable.ic_direction_arrow_n15
+                            0 -> R.drawable.ic_direction_arrow
+                            15 -> R.drawable.ic_direction_arrow_p15
+                            30 -> R.drawable.ic_direction_arrow_p30
+                            45 -> R.drawable.ic_direction_arrow_p45
+                            60 -> R.drawable.ic_direction_arrow_p60
+                            75 -> R.drawable.ic_direction_arrow_p75
+                            90 -> R.drawable.ic_direction_arrow_p90
+                            else -> R.drawable.ic_direction_arrow
+                        }
+                        Image(
+                            provider = ImageProvider(arrowDrawableRes),
+                            contentDescription = "W' Trend",
+                            modifier = GlanceModifier.size(iconSizeDp),
+                            colorFilter = ColorFilter.tint(ColorProvider(Color.White))
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
+@SuppressLint("RestrictedApi")
 @Composable
 private fun TitleRow(
     text: String,
@@ -80,7 +202,7 @@ private fun TitleRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = GlanceModifier
             .padding(0.dp)
-            .height(22.dp)
+            .height(22.dp) // This height is used in pickTextSizeSp
     ) {
         Image(
             provider = ImageProvider(R.drawable.ic_wprime_battery),
@@ -100,13 +222,17 @@ private fun TitleRow(
     }
 }
 
+// NOTE: NumberRow is no longer used directly if Text is inside the Box in WPrimeGlanceView
+// Keeping it for now in case it's used elsewhere or for reference, but it can be removed
+// if WPrimeGlanceView's structure is final.
+@SuppressLint("RestrictedApi")
 @Composable
 private fun NumberRow(
     text: String,
     textAlign: TextAlign,
     horizontalAlignment: Alignment.Horizontal,
     textSize: Int,
-    numberVerticalOffset: Int
+    numberVerticalOffset: Int // This parameter is no longer passed from WPrimeGlanceView
 ) {
     Row(
         modifier = GlanceModifier
@@ -118,7 +244,7 @@ private fun NumberRow(
         Text(
             text = text,
             modifier = GlanceModifier
-                .fillMaxWidth(), // make the text occupy full width
+                .fillMaxWidth(),
             style = TextStyle(
                 color = UnitColorProvider(Color.White),
                 fontSize = textSize.sp,
@@ -130,9 +256,11 @@ private fun NumberRow(
     }
 }
 
+
 /**
  * Glance composable for "Not Available" or "Searching" states
  */
+@SuppressLint("RestrictedApi")
 @Composable
 fun WPrimeNotAvailableGlanceView(
     message: String = "N/A",
@@ -148,7 +276,7 @@ fun WPrimeNotAvailableGlanceView(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(Color.Gray)
-                .padding(8.dp),
+                .padding(8.dp), // This padding is used as 'margins' in pickTextSizeSp
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalAlignment = Alignment.Vertical.CenterVertically
         ) {
@@ -165,16 +293,164 @@ fun WPrimeNotAvailableGlanceView(
     }
 }
 
+// Helper functions for dynamic text sizing
+private fun effectiveCharUnits(text: String): Float {
+    var units = 0f
+    for (c in text) {
+        units += when (c) {
+            '1' -> 0.7f
+            '.', ',' -> 0.35f
+            '-', '+', ' ' -> 0.6f
+            else -> 1.0f
+        }
+    }
+    return units.coerceAtLeast(1f)
+}
+
+// factor ~ ancho de un carácter monospace en dp por sp
+private const val CHAR_WIDTH_FACTOR = 0.62f // Needs tuning
+private const val LINE_HEIGHT_FACTOR = 1.2f // Needs tuning
+
+private fun pickTextSizeSp(
+    value: String,
+    widgetWidth: Dp,
+    widgetHeight: Dp,
+    reservedHorizontal: Dp,
+    maxSp: Int,
+    minSp: Int = 24,
+    targetHeightFraction: Float = 0.5f,
+    debugTag: String? = null,
+    fixedCharCount: Int? = null
+): Int {
+    val safeMax = if (maxSp < minSp) minSp else maxSp
+    if (widgetWidth == Dp.Unspecified || widgetHeight == Dp.Unspecified ||
+        widgetWidth.value <= 0f || widgetHeight.value <= 0f) {
+        debugTag?.let { WPrimeLogger.d(WPrimeLogger.Module.UI, "pickSize early-unspecified dt=$it returning=$safeMax") }
+        return safeMax
+    }
+    val availW = (widgetWidth - reservedHorizontal * 2 - 4.dp).coerceAtLeast(0.dp).value
+    val titleRowHeight = 22.dp
+    val verticalMargins = 8.dp
+    val availH = (widgetHeight - titleRowHeight - verticalMargins).coerceAtLeast(0.dp).value
+    if (availW <= 0f || availH <= 0f) {
+        debugTag?.let { WPrimeLogger.d(WPrimeLogger.Module.UI, "pickSize no-space dt=$it returning=$safeMax") }
+        return safeMax
+    }
+
+    val targetChars = fixedCharCount ?: value.length
+    // Approx char units using monospace proportions from effectiveCharUnits for '8' width baseline
+    val avgUnitPerChar = 1.0f // treat each char equal so fixed width stable
+    val units = targetChars * avgUnitPerChar
+
+    val fromWidth = if (units * CHAR_WIDTH_FACTOR > 0) (availW / (units * CHAR_WIDTH_FACTOR)) else safeMax.toFloat()
+    val adjustedFraction = targetHeightFraction.coerceIn(0.3f, 0.85f)
+    val fromHeight = (availH * adjustedFraction) / LINE_HEIGHT_FACTOR
+    val raw = fromWidth.coerceAtMost(fromHeight)
+    val clamped = raw.coerceIn(minSp.toFloat(), safeMax.toFloat())
+
+    if (debugTag != null) {
+        WPrimeLogger.d(WPrimeLogger.Module.UI, "pickSize dt=$debugTag fixedChars=$fixedCharCount valueLen=${value.length} availW=$availW availH=$availH fromW=${"%.1f".format(fromWidth)} fromH=${"%.1f".format(fromHeight)} raw=${"%.1f".format(raw)} clamped=${"%.1f".format(clamped)}")
+    }
+
+    // For fixedCharCount we skip quantization to preserve precise scaling
+    if (fixedCharCount != null) return clamped.toInt()
+
+    // Previous quantization for percentage case if not fixed
+    val steps = listOf(64, 56, 50, 46, 42, 38, 34, 32, 30, 28, 26, 24)
+    val stepped = steps.firstOrNull { clamped >= it && it <= safeMax } ?: steps.last { it <= safeMax }
+    if (debugTag != null) {
+        WPrimeLogger.d(WPrimeLogger.Module.UI, "pickSize dt=$debugTag stepped=$stepped (no fixedCharCount)")
+    }
+    return stepped
+}
+
+
+@SuppressLint("RestrictedApi")
 @OptIn(ExperimentalGlancePreviewApi::class)
-@Preview(widthDp = 200, heightDp = 150)
+@Preview(widthDp = 420, heightDp = 150)
 @Composable
 fun WPrimeGlanceViewPreview() {
     WPrimeGlanceView(
-        value = "1234",
+        value = "12.3",
+        fieldLabel = "W' (kJ)",
+        backgroundColor = UnitColorProvider(Color.DarkGray),
+        currentPower = 250,
+        criticalPower = 200,
+        wPrimePercentage = 0.65f,
+        textSize = 50, // This is maxSp
+        alignment = ViewConfig.Alignment.CENTER,
+        maxPowerDeltaForFullRotation = 150
+    )
+}
+
+@SuppressLint("RestrictedApi")
+@OptIn(ExperimentalGlancePreviewApi::class)
+@Preview(widthDp = 200, heightDp = 150)
+@Composable
+fun WPrimeGlanceViewPreview_Recovering() {
+    WPrimeGlanceView(
+        value = "18.5",
+        fieldLabel = "W' (kJ)",
+        backgroundColor = UnitColorProvider(Color.hsl(100f, 0.3f, 0.4f)),
+        currentPower = 150,
+        criticalPower = 200,
+        wPrimePercentage = 0.9f,
+        textSize = 50, // This is maxSp
+        alignment = ViewConfig.Alignment.CENTER,
+        maxPowerDeltaForFullRotation = 150
+    )
+}
+
+@SuppressLint("RestrictedApi")
+@OptIn(ExperimentalGlancePreviewApi::class)
+@Preview(widthDp = 200, heightDp = 150)
+@Composable
+fun WPrimeGlanceViewPreview_FullNoArrow() {
+    WPrimeGlanceView(
+        value = "11438", // Long value to test auto-sizing
+        fieldLabel = "W' (kJ)",
+        backgroundColor = UnitColorProvider(Color.hsl(120f, 0.5f, 0.5f)),
+        currentPower = 100,
+        criticalPower = 200,
+        wPrimePercentage = 1.0f,
+        textSize = 50, // This is maxSp
+        alignment = ViewConfig.Alignment.CENTER,
+        maxPowerDeltaForFullRotation = 150
+    )
+}
+
+@SuppressLint("RestrictedApi")
+@OptIn(ExperimentalGlancePreviewApi::class)
+@Preview(widthDp = 200, heightDp = 150)
+@Composable
+fun WPrimeGlanceViewPreview_MaxEffort() {
+    WPrimeGlanceView(
+        value = "3789", // Another long value
+        fieldLabel = "W' (kJ)",
+        backgroundColor = UnitColorProvider(Color.Red),
+        currentPower = 380,
+        criticalPower = 200,
+        wPrimePercentage = 0.1f,
+        textSize = 50, // This is maxSp
+        alignment = ViewConfig.Alignment.CENTER,
+        maxPowerDeltaForFullRotation = 150
+    )
+}
+
+@SuppressLint("RestrictedApi")
+@OptIn(ExperimentalGlancePreviewApi::class)
+@Preview(widthDp = 200, heightDp = 150)
+@Composable
+fun WPrimeGlanceViewPreview_Neutral() {
+    WPrimeGlanceView(
+        value = "1580",
         fieldLabel = "W' (kJ)",
         backgroundColor = UnitColorProvider(Color.Gray),
-        textSize = 69,
+        currentPower = 200,
+        criticalPower = 200,
+        wPrimePercentage = 0.75f,
+        textSize = 50, // This is maxSp
         alignment = ViewConfig.Alignment.CENTER,
-        numberVerticalOffset = -19
+        maxPowerDeltaForFullRotation = 150
     )
 }
