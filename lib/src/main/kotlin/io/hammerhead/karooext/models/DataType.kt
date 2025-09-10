@@ -1372,9 +1372,7 @@ data class DataType(
         /**
          * Construct full data type id from extension id and type id.
          */
-        fun dataTypeId(extension: String, typeId: String): String {
-            return "TYPE_EXT$SEPARATOR$extension$SEPARATOR$typeId"
-        }
+        fun dataTypeId(extension: String, typeId: String): String = "TYPE_EXT$SEPARATOR$extension$SEPARATOR$typeId"
 
         /**
          * Parse full data type id string into extension/typeId parts.

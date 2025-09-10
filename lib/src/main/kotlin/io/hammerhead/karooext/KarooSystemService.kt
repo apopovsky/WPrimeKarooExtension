@@ -172,12 +172,10 @@ class KarooSystemService(private val context: Context) {
      * @return true if system was connected and ready to receive effect
      * @see [KarooEffect]
      */
-    fun dispatch(effect: KarooEffect): Boolean {
-        return controller?.let {
-            it.dispatchEffect(effect.bundleWithSerializable(packageName))
-            true
-        } ?: false
-    }
+    fun dispatch(effect: KarooEffect): Boolean = controller?.let {
+        it.dispatchEffect(effect.bundleWithSerializable(packageName))
+        true
+    } ?: false
 
     /**
      * Register a listener with params to events or state changes as they happen.

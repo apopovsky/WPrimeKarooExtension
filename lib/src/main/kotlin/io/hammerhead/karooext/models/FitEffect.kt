@@ -158,9 +158,7 @@ data class WriteEventMesg(
     /**
      * @suppress
      */
-    override fun copyWith(values: List<FieldValue>): FitEffectWithValues {
-        return copy(values = values)
-    }
+    override fun copyWith(values: List<FieldValue>): FitEffectWithValues = copy(values = values)
 }
 
 /**
@@ -183,9 +181,7 @@ data class WriteToRecordMesg(
     /**
      * @suppress
      */
-    override fun copyWith(values: List<FieldValue>): FitEffectWithValues {
-        return copy(values = values)
-    }
+    override fun copyWith(values: List<FieldValue>): FitEffectWithValues = copy(values = values)
 }
 
 /**
@@ -208,9 +204,7 @@ data class WriteToSessionMesg(
     /**
      * @suppress
      */
-    override fun copyWith(values: List<FieldValue>): FitEffectWithValues {
-        return copy(values = values)
-    }
+    override fun copyWith(values: List<FieldValue>): FitEffectWithValues = copy(values = values)
 }
 
 /**

@@ -96,7 +96,5 @@ data class RideProfile(
     /**
      * @suppress
      */
-    override fun toString(): String {
-        return "RideProfile($id, name=$name)"
-    }
+    override fun toString(): String = "RideProfile($id, name=$name)"
 }

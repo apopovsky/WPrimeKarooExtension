@@ -379,9 +379,7 @@ data class OnNavigationState(
             /**
              * @suppress
              */
-            override fun toString(): String {
-                return "NavigatingRoute($name, routePolyline=[${routePolyline.length}], routeDistance=$routeDistance, rejoinPolyline=[${rejoinPolyline?.length}], rejoinDistance=$rejoinDistance, reversed=$reversed, breadcrumb=$breadcrumb, pois=${pois.map { "POI(${it.name ?: it.type})" }})"
-            }
+            override fun toString(): String = "NavigatingRoute($name, routePolyline=[${routePolyline.length}], routeDistance=$routeDistance, rejoinPolyline=[${rejoinPolyline?.length}], rejoinDistance=$rejoinDistance, reversed=$reversed, breadcrumb=$breadcrumb, pois=${pois.map { "POI(${it.name ?: it.type})" }})"
         }
 
         /**
@@ -403,9 +401,7 @@ data class OnNavigationState(
             /**
              * @suppress
              */
-            override fun toString(): String {
-                return "NavigatingToDestination($destination, polyline=[${polyline.length}])"
-            }
+            override fun toString(): String = "NavigatingToDestination($destination, polyline=[${polyline.length}])"
         }
     }
 

@@ -14,7 +14,5 @@ import io.hammerhead.karooext.KarooSystemService
 class ServiceModule {
     @Provides
     @ServiceScoped
-    fun provideKarooSystem(@ApplicationContext context: Context): KarooSystemService {
-        return KarooSystemService(context)
-    }
+    fun provideKarooSystem(@ApplicationContext context: Context): KarooSystemService = KarooSystemService(context)
 }

@@ -5,7 +5,7 @@
     id="wprime-id"
     scansDevices="false"
     mapLayer="false"
-    fitFile="false">
+    fitFile="true">
     <DataType
         description="@string/wprime_description"
         displayName="@string/wprime_display_name"

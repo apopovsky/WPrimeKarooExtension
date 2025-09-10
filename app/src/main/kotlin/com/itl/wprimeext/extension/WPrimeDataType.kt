@@ -23,32 +23,22 @@ class WPrimeDataType(
     extension: String,
 ) : WPrimeDataTypeBase(karooSystem, context, extension, "wprime") {
 
-    override fun getDisplayValue(): Double {
-        return getCalculator().getWPrimePercentage()
-    }
+    override fun getDisplayValue(): Double = getCalculator().getWPrimePercentage()
 
     override fun getInitialValue(): Double {
         return 100.0 // Initial value for W Prime percentage
     }
 
-    override fun getFormatDataTypeId(): String {
-        return DataType.Type.PERCENT_MAX_FTP
-    }
+    override fun getFormatDataTypeId(): String = DataType.Type.PERCENT_MAX_FTP
 
-    override fun getDisplayText(value: Double): String {
-        return "${value.toInt()}"
-    }
+    override fun getDisplayText(value: Double): String = "${value.toInt()}"
 
-    override fun getUnitText(): String {
-        return "%"
-    }
+    override fun getUnitText(): String = "%"
 
-    override fun getFieldLabel(wideMode: Boolean): String {
-        return if (wideMode) {
-            "W PRIME (%W')"
-        } else {
-            "W' (%W')"
-        }
+    override fun getFieldLabel(wideMode: Boolean): String = if (wideMode) {
+        "W PRIME (%W')"
+    } else {
+        "W' (%W')"
     }
 
     override fun getNumberVerticalOffset(): Int = 0 // percent view baseline

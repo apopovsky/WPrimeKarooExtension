@@ -39,11 +39,9 @@ val DefaultJson = Json {
 /**
  * @suppress
  */
-inline fun <reified T> T.bundleWithSerializable(packageName: String): Bundle {
-    return Bundle().also {
-        it.putString(BUNDLE_VALUE, DefaultJson.encodeToString(this))
-        it.putString(BUNDLE_PACKAGE, packageName)
-    }
+inline fun <reified T> T.bundleWithSerializable(packageName: String): Bundle = Bundle().also {
+    it.putString(BUNDLE_VALUE, DefaultJson.encodeToString(this))
+    it.putString(BUNDLE_PACKAGE, packageName)
 }
 
 /**
@@ -79,28 +77,26 @@ interface Emitter<T> {
      * @suppress
      */
     companion object {
-        inline fun <reified T> create(packageName: String, handler: IHandler): Emitter<T> {
-            return object : Emitter<T> {
-                private var cancellable: (() -> Unit)? = null
-                override fun onNext(t: T) {
-                    handler.onNext(t.bundleWithSerializable(packageName))
-                }
+        inline fun <reified T> create(packageName: String, handler: IHandler): Emitter<T> = object : Emitter<T> {
+            private var cancellable: (() -> Unit)? = null
+            override fun onNext(t: T) {
+                handler.onNext(t.bundleWithSerializable(packageName))
+            }
 
-                override fun onError(t: Throwable) {
-                    handler.onError(t.message)
-                }
+            override fun onError(t: Throwable) {
+                handler.onError(t.message)
+            }
 
-                override fun onComplete() {
-                    handler.onComplete()
-                }
+            override fun onComplete() {
+                handler.onComplete()
+            }
 
-                override fun setCancellable(cancellable: () -> Unit) {
-                    this.cancellable = cancellable
-                }
+            override fun setCancellable(cancellable: () -> Unit) {
+                this.cancellable = cancellable
+            }
 
-                override fun cancel() {
-                    cancellable?.invoke()
-                }
+            override fun cancel() {
+                cancellable?.invoke()
             }
         }
     }

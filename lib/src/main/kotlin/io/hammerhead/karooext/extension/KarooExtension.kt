@@ -70,9 +70,7 @@ abstract class KarooExtension(
 
     private val binder by lazy {
         object : IKarooExtension.Stub() {
-            override fun libVersion(): String {
-                return EXT_LIB_VERSION
-            }
+            override fun libVersion(): String = EXT_LIB_VERSION
 
             override fun startScan(id: String, handler: IHandler) {
                 val emitter = Emitter.create<Device>(packageName, handler)

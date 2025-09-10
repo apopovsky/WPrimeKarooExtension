@@ -34,10 +34,9 @@ import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.itl.wprimeext.R
-import androidx.glance.unit.ColorProvider as UnitColorProvider
 import io.hammerhead.karooext.models.ViewConfig
 import kotlin.math.roundToInt
-import com.itl.wprimeext.utils.WPrimeLogger
+import androidx.glance.unit.ColorProvider as UnitColorProvider
 
 /**
  * Glance composable for W' display - follows CustomDoubleTypeView pattern
@@ -57,13 +56,8 @@ fun WPrimeGlanceView(
     numberVerticalOffset: Int = 0, // new configurable vertical offset
     targetHeightFraction: Float = 0.5f,
     valueBottomExtraPadding: Int = 0,
-    debugDataTypeId: String? = null,
-    debugGridWidth: Int? = null,
-    debugGridHeight: Int? = null,
-    debugWideMode: Boolean? = null,
-    debugPreview: Boolean? = null,
     fixedCharCount: Int? = null, // NEW
-    sizeScale: Float = 1f // NEW scale multiplier
+    sizeScale: Float = 1f, // NEW scale multiplier
 ) {
     val (textAlign, horizontalAlignment) = when (alignment) {
         ViewConfig.Alignment.LEFT -> TextAlign.Start to Alignment.Start
@@ -76,14 +70,8 @@ fun WPrimeGlanceView(
     val showArrow = !(currentPower < criticalPower && wPrimeIsFull)
 
     val rotationDegrees = if (showArrow) {
-        val rawRotation = when {
-            powerDelta == 0 -> 0f
-            else -> {
-                val rotationRatio = (powerDelta.toFloat() / maxPowerDeltaForFullRotation).coerceIn(-1f, 1f)
-                rotationRatio * 90f
-            }
-        }
-        (rawRotation / 15f).roundToInt() * 15f
+        val rotationRatio = (powerDelta.toFloat() / maxPowerDeltaForFullRotation).coerceIn(-1f, 1f)
+        ((if (powerDelta == 0) 0f else rotationRatio * 90f) / 15f).roundToInt() * 15f
     } else {
         0f
     }
@@ -94,12 +82,6 @@ fun WPrimeGlanceView(
     val iconStartPaddingDp = 8.dp // Consistent with icon display
     // Reserve space for sizing heuristic only if arrow will be shown
     val sizingReservedHorizontal = if (showArrow) iconSizeDp + iconStartPaddingDp else 0.dp
-    // We no longer reserve horizontal space so text stays truly centered while arrow overlays
-    val reservedHorizontalDp = 0.dp
-
-    if (debugDataTypeId != null) {
-        WPrimeLogger.d(WPrimeLogger.Module.UI, "Compose start dt=$debugDataTypeId wide=$debugWideMode grid=${debugGridWidth}x${debugGridHeight} preview=$debugPreview value='$value' textSizeParam=$textSize fixedChars=$fixedCharCount")
-    }
 
     val baseAutoSp = pickTextSizeSp(
         value = value,
@@ -109,48 +91,39 @@ fun WPrimeGlanceView(
         maxSp = textSize, // revert to provided max
         minSp = 24, // Default minimum, can be adjusted
         targetHeightFraction = targetHeightFraction,
-        debugTag = debugDataTypeId,
-        fixedCharCount = fixedCharCount
+        fixedCharCount = fixedCharCount,
     )
-    val scaledAutoSp = (baseAutoSp * sizeScale).toInt().coerceAtLeast(8)
-    val autoTextSp = scaledAutoSp
-    if (debugDataTypeId != null) {
-        WPrimeLogger.d(WPrimeLogger.Module.UI, "Sized dt=$debugDataTypeId arrow=$showArrow reserved=${sizingReservedHorizontal.value}dp widget=${currentWidgetSize.width.value}x${currentWidgetSize.height.value}dp baseSp=$baseAutoSp scale=$sizeScale autoSp=$autoTextSp targetFrac=$targetHeightFraction bottomPadExtra=$valueBottomExtraPadding fixedChars=$fixedCharCount")
-    }
+    val autoTextSp = (baseAutoSp * sizeScale).toInt().coerceAtLeast(8)
 
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
             .cornerRadius(8.dp)
             .background(backgroundColor),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = horizontalAlignment,
             verticalAlignment = Alignment.Top,
-            modifier = GlanceModifier
-                .fillMaxHeight()
-                .wrapContentWidth()
+            modifier = GlanceModifier.fillMaxHeight().wrapContentWidth(),
         ) {
             TitleRow(fieldLabel, textAlign, horizontalAlignment)
-
             Box(
                 modifier = GlanceModifier
                     .fillMaxWidth()
-                    .padding(top = (2 + numberVerticalOffset).dp, bottom = (2 + valueBottomExtraPadding).dp)
+                    .padding(top = (2 + numberVerticalOffset).dp, bottom = (2 + valueBottomExtraPadding).dp),
             ) {
                 Text(
                     text = value,
-                    modifier = GlanceModifier
-                        .fillMaxWidth(),
+                    modifier = GlanceModifier.fillMaxWidth(),
                     style = TextStyle(
                         color = UnitColorProvider(Color.White),
                         fontSize = autoTextSp.sp, // Use dynamically calculated text size
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Normal,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
                     ),
-                    maxLines = 1
+                    maxLines = 1,
                 )
 
                 if (showArrow) {
@@ -159,7 +132,7 @@ fun WPrimeGlanceView(
                         modifier = GlanceModifier
                             .padding(start = iconStartPaddingDp)
                             .height(iconSizeDp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         val arrowDrawableRes = when (rotationDegrees.roundToInt()) {
                             -90 -> R.drawable.ic_direction_arrow_n90
@@ -181,7 +154,7 @@ fun WPrimeGlanceView(
                             provider = ImageProvider(arrowDrawableRes),
                             contentDescription = "W' Trend",
                             modifier = GlanceModifier.size(iconSizeDp),
-                            colorFilter = ColorFilter.tint(ColorProvider(Color.White))
+                            colorFilter = ColorFilter.tint(ColorProvider(Color.White)),
                         )
                     }
                 }
@@ -202,7 +175,7 @@ private fun TitleRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = GlanceModifier
             .padding(0.dp)
-            .height(22.dp) // This height is used in pickTextSizeSp
+            .height(22.dp), // This height is used in pickTextSizeSp
     ) {
         Image(
             provider = ImageProvider(R.drawable.ic_wprime_battery),
@@ -216,46 +189,11 @@ private fun TitleRow(
                 fontSize = 18.sp,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Normal,
-                textAlign = textAlign
-            )
+                textAlign = textAlign,
+            ),
         )
     }
 }
-
-// NOTE: NumberRow is no longer used directly if Text is inside the Box in WPrimeGlanceView
-// Keeping it for now in case it's used elsewhere or for reference, but it can be removed
-// if WPrimeGlanceView's structure is final.
-@SuppressLint("RestrictedApi")
-@Composable
-private fun NumberRow(
-    text: String,
-    textAlign: TextAlign,
-    horizontalAlignment: Alignment.Horizontal,
-    textSize: Int,
-    numberVerticalOffset: Int // This parameter is no longer passed from WPrimeGlanceView
-) {
-    Row(
-        modifier = GlanceModifier
-            .padding(top = numberVerticalOffset.dp)
-            .fillMaxWidth(),
-        horizontalAlignment = horizontalAlignment,
-        verticalAlignment = Alignment.Top
-    ) {
-        Text(
-            text = text,
-            modifier = GlanceModifier
-                .fillMaxWidth(),
-            style = TextStyle(
-                color = UnitColorProvider(Color.White),
-                fontSize = textSize.sp,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Normal,
-                textAlign = textAlign
-            )
-        )
-    }
-}
-
 
 /**
  * Glance composable for "Not Available" or "Searching" states
@@ -270,7 +208,7 @@ fun WPrimeNotAvailableGlanceView(
         modifier = GlanceModifier
             .fillMaxSize()
             .let { if (isKaroo3) it.cornerRadius(8.dp) else it }
-            .padding(1.dp)
+            .padding(1.dp),
     ) {
         Column(
             modifier = GlanceModifier
@@ -278,7 +216,7 @@ fun WPrimeNotAvailableGlanceView(
                 .background(Color.Gray)
                 .padding(8.dp), // This padding is used as 'margins' in pickTextSizeSp
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalAlignment = Alignment.Vertical.CenterVertically
+            verticalAlignment = Alignment.Vertical.CenterVertically,
         ) {
             Text(
                 text = message,
@@ -286,30 +224,16 @@ fun WPrimeNotAvailableGlanceView(
                     color = UnitColorProvider(Color.White),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
+                    textAlign = TextAlign.Center,
+                ),
             )
         }
     }
 }
 
 // Helper functions for dynamic text sizing
-private fun effectiveCharUnits(text: String): Float {
-    var units = 0f
-    for (c in text) {
-        units += when (c) {
-            '1' -> 0.7f
-            '.', ',' -> 0.35f
-            '-', '+', ' ' -> 0.6f
-            else -> 1.0f
-        }
-    }
-    return units.coerceAtLeast(1f)
-}
-
-// factor ~ ancho de un carácter monospace en dp por sp
-private const val CHAR_WIDTH_FACTOR = 0.62f // Needs tuning
-private const val LINE_HEIGHT_FACTOR = 1.2f // Needs tuning
+private const val CHAR_WIDTH_FACTOR = 0.62f
+private const val LINE_HEIGHT_FACTOR = 1.2f
 
 private fun pickTextSizeSp(
     value: String,
@@ -319,13 +243,14 @@ private fun pickTextSizeSp(
     maxSp: Int,
     minSp: Int = 24,
     targetHeightFraction: Float = 0.5f,
-    debugTag: String? = null,
-    fixedCharCount: Int? = null
+    fixedCharCount: Int? = null,
 ): Int {
     val safeMax = if (maxSp < minSp) minSp else maxSp
-    if (widgetWidth == Dp.Unspecified || widgetHeight == Dp.Unspecified ||
-        widgetWidth.value <= 0f || widgetHeight.value <= 0f) {
-        debugTag?.let { WPrimeLogger.d(WPrimeLogger.Module.UI, "pickSize early-unspecified dt=$it returning=$safeMax") }
+    if (widgetWidth == Dp.Unspecified ||
+        widgetHeight == Dp.Unspecified ||
+        widgetWidth.value <= 0f ||
+        widgetHeight.value <= 0f
+    ) {
         return safeMax
     }
     val availW = (widgetWidth - reservedHorizontal * 2 - 4.dp).coerceAtLeast(0.dp).value
@@ -333,7 +258,6 @@ private fun pickTextSizeSp(
     val verticalMargins = 8.dp
     val availH = (widgetHeight - titleRowHeight - verticalMargins).coerceAtLeast(0.dp).value
     if (availW <= 0f || availH <= 0f) {
-        debugTag?.let { WPrimeLogger.d(WPrimeLogger.Module.UI, "pickSize no-space dt=$it returning=$safeMax") }
         return safeMax
     }
 
@@ -348,23 +272,16 @@ private fun pickTextSizeSp(
     val raw = fromWidth.coerceAtMost(fromHeight)
     val clamped = raw.coerceIn(minSp.toFloat(), safeMax.toFloat())
 
-    if (debugTag != null) {
-        WPrimeLogger.d(WPrimeLogger.Module.UI, "pickSize dt=$debugTag fixedChars=$fixedCharCount valueLen=${value.length} availW=$availW availH=$availH fromW=${"%.1f".format(fromWidth)} fromH=${"%.1f".format(fromHeight)} raw=${"%.1f".format(raw)} clamped=${"%.1f".format(clamped)}")
-    }
-
     // For fixedCharCount we skip quantization to preserve precise scaling
     if (fixedCharCount != null) return clamped.toInt()
 
     // Previous quantization for percentage case if not fixed
     val steps = listOf(64, 56, 50, 46, 42, 38, 34, 32, 30, 28, 26, 24)
     val stepped = steps.firstOrNull { clamped >= it && it <= safeMax } ?: steps.last { it <= safeMax }
-    if (debugTag != null) {
-        WPrimeLogger.d(WPrimeLogger.Module.UI, "pickSize dt=$debugTag stepped=$stepped (no fixedCharCount)")
-    }
     return stepped
 }
 
-
+@Suppress("unused")
 @SuppressLint("RestrictedApi")
 @OptIn(ExperimentalGlancePreviewApi::class)
 @Preview(widthDp = 420, heightDp = 150)
@@ -379,10 +296,11 @@ fun WPrimeGlanceViewPreview() {
         wPrimePercentage = 0.65f,
         textSize = 50, // This is maxSp
         alignment = ViewConfig.Alignment.CENTER,
-        maxPowerDeltaForFullRotation = 150
+        maxPowerDeltaForFullRotation = 150,
     )
 }
 
+@Suppress("unused")
 @SuppressLint("RestrictedApi")
 @OptIn(ExperimentalGlancePreviewApi::class)
 @Preview(widthDp = 200, heightDp = 150)
@@ -397,10 +315,11 @@ fun WPrimeGlanceViewPreview_Recovering() {
         wPrimePercentage = 0.9f,
         textSize = 50, // This is maxSp
         alignment = ViewConfig.Alignment.CENTER,
-        maxPowerDeltaForFullRotation = 150
+        maxPowerDeltaForFullRotation = 150,
     )
 }
 
+@Suppress("unused")
 @SuppressLint("RestrictedApi")
 @OptIn(ExperimentalGlancePreviewApi::class)
 @Preview(widthDp = 200, heightDp = 150)
@@ -415,10 +334,11 @@ fun WPrimeGlanceViewPreview_FullNoArrow() {
         wPrimePercentage = 1.0f,
         textSize = 50, // This is maxSp
         alignment = ViewConfig.Alignment.CENTER,
-        maxPowerDeltaForFullRotation = 150
+        maxPowerDeltaForFullRotation = 150,
     )
 }
 
+@Suppress("unused")
 @SuppressLint("RestrictedApi")
 @OptIn(ExperimentalGlancePreviewApi::class)
 @Preview(widthDp = 200, heightDp = 150)
@@ -433,10 +353,11 @@ fun WPrimeGlanceViewPreview_MaxEffort() {
         wPrimePercentage = 0.1f,
         textSize = 50, // This is maxSp
         alignment = ViewConfig.Alignment.CENTER,
-        maxPowerDeltaForFullRotation = 150
+        maxPowerDeltaForFullRotation = 150,
     )
 }
 
+@Suppress("unused")
 @SuppressLint("RestrictedApi")
 @OptIn(ExperimentalGlancePreviewApi::class)
 @Preview(widthDp = 200, heightDp = 150)
@@ -451,6 +372,6 @@ fun WPrimeGlanceViewPreview_Neutral() {
         wPrimePercentage = 0.75f,
         textSize = 50, // This is maxSp
         alignment = ViewConfig.Alignment.CENTER,
-        maxPowerDeltaForFullRotation = 150
+        maxPowerDeltaForFullRotation = 150,
     )
 }

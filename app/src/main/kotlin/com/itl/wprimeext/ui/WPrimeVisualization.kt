@@ -16,23 +16,27 @@ package com.itl.wprimeext.ui
 import androidx.compose.ui.graphics.Color
 
 /**
- * Color calculation functions for W' visualization
+ * Color calculation for W' visualization based on power ratio relative to Critical Power.
+ * Thresholds (powerRatio = currentPower / CP):
+ *  < 0.90  -> recovery green (#109c77)
+ *  < 1.00  -> light green (#59c496)
+ *  < 1.10  -> yellow (#e6de26)
+ *  < 1.25  -> mid orange (#e48f73)
+ *  < 1.40  -> orange (#e5683c)
+ *  < 1.60  -> red (#c7292a)
+ *  >= 1.60 -> max violet (#af26a0)
  */
 fun calculateWPrimeColor(smoothedPower3s: Double, criticalPower: Double): Color {
+    if (criticalPower <= 0.0) return Color(0xFF109C77) // safe fallback
     val powerRatio = smoothedPower3s / criticalPower
 
     return when {
-        // Recovering (power below CP) - Green tones
-        powerRatio <= 0.50 -> Color(0xFF2E7D32) // Verde oscuro - recuperación muy rápida
-        powerRatio <= 0.70 -> Color(0xFF388E3C) // Verde medio - recuperación rápida
-        powerRatio <= 0.85 -> Color(0xFF4CAF50) // Verde - recuperación moderada
-        powerRatio <= 1.00 -> Color(0xFF66BB6A) // Verde claro - recuperación lenta
-
-        // Above CP (discharging W') - Yellow to Purple based on intensity
-        powerRatio <= 1.10 -> Color(0xFFFFEB3B) // Amarillo - ligeramente sobre CP
-        powerRatio <= 1.25 -> Color(0xFFFF9800) // Naranja - moderadamente sobre CP
-        powerRatio <= 1.50 -> Color(0xFFFF5722) // Rojo naranja - esfuerzo alto
-        powerRatio <= 2.00 -> Color(0xFFE91E63) // Rojo - esfuerzo muy alto
-        else -> Color(0xFF9C27B0) // Violeta - esfuerzo extremo que agota W' muy rápido
+        powerRatio < 0.90 -> Color(0xFF109C77) // recovery green
+        powerRatio < 1.00 -> Color(0xFF59C496) // light green near CP
+        powerRatio < 1.10 -> Color(0xFFE6DE26) // yellow
+        powerRatio < 1.25 -> Color(0xFFE48F73) // mid orange
+        powerRatio < 1.40 -> Color(0xFFE5683C) // orange
+        powerRatio < 1.60 -> Color(0xFFC7292A) // red
+        else -> Color(0xFFAF26A0) // max violet
     }
 }

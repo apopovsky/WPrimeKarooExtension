@@ -34,15 +34,13 @@ enum class BatteryStatus {
     ;
 
     companion object {
-        fun fromPercentage(percentage: Int): BatteryStatus {
-            return when {
-                percentage > 95 -> NEW
-                percentage > 80 -> GOOD
-                percentage > 45 -> OK
-                percentage > 15 -> LOW
-                percentage > 0 -> CRITICAL
-                else -> INVALID
-            }
+        fun fromPercentage(percentage: Int): BatteryStatus = when {
+            percentage > 95 -> NEW
+            percentage > 80 -> GOOD
+            percentage > 45 -> OK
+            percentage > 15 -> LOW
+            percentage > 0 -> CRITICAL
+            else -> INVALID
         }
     }
 }

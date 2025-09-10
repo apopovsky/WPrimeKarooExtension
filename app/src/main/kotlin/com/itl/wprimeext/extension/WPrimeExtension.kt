@@ -35,7 +35,6 @@ import io.hammerhead.karooext.models.KarooEffect
 import io.hammerhead.karooext.models.RideState
 import io.hammerhead.karooext.models.StreamState
 import io.hammerhead.karooext.models.SystemNotification
-import io.hammerhead.karooext.models.WriteEventMesg
 import io.hammerhead.karooext.models.WriteToRecordMesg
 import io.hammerhead.karooext.models.WriteToSessionMesg
 import kotlinx.coroutines.CoroutineScope
@@ -43,11 +42,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 import kotlin.reflect.full.createInstance
 import kotlin.uuid.ExperimentalUuidApi
@@ -67,69 +67,70 @@ class WPrimeExtension : KarooExtension("wprime-id", "1.0") {
         )
     }
 
-    private val doughnutsField by lazy {
+    private val wPrimeJField by lazy {
         DeveloperField(
-            fieldDefinitionNumber = 0,
-            fitBaseTypeId = 136, // FitBaseType.Float32
-            fieldName = "Doughnuts Earned",
-            units = "doughnuts",
+            fieldDefinitionNumber = 1,
+            fitBaseTypeId = 134, // FitBaseType.UInt32 (W' stored in Joules, fits in positive int range)
+            fieldName = "WPrimeJ",
+            units = "J",
+        )
+    }
+    private val wPrimePctField by lazy {
+        DeveloperField(
+            fieldDefinitionNumber = 2,
+            fitBaseTypeId = 132, // FitBaseType.UInt16 (percentage 0-100)
+            fieldName = "WPrimePct",
+            units = "%",
         )
     }
 
     override fun startFit(emitter: Emitter<FitEffect>) {
         val job = CoroutineScope(Dispatchers.IO).launch {
-            karooSystem.streamDataFlow(DataType.Type.ELAPSED_TIME)
-                .mapNotNull { (it as? StreamState.Streaming)?.dataPoint?.singleValue?.div(1000) }
-                .combine(karooSystem.consumerFlow<RideState>()) { seconds, rideState ->
-                    Pair(seconds, rideState)
+            // Initialize settings & calculator (mirror logic from data types)
+            val settings = WPrimeSettings(this@WPrimeExtension)
+            val initialConfig = settings.configuration.first()
+            val calculator = WPrimeCalculator(
+                criticalPower = initialConfig.criticalPower,
+                anaerobicCapacity = initialConfig.anaerobicCapacity,
+                tauRecovery = initialConfig.tauRecovery,
+            )
+            // Keep calculator updated with config changes
+            launch {
+                settings.configuration.collect { cfg ->
+                    calculator.updateConfiguration(
+                        cfg.criticalPower,
+                        cfg.anaerobicCapacity,
+                        cfg.tauRecovery,
+                    )
                 }
-                .collect { (seconds, rideState) ->
-                    // One to start and another one earned every 20 minutes (rounded to 0.1)
-                    val doughnuts = 1 + (seconds / 120.0).roundToInt() / 10.0
-                    val doughnutsField = FieldValue(doughnutsField, doughnuts)
-                    when (rideState) {
-                        is RideState.Idle -> {}
-                        // When paused, write to SessionMesg so it's committed infrequently
-                        // Last set will be saved at end of activity
-                        is RideState.Paused -> {
-                            WPrimeLogger.logDataFlow(WPrimeLogger.Module.EXTENSION, "FIT session write", "doughnuts: $doughnuts")
-                            emitter.onNext(WriteToSessionMesg(doughnutsField))
-                        }
-                        // When recording, write doughnuts and power to record messages
-                        is RideState.Recording -> {
-                            WPrimeLogger.logDataFlow(WPrimeLogger.Module.EXTENSION, "FIT record write", "doughnuts: $doughnuts")
-                            emitter.onNext(WriteToRecordMesg(doughnutsField))
+            }
 
-                            // Power: saw-tooth [100, 200]
-                            val fakePower = 100 + seconds.mod(200.0).minus(100).absoluteValue
-                            WPrimeLogger.logDataFlow(WPrimeLogger.Module.EXTENSION, "Fake power generated", "${fakePower}W at ${seconds}s")
-                            emitter.onNext(
-                                WriteToRecordMesg(
-                                    /**
-                                     * From FIT SDK:
-                                     * public static final int PowerFieldNum = 7;
-                                     */
-                                    FieldValue(7, fakePower),
-                                ),
-                            )
+            karooSystem.streamDataFlow(DataType.Type.POWER)
+                .combine(karooSystem.consumerFlow<RideState>()) { powerState, rideState ->
+                    Pair(powerState, rideState)
+                }
+                .collectLatest { (powerState, rideState) ->
+                    val streaming = powerState as? StreamState.Streaming
+                    val power = streaming?.dataPoint?.singleValue ?: 0.0
+                    // Update calculator timestamped
+                    calculator.updatePower(power, System.currentTimeMillis())
+                    val wPrimeJ = calculator.getCurrentWPrime().roundToInt().coerceAtLeast(0)
+                    val wPrimePct = calculator.getWPrimePercentage().roundToInt().coerceIn(0, 100)
+                    val fieldJ = FieldValue(wPrimeJField, wPrimeJ.toDouble())
+                    val fieldPct = FieldValue(wPrimePctField, wPrimePct.toDouble())
+                    when (rideState) {
+                        is RideState.Idle -> { /* no write */ }
+                        is RideState.Paused -> {
+                            // Session-level write (infrequent)
+                            emitter.onNext(WriteToSessionMesg(listOf(fieldJ, fieldPct)))
                         }
-                    }
-                    if (seconds == 42.0) {
-                        // Off-course marker at 42 seconds with doughnuts included
-                        WPrimeLogger.i(WPrimeLogger.Module.EXTENSION, LogConstants.FIT_EVENT_WRITTEN + " - Off-course marker at 42s")
-                        emitter.onNext(
-                            WriteEventMesg(
-                                event = 7, // OFF_COURSE((short)7),
-                                eventType = 3, // MARKER((short)3),
-                                values = listOf(doughnutsField),
-                            ),
-                        )
+                        is RideState.Recording -> {
+                            emitter.onNext(WriteToRecordMesg(listOf(fieldJ, fieldPct)))
+                        }
                     }
                 }
         }
-        emitter.setCancellable {
-            job.cancel()
-        }
+        emitter.setCancellable { job.cancel() }
     }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")

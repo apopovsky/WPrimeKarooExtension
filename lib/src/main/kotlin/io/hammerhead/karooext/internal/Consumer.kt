@@ -24,10 +24,8 @@ import timber.log.Timber
 /**
  * @suppress
  */
-inline fun <reified T> Bundle.serializableFromBundle(): T? {
-    return getString(BUNDLE_VALUE)?.let {
-        DefaultJson.decodeFromString(it)
-    }
+inline fun <reified T> Bundle.serializableFromBundle(): T? = getString(BUNDLE_VALUE)?.let {
+    DefaultJson.decodeFromString(it)
 }
 
 /**
@@ -37,22 +35,20 @@ inline fun <reified T> createConsumer(
     crossinline onNextCallback: (T) -> Unit,
     noinline onErrorCallback: (String) -> Unit,
     noinline onCompleteCallback: () -> Unit,
-): IHandler {
-    return object : IHandler.Stub() {
-        override fun onNext(bundle: Bundle) {
-            bundle.serializableFromBundle<T>()?.let {
-                onNextCallback(it)
-            } ?: run {
-                Timber.w("onNext got [${bundle.getString(BUNDLE_VALUE)}] in bundle but couldn't deserialize")
-            }
+): IHandler = object : IHandler.Stub() {
+    override fun onNext(bundle: Bundle) {
+        bundle.serializableFromBundle<T>()?.let {
+            onNextCallback(it)
+        } ?: run {
+            Timber.w("onNext got [${bundle.getString(BUNDLE_VALUE)}] in bundle but couldn't deserialize")
         }
+    }
 
-        override fun onError(msg: String) {
-            onErrorCallback.invoke(msg)
-        }
+    override fun onError(msg: String) {
+        onErrorCallback.invoke(msg)
+    }
 
-        override fun onComplete() {
-            onCompleteCallback.invoke()
-        }
+    override fun onComplete() {
+        onCompleteCallback.invoke()
     }
 }

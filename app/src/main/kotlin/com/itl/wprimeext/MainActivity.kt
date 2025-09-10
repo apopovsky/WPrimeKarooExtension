@@ -18,7 +18,6 @@ package com.itl.wprimeext
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -41,12 +40,6 @@ fun Main() {
 @SuppressLint("SetTextI18n")
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
-    fun simulateBackPress() {
-        dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK))
-        dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BACK))
-    }
-
     @SuppressLint("InlinedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -40,12 +40,10 @@ class WPrimeKjDataType(
 
     override fun getUnitText(): String = "J"
 
-    override fun getFieldLabel(wideMode: Boolean): String {
-        return if (wideMode) {
-            "W PRIME (J)"
-        } else {
-            "W' (J)"
-        }
+    override fun getFieldLabel(wideMode: Boolean): String = if (wideMode) {
+        "W PRIME (J)"
+    } else {
+        "W' (J)"
     }
 
     override fun getNumberVerticalOffset(): Int = 0 // align baseline

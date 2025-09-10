@@ -120,7 +120,7 @@ fun ConfigurationScreen() {
             // FAB posicionado como en ki2: esquina inferior izquierda con margen
             FloatingActionButton(
                 onClick = {
-                    (context as? MainActivity)?.simulateBackPress()
+                    (context as? MainActivity)?.finish()
                 },
                 modifier = Modifier
                     .align(Alignment.BottomStart)
