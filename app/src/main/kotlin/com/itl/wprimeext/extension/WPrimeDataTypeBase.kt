@@ -22,7 +22,7 @@ import androidx.glance.appwidget.GlanceRemoteViews
 import androidx.glance.unit.ColorProvider
 import com.itl.wprimeext.ui.WPrimeGlanceView
 import com.itl.wprimeext.ui.WPrimeNotAvailableGlanceView
-import com.itl.wprimeext.ui.calculateWPrimeColor
+import com.itl.wprimeext.ui.calculateWPrimeColors
 import com.itl.wprimeext.utils.LogConstants
 import com.itl.wprimeext.utils.WPrimeLogger
 import io.hammerhead.karooext.KarooSystemService
@@ -48,7 +48,7 @@ import kotlin.math.sin
 @OptIn(ExperimentalGlanceRemoteViewsApi::class)
 abstract class WPrimeDataTypeBase(
     private val karooSystem: KarooSystemService,
-    private val context: Context,
+    context: Context,
     extension: String,
     typeId: String,
 ) : DataTypeImpl(extension, typeId) {
@@ -66,6 +66,7 @@ abstract class WPrimeDataTypeBase(
     data class WPrimeDisplayData(
         val displayValue: Double,
         val backgroundColor: Color,
+        val textColor: Color,
         val currentPower: Int,
         val criticalPower: Int,
         val wPrimePercentage: Float,
@@ -112,8 +113,8 @@ abstract class WPrimeDataTypeBase(
                     ),
                 )
 
-                // Stream real power data for W Prime calculation
-                val powerFlow = karooSystem.streamDataFlow(DataType.Type.POWER)
+                // Stream 3s smoothed power data for W Prime calculation
+                val powerFlow = karooSystem.streamDataFlow(DataType.Type.SMOOTHED_3S_AVERAGE_POWER)
                 powerFlow.collect { power ->
                     when (power) {
                         is StreamState.Streaming -> {
@@ -230,6 +231,7 @@ abstract class WPrimeDataTypeBase(
                                         value = getDisplayText(data.displayValue),
                                         fieldLabel = getFieldLabel(wideMode),
                                         backgroundColor = ColorProvider(data.backgroundColor),
+                                        textColor = ColorProvider(data.textColor), // Pass the calculated text color
                                         currentPower = data.currentPower,
                                         criticalPower = data.criticalPower,
                                         wPrimePercentage = data.wPrimePercentage,
@@ -281,13 +283,14 @@ abstract class WPrimeDataTypeBase(
             // Simulate W' calculation for preview
             wprimeCalculator.updatePower(previewPower, System.currentTimeMillis())
             val displayValue = getDisplayValue()
-            val backgroundColor = calculateDisplayColor(previewPower)
+            val (backgroundColor, textColor) = calculateDisplayColors(previewPower)
             val wPrimePercentage = (displayValue / configuration.anaerobicCapacity).toFloat().coerceIn(0f, 1f)
 
             emit(
                 WPrimeDisplayData(
                     displayValue = displayValue,
                     backgroundColor = backgroundColor,
+                    textColor = textColor,
                     currentPower = previewPower.toInt(),
                     criticalPower = configuration.criticalPower.toInt(),
                     wPrimePercentage = wPrimePercentage,
@@ -300,14 +303,14 @@ abstract class WPrimeDataTypeBase(
     }
 
     private fun streamRealWPrimeData(): Flow<WPrimeDisplayData> = flow {
-        val powerFlow = karooSystem.streamDataFlow(DataType.Type.POWER)
+        val powerFlow = karooSystem.streamDataFlow(DataType.Type.SMOOTHED_3S_AVERAGE_POWER)
         powerFlow.collect { power ->
             when (power) {
                 is StreamState.Streaming -> {
                     val powerValue = power.dataPoint.singleValue ?: 0.0
                     wprimeCalculator.updatePower(powerValue, System.currentTimeMillis())
                     val displayValue = getDisplayValue()
-                    val backgroundColor = calculateDisplayColor(powerValue)
+                    val (backgroundColor, textColor) = calculateDisplayColors(powerValue)
                     val criticalPower = wprimeCalculator.getCriticalPower()
                     val anaerobicCapacity = wprimeCalculator.getAnaerobicCapacity()
                     val wPrimePercentage = (displayValue / anaerobicCapacity).toFloat().coerceIn(0f, 1f)
@@ -316,6 +319,7 @@ abstract class WPrimeDataTypeBase(
                         WPrimeDisplayData(
                             displayValue = displayValue,
                             backgroundColor = backgroundColor,
+                            textColor = textColor,
                             currentPower = powerValue.toInt(),
                             criticalPower = criticalPower.toInt(),
                             wPrimePercentage = wPrimePercentage,
@@ -325,7 +329,7 @@ abstract class WPrimeDataTypeBase(
                 is StreamState.NotAvailable, is StreamState.Searching -> {
                     // Use default/initial values when power data not available
                     val displayValue = getInitialValue()
-                    val backgroundColor = calculateDisplayColor(0.0)
+                    val (backgroundColor, textColor) = calculateDisplayColors(0.0)
                     val criticalPower = wprimeCalculator.getCriticalPower()
                     val anaerobicCapacity = wprimeCalculator.getAnaerobicCapacity()
                     val wPrimePercentage = (displayValue / anaerobicCapacity).toFloat().coerceIn(0f, 1f)
@@ -334,6 +338,7 @@ abstract class WPrimeDataTypeBase(
                         WPrimeDisplayData(
                             displayValue = displayValue,
                             backgroundColor = backgroundColor,
+                            textColor = textColor,
                             currentPower = 0,
                             criticalPower = criticalPower.toInt(),
                             wPrimePercentage = wPrimePercentage,
@@ -343,7 +348,7 @@ abstract class WPrimeDataTypeBase(
                 else -> {
                     // Handle other cases with safe defaults
                     val displayValue = getInitialValue()
-                    val backgroundColor = calculateDisplayColor(0.0)
+                    val (backgroundColor, textColor) = calculateDisplayColors(0.0)
                     val criticalPower = wprimeCalculator.getCriticalPower()
                     val anaerobicCapacity = wprimeCalculator.getAnaerobicCapacity()
                     val wPrimePercentage = (displayValue / anaerobicCapacity).toFloat().coerceIn(0f, 1f)
@@ -352,6 +357,7 @@ abstract class WPrimeDataTypeBase(
                         WPrimeDisplayData(
                             displayValue = displayValue,
                             backgroundColor = backgroundColor,
+                            textColor = textColor,
                             currentPower = 0,
                             criticalPower = criticalPower.toInt(),
                             wPrimePercentage = wPrimePercentage,
@@ -362,12 +368,27 @@ abstract class WPrimeDataTypeBase(
         }
     }
 
-    private fun calculateDisplayColor(currentPower: Double = 0.0): Color {
-        // Get current configuration for critical power
+    private fun calculateDisplayColors(currentPower: Double = 0.0): Pair<Color, Color> {
+        // Get current configuration for critical power and W' percentage
         val criticalPower = wprimeCalculator.getCriticalPower()
+        val wPrimePercentage = wprimeCalculator.getWPrimePercentage() / 100.0 // Convert to 0-1 range
 
-        // Use current power (3s smoothed would be ideal, but we'll use current power for now)
-        return calculateWPrimeColor(currentPower, criticalPower)
+        // Log the values for debugging
+        WPrimeLogger.d(
+            WPrimeLogger.Module.DATA_TYPE,
+            "Color calculation - Power: ${currentPower}W, CP: ${criticalPower}W, W': ${(wPrimePercentage * 100).toInt()}%"
+        )
+
+        // Use current power (3s smoothed) and W' percentage for color calculation
+        val colors = calculateWPrimeColors(currentPower, criticalPower, wPrimePercentage)
+
+        // Log the determined colors
+        WPrimeLogger.d(
+            WPrimeLogger.Module.DATA_TYPE,
+            "Determined colors: BG=#${colors.backgroundColor.value.toString(16).uppercase().padStart(8, '0')}, Text=#${colors.textColor.value.toString(16).uppercase().padStart(8, '0')} for power=${currentPower}W, CP=${criticalPower}W, W'=${(wPrimePercentage * 100).toInt()}%"
+        )
+
+        return Pair(colors.backgroundColor, colors.textColor)
     }
 
     private fun generatePreviewPowerData(simulationTime: Double, criticalPower: Double): Double {

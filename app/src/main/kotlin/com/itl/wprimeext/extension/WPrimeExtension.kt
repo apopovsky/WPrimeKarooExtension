@@ -105,14 +105,14 @@ class WPrimeExtension : KarooExtension("wprime-id", "1.0") {
                 }
             }
 
-            karooSystem.streamDataFlow(DataType.Type.POWER)
+            karooSystem.streamDataFlow(DataType.Type.SMOOTHED_3S_AVERAGE_POWER)
                 .combine(karooSystem.consumerFlow<RideState>()) { powerState, rideState ->
                     Pair(powerState, rideState)
                 }
                 .collectLatest { (powerState, rideState) ->
                     val streaming = powerState as? StreamState.Streaming
                     val power = streaming?.dataPoint?.singleValue ?: 0.0
-                    // Update calculator timestamped
+                    // Update calculator with 3s smoothed power for more stable W' calculations
                     calculator.updatePower(power, System.currentTimeMillis())
                     val wPrimeJ = calculator.getCurrentWPrime().roundToInt().coerceAtLeast(0)
                     val wPrimePct = calculator.getWPrimePercentage().roundToInt().coerceIn(0, 100)

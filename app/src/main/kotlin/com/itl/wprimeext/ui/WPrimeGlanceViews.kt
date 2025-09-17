@@ -32,7 +32,6 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
-import androidx.glance.unit.ColorProvider
 import com.itl.wprimeext.R
 import io.hammerhead.karooext.models.ViewConfig
 import kotlin.math.roundToInt
@@ -47,6 +46,7 @@ fun WPrimeGlanceView(
     value: String,
     fieldLabel: String,
     backgroundColor: UnitColorProvider,
+    textColor: UnitColorProvider = UnitColorProvider(Color.White), // New parameter for text color
     currentPower: Int,
     criticalPower: Int,
     wPrimePercentage: Float,
@@ -67,13 +67,22 @@ fun WPrimeGlanceView(
 
     val powerDelta = currentPower - criticalPower
     val wPrimeIsFull = wPrimePercentage >= 0.99f
-    val showArrow = !(currentPower < criticalPower && wPrimeIsFull)
+    val isAtMaxWithLowPower = currentPower < criticalPower && wPrimeIsFull
 
-    val rotationDegrees = if (showArrow) {
-        val rotationRatio = (powerDelta.toFloat() / maxPowerDeltaForFullRotation).coerceIn(-1f, 1f)
-        ((if (powerDelta == 0) 0f else rotationRatio * 90f) / 15f).roundToInt() * 15f
+    // Log arrow calculation values for debugging
+    println("WPrimeGlanceView - currentPower: ${currentPower}W, criticalPower: ${criticalPower}W, wPrimePercentage: ${wPrimePercentage}, wPrimeIsFull: ${wPrimeIsFull}, isAtMaxWithLowPower: ${isAtMaxWithLowPower}")
+
+    // Always show arrow, but force horizontal when at max with low power
+    val showArrow = true
+
+    val rotationDegrees = if (isAtMaxWithLowPower) {
+        println("WPrimeGlanceView - Setting horizontal arrow (0°) for max W' with low power")
+        0f // Force horizontal arrow when at 100% with power below CP
     } else {
-        0f
+        val rotationRatio = (powerDelta.toFloat() / maxPowerDeltaForFullRotation).coerceIn(-1f, 1f)
+        val degrees = ((if (powerDelta == 0) 0f else rotationRatio * 90f) / 15f).roundToInt() * 15f
+        println("WPrimeGlanceView - Setting calculated arrow rotation: ${degrees}° (powerDelta: ${powerDelta}W)")
+        degrees
     }
 
     // Dynamic text size calculation
@@ -98,7 +107,7 @@ fun WPrimeGlanceView(
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .cornerRadius(8.dp)
+            .cornerRadius(12.dp)
             .background(backgroundColor),
         contentAlignment = Alignment.Center,
     ) {
@@ -107,7 +116,7 @@ fun WPrimeGlanceView(
             verticalAlignment = Alignment.Top,
             modifier = GlanceModifier.fillMaxHeight().wrapContentWidth(),
         ) {
-            TitleRow(fieldLabel, textAlign, horizontalAlignment)
+            TitleRow(fieldLabel, textAlign, horizontalAlignment, textColor) // Pass textColor parameter
             Box(
                 modifier = GlanceModifier
                     .fillMaxWidth()
@@ -117,7 +126,7 @@ fun WPrimeGlanceView(
                     text = value,
                     modifier = GlanceModifier.fillMaxWidth(),
                     style = TextStyle(
-                        color = UnitColorProvider(Color.White),
+                        color = textColor, // Use the provided text color instead of hardcoded white
                         fontSize = autoTextSp.sp, // Use dynamically calculated text size
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Normal,
@@ -154,7 +163,7 @@ fun WPrimeGlanceView(
                             provider = ImageProvider(arrowDrawableRes),
                             contentDescription = "W' Trend",
                             modifier = GlanceModifier.size(iconSizeDp),
-                            colorFilter = ColorFilter.tint(ColorProvider(Color.White)),
+                            colorFilter = ColorFilter.tint(textColor),
                         )
                     }
                 }
@@ -169,6 +178,7 @@ private fun TitleRow(
     text: String,
     textAlign: TextAlign,
     horizontalAlignment: Alignment.Horizontal,
+    textColor: UnitColorProvider, // Add textColor parameter
 ) {
     Row(
         horizontalAlignment = horizontalAlignment,
@@ -185,7 +195,7 @@ private fun TitleRow(
         Text(
             text = text,
             style = TextStyle(
-                color = UnitColorProvider(Color.White),
+                color = textColor, // Use the passed textColor
                 fontSize = 18.sp,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Normal,
@@ -207,7 +217,7 @@ fun WPrimeNotAvailableGlanceView(
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .let { if (isKaroo3) it.cornerRadius(8.dp) else it }
+            .let { if (isKaroo3) it.cornerRadius(12.dp) else it.cornerRadius(0.dp) }
             .padding(1.dp),
     ) {
         Column(

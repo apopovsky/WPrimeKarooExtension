@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 
 /**
  * Color calculation for W' visualization based on power ratio relative to Critical Power.
+ * Special case: Light blue when at max W' (100%) with power below CP (stable state)
  * Thresholds (powerRatio = currentPower / CP):
  *  < 0.90  -> recovery green (#109c77)
  *  < 1.00  -> light green (#59c496)
@@ -26,17 +27,30 @@ import androidx.compose.ui.graphics.Color
  *  < 1.60  -> red (#c7292a)
  *  >= 1.60 -> max violet (#af26a0)
  */
-fun calculateWPrimeColor(smoothedPower3s: Double, criticalPower: Double): Color {
-    if (criticalPower <= 0.0) return Color(0xFF109C77) // safe fallback
+
+data class WPrimeColors(
+    val backgroundColor: Color,
+    val textColor: Color
+)
+
+fun calculateWPrimeColors(smoothedPower3s: Double, criticalPower: Double, wPrimePercentage: Double = -1.0): WPrimeColors {
+    if (criticalPower <= 0.0) return WPrimeColors(Color(0xFF109C77), Color.White) // safe fallback
+
+    // Special case: Light blue when at 100% W' with power below CP (stable/no change state)
+    if (wPrimePercentage >= 0.99 && smoothedPower3s < criticalPower) {
+        return WPrimeColors(Color(0xFF94D8E0), Color.Black) // Light blue with black text
+    }
+
     val powerRatio = smoothedPower3s / criticalPower
 
     return when {
-        powerRatio < 0.90 -> Color(0xFF109C77) // recovery green
-        powerRatio < 1.00 -> Color(0xFF59C496) // light green near CP
-        powerRatio < 1.10 -> Color(0xFFE6DE26) // yellow
-        powerRatio < 1.25 -> Color(0xFFE48F73) // mid orange
-        powerRatio < 1.40 -> Color(0xFFE5683C) // orange
-        powerRatio < 1.60 -> Color(0xFFC7292A) // red
-        else -> Color(0xFFAF26A0) // max violet
+        powerRatio < 0.90 -> WPrimeColors(Color(0xFF109C77), Color.White) // recovery green with white text
+        powerRatio < 1.00 -> WPrimeColors(Color(0xFF59C496), Color.Black) // light green with black text
+        powerRatio < 1.10 -> WPrimeColors(Color(0xFFE6DE26), Color.Black) // yellow with black text
+        powerRatio < 1.25 -> WPrimeColors(Color(0xFFE48F73), Color.Black) // mid orange with black text
+        powerRatio < 1.40 -> WPrimeColors(Color(0xFFE5683C), Color.White) // orange with white text
+        powerRatio < 1.60 -> WPrimeColors(Color(0xFFC7292A), Color.White) // red with white text
+        else -> WPrimeColors(Color(0xFFAF26A0), Color.White) // max violet with white text
     }
 }
+
