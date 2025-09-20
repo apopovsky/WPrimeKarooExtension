@@ -77,8 +77,6 @@ abstract class WPrimeDataTypeBase(
         val anaerobicCapacity: Double,
     )
 
-    // Subclasses now ONLY influence formatting / labels. Base always supplies Joules internally
-    open fun getInitialValue(): Double = wprimeCalculator.getAnaerobicCapacity()
     abstract fun getFormatDataTypeId(): String
     abstract fun getDisplayText(joulesValue: Double): String
     abstract fun getUnitText(): String
@@ -92,8 +90,6 @@ abstract class WPrimeDataTypeBase(
     abstract fun getInitialStreamValue(): Double
     abstract fun mapJoulesToStreamValue(joules: Double): Double
 
-    // Expose calculator to subclasses for formatting computations
-    protected fun getCalculator(): WPrimeCalculator = wprimeCalculator
     protected fun getAnaerobicCapacity(): Double = wprimeCalculator.getAnaerobicCapacity()
 
     override fun startStream(emitter: Emitter<StreamState>) {

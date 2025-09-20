@@ -84,12 +84,4 @@ class WPrimeSettings(private val context: Context) {
         WPrimeLogger.i(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_SAVED + " - Record FIT toggle")
     }
 
-    suspend fun updateConfiguration(config: WPrimeConfiguration) {
-        context.dataStore.edit { preferences ->
-            preferences[CRITICAL_POWER_KEY] = config.criticalPower
-            preferences[ANAEROBIC_CAPACITY_KEY] = config.anaerobicCapacity
-            preferences[TAU_RECOVERY_KEY] = config.tauRecovery
-        }
-        WPrimeLogger.i(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_SAVED + " - Full configuration")
-    }
 }
