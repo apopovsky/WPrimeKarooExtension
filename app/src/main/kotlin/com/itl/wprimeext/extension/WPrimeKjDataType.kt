@@ -24,27 +24,20 @@ class WPrimeKjDataType(
     extension: String,
 ) : WPrimeDataTypeBase(karooSystem, context, extension, "wprime-kj") {
 
-    override fun getDisplayValue(): Double {
-        return getCalculator().getCurrentWPrime() // Keep in Joules (remove /1000.0)
-    }
-
-    override fun getInitialValue(): Double {
-        return 12000.0 // Initial value for W Prime in J (12000J)
-    }
+    // Display text uses raw Joules rounded
+    override fun getDisplayText(joulesValue: Double): String = joulesValue.roundToInt().toString()
 
     override fun getFormatDataTypeId(): String {
-        return DataType.Type.POWER // Use power format for energy display
+        return DataType.Type.POWER // Use power-like numeric format (no percent)
     }
-
-    override fun getDisplayText(value: Double): String = value.roundToInt().toString()
 
     override fun getUnitText(): String = "J"
 
-    override fun getFieldLabel(wideMode: Boolean): String = if (wideMode) {
-        "W PRIME (J)"
-    } else {
-        "W' (J)"
-    }
+    override fun getFieldLabel(): String ="W' (J)"
+
+    // Stream mapping: emit Joules directly
+    override fun getInitialStreamValue(): Double = getAnaerobicCapacity()
+    override fun mapJoulesToStreamValue(joules: Double): Double = joules
 
     override fun getNumberVerticalOffset(): Int = 0 // align baseline
     override fun getTargetHeightFraction(): Float = 0.43f // smaller

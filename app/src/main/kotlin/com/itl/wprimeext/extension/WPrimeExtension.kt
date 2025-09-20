@@ -89,12 +89,13 @@ class WPrimeExtension : KarooExtension("wprime-id", "1.0") {
             // Initialize settings & calculator (mirror logic from data types)
             val settings = WPrimeSettings(this@WPrimeExtension)
             val initialConfig = settings.configuration.first()
+            var recordFitEnabled = initialConfig.recordFit
             val calculator = WPrimeCalculator(
                 criticalPower = initialConfig.criticalPower,
                 anaerobicCapacity = initialConfig.anaerobicCapacity,
                 tauRecovery = initialConfig.tauRecovery,
             )
-            // Keep calculator updated with config changes
+            // Keep calculator & toggle updated with config changes
             launch {
                 settings.configuration.collect { cfg ->
                     calculator.updateConfiguration(
@@ -102,14 +103,16 @@ class WPrimeExtension : KarooExtension("wprime-id", "1.0") {
                         cfg.anaerobicCapacity,
                         cfg.tauRecovery,
                     )
+                    recordFitEnabled = cfg.recordFit
                 }
             }
 
-            karooSystem.streamDataFlow(DataType.Type.SMOOTHED_3S_AVERAGE_POWER)
+            karooSystem.streamDataFlow(DataType.Type.POWER)
                 .combine(karooSystem.consumerFlow<RideState>()) { powerState, rideState ->
                     Pair(powerState, rideState)
                 }
                 .collectLatest { (powerState, rideState) ->
+                    if (!recordFitEnabled) return@collectLatest // Skip all FIT writes if disabled
                     val streaming = powerState as? StreamState.Streaming
                     val power = streaming?.dataPoint?.singleValue ?: 0.0
                     // Update calculator with 3s smoothed power for more stable W' calculations
@@ -121,7 +124,6 @@ class WPrimeExtension : KarooExtension("wprime-id", "1.0") {
                     when (rideState) {
                         is RideState.Idle -> { /* no write */ }
                         is RideState.Paused -> {
-                            // Session-level write (infrequent)
                             emitter.onNext(WriteToSessionMesg(listOf(fieldJ, fieldPct)))
                         }
                         is RideState.Recording -> {

@@ -33,15 +33,15 @@ data class WPrimeColors(
     val textColor: Color
 )
 
-fun calculateWPrimeColors(smoothedPower3s: Double, criticalPower: Double, wPrimePercentage: Double = -1.0): WPrimeColors {
+fun calculateWPrimeColors(currentPower: Double, criticalPower: Double, wPrimePercentage: Double = -1.0): WPrimeColors {
     if (criticalPower <= 0.0) return WPrimeColors(Color(0xFF109C77), Color.White) // safe fallback
 
     // Special case: Light blue when at 100% W' with power below CP (stable/no change state)
-    if (wPrimePercentage >= 0.99 && smoothedPower3s < criticalPower) {
+    if (wPrimePercentage >= 0.99 && currentPower < criticalPower) {
         return WPrimeColors(Color(0xFF94D8E0), Color.Black) // Light blue with black text
     }
 
-    val powerRatio = smoothedPower3s / criticalPower
+    val powerRatio = currentPower / criticalPower
 
     return when {
         powerRatio < 0.90 -> WPrimeColors(Color(0xFF109C77), Color.White) // recovery green with white text

@@ -31,9 +31,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.itl.wprimeext.extension.WPrimeSettings
-import com.itl.wprimeext.ui.components.ConfigurationCard
+import com.itl.wprimeext.ui.components.CompactSettingField
 import com.itl.wprimeext.ui.viewmodel.WPrimeConfigViewModel
 import com.itl.wprimeext.ui.viewmodel.WPrimeConfigViewModelFactory
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +56,7 @@ fun ConfigurationScreen() {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Configuración W Prime",
+                        text = "W Prime Settings",
                         fontWeight = FontWeight.Bold,
                     )
                 },
@@ -73,47 +77,75 @@ fun ConfigurationScreen() {
                     verticalArrangement = Arrangement.spacedBy(20.dp),
                 ) {
                     Text(
-                        text = "Parámetros W Prime",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
+                        text = "W Prime Parameters",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    ConfigurationCard(
-                        title = "Potencia Crítica (CP)",
-                        description = "Potencia máxima sostenible",
+                    // Campos compactos
+                    CompactSettingField(
+                        title = "Critical Power (CP)",
                         value = configuration.criticalPower,
                         unit = "W",
                         onValueChange = viewModel::updateCriticalPower,
                     )
-
-                    ConfigurationCard(
-                        title = "Capacidad Anaeróbica (W')",
-                        description = "Energía disponible sobre CP",
+                    CompactSettingField(
+                        title = "Anaerobic Capacity (W')",
                         value = configuration.anaerobicCapacity,
                         unit = "J",
                         onValueChange = viewModel::updateAnaerobicCapacity,
                     )
-
-                    ConfigurationCard(
-                        title = "Tau Recuperación",
-                        description = "Velocidad de recuperación de W'",
+                    CompactSettingField(
+                        title = "Tau Recovery",
                         value = configuration.tauRecovery,
                         unit = "s",
                         onValueChange = viewModel::updateTauRecovery,
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    // Toggle para grabar datos W' al archivo FIT
+                    androidx.compose.material3.Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth(0.75f)) {
+                                Text(
+                                    text = "Record W' to FIT",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                Text(
+                                    text = "Add W' fields to FIT file",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Switch(
+                                checked = configuration.recordFit,
+                                onCheckedChange = { viewModel.updateRecordFit(it) },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                                ),
+                            )
+                        }
+                    }
 
                     Text(
-                        text = "✓ Guardado automático",
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = "Changes saved automatically",
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(top = 4.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(80.dp))
+                    Spacer(modifier = Modifier.height(56.dp))
                 }
             }
 
@@ -136,7 +168,7 @@ fun ConfigurationScreen() {
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Volver",
+                    contentDescription = "Back",
                 )
             }
         }

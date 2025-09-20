@@ -23,22 +23,24 @@ class WPrimeDataType(
     extension: String,
 ) : WPrimeDataTypeBase(karooSystem, context, extension, "wprime") {
 
-    override fun getDisplayValue(): Double = getCalculator().getWPrimePercentage()
-
-    override fun getInitialValue(): Double {
-        return 100.0 // Initial value for W Prime percentage
+    // Base emits Joules; we convert to percentage for display
+    override fun getDisplayText(joulesValue: Double): String {
+        val capacity = getAnaerobicCapacity().coerceAtLeast(1.0)
+        val pct = (joulesValue / capacity * 100.0).coerceIn(0.0, 100.0)
+        return pct.toInt().toString()
     }
 
     override fun getFormatDataTypeId(): String = DataType.Type.PERCENT_MAX_FTP
 
-    override fun getDisplayText(value: Double): String = "${value.toInt()}"
-
     override fun getUnitText(): String = "%"
 
-    override fun getFieldLabel(wideMode: Boolean): String = if (wideMode) {
-        "W PRIME (%W')"
-    } else {
-        "W' (%W')"
+    override fun getFieldLabel(): String =         "%W'"
+
+    // Stream mapping: provide percent so Karoo can format with percent DataType
+    override fun getInitialStreamValue(): Double = 100.0
+    override fun mapJoulesToStreamValue(joules: Double): Double {
+        val capacity = getAnaerobicCapacity().coerceAtLeast(1.0)
+        return (joules / capacity * 100.0).coerceIn(0.0, 100.0)
     }
 
     override fun getNumberVerticalOffset(): Int = 0 // percent view baseline

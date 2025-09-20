@@ -40,23 +40,22 @@ class WPrimeConfigViewModel(
 
     fun updateCriticalPower(power: Double) {
         WPrimeLogger.d(WPrimeLogger.Module.VIEWMODEL, LogConstants.UI_VALUES_CHANGED + " - CP: ${power}W")
-        viewModelScope.launch {
-            wPrimeSettings.updateCriticalPower(power)
-        }
+        viewModelScope.launch { wPrimeSettings.updateCriticalPower(power) }
     }
 
     fun updateAnaerobicCapacity(capacity: Double) {
         WPrimeLogger.d(WPrimeLogger.Module.VIEWMODEL, LogConstants.UI_VALUES_CHANGED + " - W': ${capacity}J")
-        viewModelScope.launch {
-            wPrimeSettings.updateAnaerobicCapacity(capacity)
-        }
+        viewModelScope.launch { wPrimeSettings.updateAnaerobicCapacity(capacity) }
     }
 
     fun updateTauRecovery(tau: Double) {
         WPrimeLogger.d(WPrimeLogger.Module.VIEWMODEL, LogConstants.UI_VALUES_CHANGED + " - Tau: ${tau}s")
-        viewModelScope.launch {
-            wPrimeSettings.updateTauRecovery(tau)
-        }
+        viewModelScope.launch { wPrimeSettings.updateTauRecovery(tau) }
+    }
+
+    fun updateRecordFit(enabled: Boolean) {
+        WPrimeLogger.d(WPrimeLogger.Module.VIEWMODEL, LogConstants.UI_VALUES_CHANGED + " - recordFit: $enabled")
+        viewModelScope.launch { wPrimeSettings.updateRecordFit(enabled) }
     }
 }
 

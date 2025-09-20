@@ -46,10 +46,11 @@ fun WPrimeGlanceView(
     value: String,
     fieldLabel: String,
     backgroundColor: UnitColorProvider,
-    textColor: UnitColorProvider = UnitColorProvider(Color.White), // New parameter for text color
+    textColor: UnitColorProvider = UnitColorProvider(Color.White),
     currentPower: Int,
     criticalPower: Int,
-    wPrimePercentage: Float,
+    wPrimeJoules: Double, // NEW: raw Joules remaining
+    anaerobicCapacity: Double, // NEW: capacity to compute percentage internally
     textSize: Int = 56, // This will act as maxSp for dynamic sizing
     alignment: ViewConfig.Alignment = ViewConfig.Alignment.RIGHT,
     maxPowerDeltaForFullRotation: Int = 150,
@@ -65,12 +66,15 @@ fun WPrimeGlanceView(
         ViewConfig.Alignment.RIGHT -> TextAlign.End to Alignment.End
     }
 
+    val safeCapacity = anaerobicCapacity.takeIf { it > 0 } ?: 1.0
+    val wPrimeFraction = (wPrimeJoules / safeCapacity).toFloat().coerceIn(0f, 1f)
+
     val powerDelta = currentPower - criticalPower
-    val wPrimeIsFull = wPrimePercentage >= 0.99f
+    val wPrimeIsFull = wPrimeFraction >= 0.995f // treat >=99.5% as full
     val isAtMaxWithLowPower = currentPower < criticalPower && wPrimeIsFull
 
     // Log arrow calculation values for debugging
-    println("WPrimeGlanceView - currentPower: ${currentPower}W, criticalPower: ${criticalPower}W, wPrimePercentage: ${wPrimePercentage}, wPrimeIsFull: ${wPrimeIsFull}, isAtMaxWithLowPower: ${isAtMaxWithLowPower}")
+    println("WPrimeGlanceView - currentPower: ${currentPower}W, criticalPower: ${criticalPower}W, wPrimeJoules: ${wPrimeJoules.roundToInt()}J, capacity: ${safeCapacity.roundToInt()}J, wPrimeFraction: $wPrimeFraction, wPrimeIsFull: $wPrimeIsFull, isAtMaxWithLowPower: $isAtMaxWithLowPower, value: $value")
 
     // Always show arrow, but force horizontal when at max with low power
     val showArrow = true
@@ -88,7 +92,7 @@ fun WPrimeGlanceView(
     // Dynamic text size calculation
     val currentWidgetSize = LocalSize.current
     val iconSizeDp = 28.dp // Consistent with icon display
-    val iconStartPaddingDp = 8.dp // Consistent with icon display
+    val iconStartPaddingDp = 4.dp // Consistent with icon display
     // Reserve space for sizing heuristic only if arrow will be shown
     val sizingReservedHorizontal = if (showArrow) iconSizeDp + iconStartPaddingDp else 0.dp
 
@@ -139,7 +143,7 @@ fun WPrimeGlanceView(
                     // Overlay arrow without affecting text layout
                     Row(
                         modifier = GlanceModifier
-                            .padding(start = iconStartPaddingDp)
+                            .padding(start = iconStartPaddingDp, top = 10.dp)
                             .height(iconSizeDp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -201,6 +205,7 @@ private fun TitleRow(
                 fontWeight = FontWeight.Normal,
                 textAlign = textAlign,
             ),
+            modifier = GlanceModifier.padding(top = 6.dp)
         )
     }
 }
@@ -303,7 +308,8 @@ fun WPrimeGlanceViewPreview() {
         backgroundColor = UnitColorProvider(Color.DarkGray),
         currentPower = 250,
         criticalPower = 200,
-        wPrimePercentage = 0.65f,
+        wPrimeJoules = 8000.0,
+        anaerobicCapacity = 12000.0,
         textSize = 50, // This is maxSp
         alignment = ViewConfig.Alignment.CENTER,
         maxPowerDeltaForFullRotation = 150,
@@ -322,7 +328,8 @@ fun WPrimeGlanceViewPreview_Recovering() {
         backgroundColor = UnitColorProvider(Color.hsl(100f, 0.3f, 0.4f)),
         currentPower = 150,
         criticalPower = 200,
-        wPrimePercentage = 0.9f,
+        wPrimeJoules = 10800.0,
+        anaerobicCapacity = 12000.0,
         textSize = 50, // This is maxSp
         alignment = ViewConfig.Alignment.CENTER,
         maxPowerDeltaForFullRotation = 150,
@@ -341,7 +348,8 @@ fun WPrimeGlanceViewPreview_FullNoArrow() {
         backgroundColor = UnitColorProvider(Color.hsl(120f, 0.5f, 0.5f)),
         currentPower = 100,
         criticalPower = 200,
-        wPrimePercentage = 1.0f,
+        wPrimeJoules = 12000.0,
+        anaerobicCapacity = 12000.0,
         textSize = 50, // This is maxSp
         alignment = ViewConfig.Alignment.CENTER,
         maxPowerDeltaForFullRotation = 150,
@@ -360,7 +368,8 @@ fun WPrimeGlanceViewPreview_MaxEffort() {
         backgroundColor = UnitColorProvider(Color.Red),
         currentPower = 380,
         criticalPower = 200,
-        wPrimePercentage = 0.1f,
+        wPrimeJoules = 2000.0,
+        anaerobicCapacity = 12000.0,
         textSize = 50, // This is maxSp
         alignment = ViewConfig.Alignment.CENTER,
         maxPowerDeltaForFullRotation = 150,
@@ -379,7 +388,8 @@ fun WPrimeGlanceViewPreview_Neutral() {
         backgroundColor = UnitColorProvider(Color.Gray),
         currentPower = 200,
         criticalPower = 200,
-        wPrimePercentage = 0.75f,
+        wPrimeJoules = 9000.0,
+        anaerobicCapacity = 12000.0,
         textSize = 50, // This is maxSp
         alignment = ViewConfig.Alignment.CENTER,
         maxPowerDeltaForFullRotation = 150,
