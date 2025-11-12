@@ -94,6 +94,8 @@ class WPrimeExtension : KarooExtension("wprime-id", "1.0") {
                 criticalPower = initialConfig.criticalPower,
                 anaerobicCapacity = initialConfig.anaerobicCapacity,
                 tauRecovery = initialConfig.tauRecovery,
+                kIn = initialConfig.kIn,
+                modelType = initialConfig.modelType,
             )
             // Keep calculator & toggle updated with config changes
             launch {
@@ -102,6 +104,8 @@ class WPrimeExtension : KarooExtension("wprime-id", "1.0") {
                         cfg.criticalPower,
                         cfg.anaerobicCapacity,
                         cfg.tauRecovery,
+                        cfg.kIn,
+                        cfg.modelType,
                     )
                     recordFitEnabled = cfg.recordFit
                 }

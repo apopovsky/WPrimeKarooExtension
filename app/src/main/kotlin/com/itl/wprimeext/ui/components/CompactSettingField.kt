@@ -36,6 +36,7 @@ fun CompactSettingField(
     value: Double,
     unit: String,
     onValueChange: (Double) -> Unit,
+    enabled: Boolean = true,
 ) {
     Row(
         modifier = Modifier
@@ -52,12 +53,15 @@ fun CompactSettingField(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
+                color = if (enabled) MaterialTheme.colorScheme.onSurface
+                       else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
             )
             if (!description.isNullOrBlank()) {
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant
+                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
                 )
             }
         }
@@ -76,6 +80,7 @@ fun CompactSettingField(
                     }
                 }
             },
+            enabled = enabled,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             singleLine = true,
             modifier = Modifier.width(110.dp),
@@ -88,10 +93,11 @@ fun CompactSettingField(
             text = unit,
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
+            color = if (enabled) MaterialTheme.colorScheme.primary
+                   else MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
         )
 
-        if (showSaved) {
+        if (showSaved && enabled) {
             LaunchedEffect(showSaved) {
                 delay(1200)
                 showSaved = false

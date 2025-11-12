@@ -15,6 +15,7 @@ object LogConstants {
 
     // W Prime calculations
     const val WPRIME_INITIALIZED = "W Prime calculator initialized"
+    const val WPRIME_CONFIG_UPDATING = "Updating W Prime configuration"
     const val WPRIME_CONFIG_UPDATED = "W Prime configuration updated"
     const val WPRIME_DEPLETED = "W Prime fully depleted"
     const val WPRIME_RECOVERING = "W Prime recovering"

@@ -103,10 +103,12 @@ abstract class WPrimeDataTypeBase(
                             config.criticalPower,
                             config.anaerobicCapacity,
                             config.tauRecovery,
+                            config.kIn,
+                            config.modelType,
                         )
                         WPrimeLogger.d(
                             WPrimeLogger.Module.DATA_TYPE,
-                            "Setting Calculator Configuration for $typeId - CP: ${config.criticalPower}W, W': ${config.anaerobicCapacity}J, Tau: ${config.tauRecovery}s",
+                            "Setting Calculator Configuration for $typeId - Model: ${config.modelType}, CP: ${config.criticalPower}W, W': ${config.anaerobicCapacity}J, Tau: ${config.tauRecovery}s, kIn: ${config.kIn}"
                         )
                     }
                 }
