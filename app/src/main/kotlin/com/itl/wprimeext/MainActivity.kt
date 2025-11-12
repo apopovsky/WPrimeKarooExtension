@@ -43,6 +43,7 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("InlinedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setResult(RESULT_OK)
         setContent { Main() }
     }
 }

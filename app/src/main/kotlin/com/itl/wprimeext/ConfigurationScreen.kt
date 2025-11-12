@@ -3,21 +3,25 @@ package com.itl.wprimeext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -28,18 +32,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.itl.wprimeext.extension.WPrimeConfiguration
 import com.itl.wprimeext.extension.WPrimeSettings
 import com.itl.wprimeext.ui.components.CompactSettingField
 import com.itl.wprimeext.ui.viewmodel.WPrimeConfigViewModel
 import com.itl.wprimeext.ui.viewmodel.WPrimeConfigViewModelFactory
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.Row
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConfigurationScreen() {
     val context = LocalContext.current
@@ -51,6 +52,28 @@ fun ConfigurationScreen() {
     val configuration by viewModel.configuration.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
+    ConfigurationScreenContent(
+        isLoading = isLoading,
+        configuration = configuration,
+        onCriticalPowerChange = viewModel::updateCriticalPower,
+        onAnaerobicCapacityChange = viewModel::updateAnaerobicCapacity,
+        onTauRecoveryChange = viewModel::updateTauRecovery,
+        onRecordFitChange = viewModel::updateRecordFit,
+        onBackClick = { (context as? MainActivity)?.finish() }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ConfigurationScreenContent(
+    isLoading: Boolean,
+    configuration: WPrimeConfiguration,
+    onCriticalPowerChange: (Double) -> Unit,
+    onAnaerobicCapacityChange: (Double) -> Unit,
+    onTauRecoveryChange: (Double) -> Unit,
+    onRecordFitChange: (Boolean) -> Unit,
+    onBackClick: () -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -87,23 +110,23 @@ fun ConfigurationScreen() {
                         title = "Critical Power (CP)",
                         value = configuration.criticalPower,
                         unit = "W",
-                        onValueChange = viewModel::updateCriticalPower,
+                        onValueChange = onCriticalPowerChange,
                     )
                     CompactSettingField(
                         title = "Anaerobic Capacity (W')",
                         value = configuration.anaerobicCapacity,
                         unit = "J",
-                        onValueChange = viewModel::updateAnaerobicCapacity,
+                        onValueChange = onAnaerobicCapacityChange,
                     )
                     CompactSettingField(
                         title = "Tau Recovery",
                         value = configuration.tauRecovery,
                         unit = "s",
-                        onValueChange = viewModel::updateTauRecovery,
+                        onValueChange = onTauRecoveryChange,
                     )
 
                     // Toggle para grabar datos W' al archivo FIT
-                    androidx.compose.material3.Card(
+                    Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
                     ) {
@@ -128,7 +151,7 @@ fun ConfigurationScreen() {
                             }
                             Switch(
                                 checked = configuration.recordFit,
-                                onCheckedChange = { viewModel.updateRecordFit(it) },
+                                onCheckedChange = onRecordFitChange,
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = MaterialTheme.colorScheme.primary,
                                     checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
@@ -151,9 +174,7 @@ fun ConfigurationScreen() {
 
             // FAB posicionado como en ki2: esquina inferior izquierda con margen
             FloatingActionButton(
-                onClick = {
-                    (context as? MainActivity)?.finish()
-                },
+                onClick = onBackClick,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(start = 0.dp, bottom = 10.dp)
@@ -167,10 +188,29 @@ fun ConfigurationScreen() {
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    imageVector = ArrowBack,
                     contentDescription = "Back",
                 )
             }
         }
     }
+}
+
+@Preview
+@Composable
+fun ConfigurationScreenPreview() {
+    ConfigurationScreenContent(
+        isLoading = false,
+        configuration = WPrimeConfiguration(
+            criticalPower = 300.0,
+            anaerobicCapacity = 15000.0,
+            tauRecovery = 250.0,
+            recordFit = true
+        ),
+        onCriticalPowerChange = {},
+        onAnaerobicCapacityChange = {},
+        onTauRecoveryChange = {},
+        onRecordFitChange = {},
+        onBackClick = {}
+    )
 }
