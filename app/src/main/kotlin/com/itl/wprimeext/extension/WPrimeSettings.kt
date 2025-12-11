@@ -46,7 +46,7 @@ class WPrimeSettings(private val context: Context) {
         }
         WPrimeLogger.d(
             WPrimeLogger.Module.SETTINGS,
-            "Loaded configuration - CP: ${config.criticalPower}, W': ${config.anaerobicCapacity}, Tau: ${config.tauRecovery}, recordFit: ${config.recordFit}"
+            "Loaded configuration - CP: ${config.criticalPower}, W': ${config.anaerobicCapacity}, Tau: ${config.tauRecovery}, recordFit: ${config.recordFit}",
         )
 
         config
@@ -83,5 +83,4 @@ class WPrimeSettings(private val context: Context) {
         }
         WPrimeLogger.i(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_SAVED + " - Record FIT toggle")
     }
-
 }

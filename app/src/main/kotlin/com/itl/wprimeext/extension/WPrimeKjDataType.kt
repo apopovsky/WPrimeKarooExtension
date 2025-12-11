@@ -33,7 +33,7 @@ class WPrimeKjDataType(
 
     override fun getUnitText(): String = "J"
 
-    override fun getFieldLabel(): String ="W' (J)"
+    override fun getFieldLabel(): String = "W' (J)"
 
     // Stream mapping: emit Joules directly
     override fun getInitialStreamValue(): Double = getAnaerobicCapacity()

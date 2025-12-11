@@ -106,4 +106,3 @@ fun CompactSettingField(
         }
     }
 }
-

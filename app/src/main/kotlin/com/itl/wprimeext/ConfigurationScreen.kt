@@ -13,7 +13,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -59,7 +60,7 @@ fun ConfigurationScreen() {
         onAnaerobicCapacityChange = viewModel::updateAnaerobicCapacity,
         onTauRecoveryChange = viewModel::updateTauRecovery,
         onRecordFitChange = viewModel::updateRecordFit,
-        onBackClick = { (context as? MainActivity)?.finish() }
+        onBackClick = { (context as? MainActivity)?.finish() },
     )
 }
 
@@ -72,7 +73,7 @@ fun ConfigurationScreenContent(
     onAnaerobicCapacityChange: (Double) -> Unit,
     onTauRecoveryChange: (Double) -> Unit,
     onRecordFitChange: (Boolean) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -165,7 +166,7 @@ fun ConfigurationScreenContent(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(top = 4.dp)
+                        modifier = Modifier.padding(top = 4.dp),
                     )
 
                     Spacer(modifier = Modifier.height(56.dp))
@@ -188,7 +189,7 @@ fun ConfigurationScreenContent(
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
             ) {
                 Icon(
-                    imageVector = ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
                 )
             }
@@ -205,12 +206,12 @@ fun ConfigurationScreenPreview() {
             criticalPower = 300.0,
             anaerobicCapacity = 15000.0,
             tauRecovery = 250.0,
-            recordFit = true
+            recordFit = true,
         ),
         onCriticalPowerChange = {},
         onAnaerobicCapacityChange = {},
         onTauRecoveryChange = {},
         onRecordFitChange = {},
-        onBackClick = {}
+        onBackClick = {},
     )
 }

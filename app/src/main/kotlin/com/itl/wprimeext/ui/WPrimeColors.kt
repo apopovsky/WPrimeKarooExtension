@@ -30,7 +30,7 @@ import androidx.compose.ui.graphics.Color
 
 data class WPrimeColors(
     val backgroundColor: Color,
-    val textColor: Color
+    val textColor: Color,
 )
 
 fun calculateWPrimeColors(currentPower: Double, criticalPower: Double, wPrimePercentage: Double = -1.0): WPrimeColors {
@@ -53,4 +53,3 @@ fun calculateWPrimeColors(currentPower: Double, criticalPower: Double, wPrimePer
         else -> WPrimeColors(Color(0xFFAF26A0), Color.White) // max violet with white text
     }
 }
-

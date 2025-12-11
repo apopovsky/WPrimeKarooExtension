@@ -85,7 +85,7 @@ fun WPrimeGlanceView(
     } else {
         val rotationRatio = (powerDelta.toFloat() / maxPowerDeltaForFullRotation).coerceIn(-1f, 1f)
         val degrees = ((if (powerDelta == 0) 0f else rotationRatio * 90f) / 15f).roundToInt() * 15f
-        println("WPrimeGlanceView - Setting calculated arrow rotation: ${degrees}° (powerDelta: ${powerDelta}W)")
+        println("WPrimeGlanceView - Setting calculated arrow rotation: $degrees° (powerDelta: ${powerDelta}W)")
         degrees
     }
 
@@ -205,7 +205,7 @@ private fun TitleRow(
                 fontWeight = FontWeight.Normal,
                 textAlign = textAlign,
             ),
-            modifier = GlanceModifier.padding(top = 6.dp)
+            modifier = GlanceModifier.padding(top = 6.dp),
         )
     }
 }

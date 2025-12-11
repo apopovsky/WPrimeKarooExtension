@@ -12,6 +12,7 @@ pluginManagement {
     }
 }
 
+@Suppress("UnstableApiUsage")
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
@@ -19,6 +20,10 @@ dependencyResolutionManagement {
         mavenLocal()
         google()
         mavenCentral()
+        // mapbox
+        maven {
+            url = uri("https://api.mapbox.com/downloads/v2/releases/maven")
+        }
         // karoo-ext
         maven {
             url = uri("https://maven.pkg.github.com/hammerheadnav/karoo-ext")
@@ -26,10 +31,9 @@ dependencyResolutionManagement {
                 username = providers.gradleProperty("gpr.user").getOrElse(System.getenv("USERNAME"))
                 password = providers.gradleProperty("gpr.key").getOrElse(System.getenv("TOKEN"))
             }
-        }
-        // mapbox
-        maven {
-            url = uri("https://api.mapbox.com/downloads/v2/releases/maven")
+            content {
+                includeGroup("io.hammerhead")
+            }
         }
     }
 }

@@ -1,15 +1,16 @@
 [versions]
-activity = "1.11.0"
-agp = "8.4.1"
+activity = "1.12.1"
+agp = "8.13.1"
 dokka = "2.1.0"
-kotlin = "2.0.0"
+kotlin = "2.2.21"
 coreKtx = "1.17.0"
 coroutines = "1.10.2"
-lifecycle = "2.9.4"
+lifecycle = "2.10.0"
 glance = "1.1.1"
 hilt = "2.57.2"
-datastore = "1.1.7"
-ksp = "2.0.0-1.0.21"
+datastore = "1.2.0"
+ksp = "2.3.3"
+nordicBleClient = "2.0.0-alpha12"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
@@ -18,7 +19,8 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version = "2.2.1" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version = "1.3.0" }
-androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version = "1.9.4" }
+androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version = "1.10.0" }
+androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 
 # lifecycle
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
@@ -32,7 +34,7 @@ androidx-glance-appwidget-preview = { module = "androidx.glance:glance-appwidget
 androidx-glance-preview = { group = "androidx.glance", name = "glance-preview", version.ref = "glance" }
 
 # compose
-androidx-compose-bom = { module = "androidx.compose:compose-bom", version = "2025.11.00" }
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version = "2025.12.00" }
 androidx-material3 = { module = "androidx.compose.material3:material3" }
 androidx-ui = { module = "androidx.compose.ui:ui" }
 androidx-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
@@ -54,6 +56,7 @@ kotlinx-coroutines-rx2 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-rx
 # datastore
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 
+nordic-ble-client = { module = "no.nordicsemi.kotlin.ble:client-android", version.ref = "nordicBleClient" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.9.0" }
 mapbox-sdk-turf = { module = "com.mapbox.mapboxsdk:mapbox-sdk-turf", version = "7.3.1" }
 timber = { module = "com.jakewharton.timber:timber", version = "5.0.1" }
