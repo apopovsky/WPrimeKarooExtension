@@ -34,7 +34,6 @@ import io.hammerhead.karooext.models.FitEffect
 import io.hammerhead.karooext.models.KarooEffect
 import io.hammerhead.karooext.models.RideState
 import io.hammerhead.karooext.models.StreamState
-import io.hammerhead.karooext.models.SystemNotification
 import io.hammerhead.karooext.models.WriteToRecordMesg
 import io.hammerhead.karooext.models.WriteToSessionMesg
 import kotlinx.coroutines.CoroutineScope
@@ -143,19 +142,11 @@ class WPrimeExtension : KarooExtension("wprime-id", "1.0") {
     override fun onCreate() {
         super.onCreate()
         WPrimeLogger.i(WPrimeLogger.Module.EXTENSION, LogConstants.EXTENSION_STARTED + " - Version 1.0")
+
         serviceJob = CoroutineScope(Dispatchers.IO).launch {
             karooSystem.connect { connected ->
                 if (connected) {
                     WPrimeLogger.i(WPrimeLogger.Module.EXTENSION, LogConstants.SERVICE_CONNECTED)
-                    karooSystem.dispatch(
-                        SystemNotification(
-                            "wprime-started",
-                            "W Prime Extension Started",
-                            action = "Configure",
-                            actionIntent = "com.itl.wprimeext.MAIN",
-                        ),
-                    )
-                    WPrimeLogger.i(WPrimeLogger.Module.EXTENSION, LogConstants.NOTIFICATION_SENT + " - Extension started notification")
                 } else {
                     WPrimeLogger.w(WPrimeLogger.Module.EXTENSION, "Failed to connect to Karoo service")
                 }

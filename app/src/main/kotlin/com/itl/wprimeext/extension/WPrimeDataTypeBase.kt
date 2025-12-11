@@ -86,6 +86,7 @@ abstract class WPrimeDataTypeBase(
     open fun getValueBottomPaddingExtra(): Int = 0
     open fun getFixedCharCount(): Int? = null
     open fun getSizeScale(): Float = 1f
+
     // NEW: numeric value provided to Karoo stream (could be percent or Joules)
     abstract fun getInitialStreamValue(): Double
     abstract fun mapJoulesToStreamValue(joules: Double): Double
@@ -372,14 +373,14 @@ abstract class WPrimeDataTypeBase(
 
         WPrimeLogger.d(
             WPrimeLogger.Module.DATA_TYPE,
-            "Color calculation - Power: ${currentPower}W, CP: ${criticalPower}W, W': ${(wPrimePercentage * 100).toInt()}%"
+            "Color calculation - Power: ${currentPower}W, CP: ${criticalPower}W, W': ${(wPrimePercentage * 100).toInt()}%",
         )
 
         val colors = calculateWPrimeColors(currentPower, criticalPower, wPrimePercentage)
 
         WPrimeLogger.d(
             WPrimeLogger.Module.DATA_TYPE,
-            "Determined colors: BG=#${colors.backgroundColor.value.toString(16).uppercase().padStart(8, '0')}, Text=#${colors.textColor.value.toString(16).uppercase().padStart(8, '0')} for power=${currentPower}W, CP=${criticalPower}W, W'=${(wPrimePercentage * 100).toInt()}%"
+            "Determined colors: BG=#${colors.backgroundColor.value.toString(16).uppercase().padStart(8, '0')}, Text=#${colors.textColor.value.toString(16).uppercase().padStart(8, '0')} for power=${currentPower}W, CP=${criticalPower}W, W'=${(wPrimePercentage * 100).toInt()}%",
         )
 
         return Pair(colors.backgroundColor, colors.textColor)

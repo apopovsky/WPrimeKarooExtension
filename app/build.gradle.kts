@@ -9,12 +9,12 @@ plugins {
 
 android {
     namespace = "com.itl.wprimeext"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.itl.wprimeext"
         minSdk = 23
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 8
         versionName = "1.0"
         base.archivesName.set("WPrimeExtension-v${versionName}")
@@ -31,9 +31,12 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        }
     }
+    @Suppress("UnstableApiUsage")
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.14"
     }
@@ -65,6 +68,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.material.icons.extended)
     debugImplementation(libs.androidx.ui.tooling)
 
     implementation(libs.androidx.activity.compose)
@@ -88,7 +92,7 @@ dependencies {
     // datastore
     implementation(libs.androidx.datastore.preferences)
 
-    implementation("no.nordicsemi.kotlin.ble:client-android:2.0.0-alpha02")
+    implementation(libs.nordic.ble.client)
 
     // Hilt
     ksp(libs.hilt.android.compiler)

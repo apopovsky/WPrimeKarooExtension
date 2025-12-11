@@ -56,7 +56,7 @@ class WPrimeSettings(private val context: Context) {
         }
         WPrimeLogger.d(
             WPrimeLogger.Module.SETTINGS,
-            "Loaded configuration - Model: ${config.modelType}, CP: ${config.criticalPower}, W': ${config.anaerobicCapacity}, Tau: ${config.tauRecovery}, kIn: ${config.kIn}, recordFit: ${config.recordFit}"
+            "Loaded configuration - Model: ${config.modelType}, CP: ${config.criticalPower}, W': ${config.anaerobicCapacity}, Tau: ${config.tauRecovery}, kIn: ${config.kIn}, recordFit: ${config.recordFit}",
         )
 
         config

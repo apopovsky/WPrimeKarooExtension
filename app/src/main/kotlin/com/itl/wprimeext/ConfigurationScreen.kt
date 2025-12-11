@@ -165,7 +165,8 @@ fun ConfigurationScreenLayout(
                         )
                     }
 
-                    Card(
+                    // Toggle para grabar datos W' al archivo FIT
+                    androidx.compose.material3.Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
                     ) {
@@ -204,7 +205,7 @@ fun ConfigurationScreenLayout(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(top = 4.dp)
+                        modifier = Modifier.padding(top = 4.dp),
                     )
 
                     Spacer(modifier = Modifier.height(56.dp))

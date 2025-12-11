@@ -34,7 +34,7 @@ class WPrimeDataType(
 
     override fun getUnitText(): String = "%"
 
-    override fun getFieldLabel(): String =         "%W'"
+    override fun getFieldLabel(): String = "%W'"
 
     // Stream mapping: provide percent so Karoo can format with percent DataType
     override fun getInitialStreamValue(): Double = 100.0
