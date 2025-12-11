@@ -23,7 +23,7 @@ interface IWPrimeModel {
  */
 abstract class BaseWPrimeModel(
     protected val cp: Double,
-    protected val wPrime: Double
+    protected val wPrime: Double,
 ) : IWPrimeModel {
     protected var wBal: Double = wPrime
 
@@ -112,9 +112,9 @@ class CaenLievensModel(cp: Double, wPrime: Double) : BaseWPrimeModel(cp, wPrime)
         if (cp <= 0) return 1000.0 // Avoid division by zero
         val ratio = power / cp
         return when {
-            ratio < 0.6 -> 350.0  // Moderate
-            ratio < 0.9 -> 700.0  // Heavy
-            else -> 1000.0        // Near CP
+            ratio < 0.6 -> 350.0 // Moderate
+            ratio < 0.9 -> 700.0 // Heavy
+            else -> 1000.0 // Near CP
         }
     }
 
@@ -182,7 +182,7 @@ class WPrimeCalculator(
     private var anaerobicCapacity: Double,
     private var tauRecovery: Double, // Used as tau override for Bartram
     private var kIn: Double = 0.002, // Used for Weigend hydraulic model
-    private var modelType: WPrimeModelType = WPrimeModelType.SKIBA_DIFFERENTIAL
+    private var modelType: WPrimeModelType = WPrimeModelType.SKIBA_DIFFERENTIAL,
 ) {
     private var model: IWPrimeModel = WPrimeFactory.create(modelType, criticalPower, anaerobicCapacity, tauRecovery, kIn)
     private var lastUpdateTime: Long = 0
@@ -205,14 +205,14 @@ class WPrimeCalculator(
         anaerobicCapacity: Double,
         tauRecovery: Double, // Used as tau override for Bartram
         kIn: Double,
-        modelType: WPrimeModelType
+        modelType: WPrimeModelType,
     ) {
         require(criticalPower > 0) { "Critical Power must be positive" }
         require(anaerobicCapacity >= 0) { "Anaerobic Capacity must be non-negative" }
 
         WPrimeLogger.d(
             WPrimeLogger.Module.CALCULATOR,
-            "${LogConstants.WPRIME_CONFIG_UPDATING} - Model: $modelType, CP: $criticalPower, W': $anaerobicCapacity"
+            "${LogConstants.WPRIME_CONFIG_UPDATING} - Model: $modelType, CP: $criticalPower, W': $anaerobicCapacity",
         )
 
         this.criticalPower = criticalPower
@@ -294,17 +294,16 @@ enum class WPrimeModelType {
     BARTRAM,
     CAEN_LIEVENS,
     CHORLEY,
-    WEIGEND
+    WEIGEND,
 }
 
 object WPrimeFactory {
-    fun create(type: WPrimeModelType, cp: Double, wPrime: Double, tauOverride: Double? = null, kIn: Double = 0.002): IWPrimeModel =
-        when (type) {
-            WPrimeModelType.SKIBA_2012 -> Skiba2012Model(cp, wPrime)
-            WPrimeModelType.SKIBA_DIFFERENTIAL -> SkibaDifferentialModel(cp, wPrime)
-            WPrimeModelType.BARTRAM -> BartramModel(cp, wPrime, tauOverride)
-            WPrimeModelType.CAEN_LIEVENS -> CaenLievensModel(cp, wPrime)
-            WPrimeModelType.CHORLEY -> ChorleyModel(cp, wPrime)
-            WPrimeModelType.WEIGEND -> WeigendHydraulicModel(cp, wPrime, kIn)
-        }
+    fun create(type: WPrimeModelType, cp: Double, wPrime: Double, tauOverride: Double? = null, kIn: Double = 0.002): IWPrimeModel = when (type) {
+        WPrimeModelType.SKIBA_2012 -> Skiba2012Model(cp, wPrime)
+        WPrimeModelType.SKIBA_DIFFERENTIAL -> SkibaDifferentialModel(cp, wPrime)
+        WPrimeModelType.BARTRAM -> BartramModel(cp, wPrime, tauOverride)
+        WPrimeModelType.CAEN_LIEVENS -> CaenLievensModel(cp, wPrime)
+        WPrimeModelType.CHORLEY -> ChorleyModel(cp, wPrime)
+        WPrimeModelType.WEIGEND -> WeigendHydraulicModel(cp, wPrime, kIn)
+    }
 }

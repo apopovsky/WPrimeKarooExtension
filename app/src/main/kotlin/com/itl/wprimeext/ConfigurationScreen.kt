@@ -18,12 +18,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -75,7 +75,7 @@ fun ConfigurationScreen() {
         onKInChange = viewModel::updateKIn,
         onRecordFitChange = viewModel::updateRecordFit,
         onModelSelected = viewModel::updateModelType,
-        onBackClick = { (context as? MainActivity)?.finish() }
+        onBackClick = { (context as? MainActivity)?.finish() },
     )
 }
 
@@ -94,7 +94,7 @@ fun ConfigurationScreenLayout(
     onKInChange: (Double) -> Unit,
     onRecordFitChange: (Boolean) -> Unit,
     onModelSelected: (WPrimeModelType) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
 ) {
     val requirements = getModelRequirements(configuration.modelType)
 
@@ -126,7 +126,7 @@ fun ConfigurationScreenLayout(
 
                     ModelSelectionDropdown(
                         selectedModel = configuration.modelType,
-                        onModelSelected = onModelSelected
+                        onModelSelected = onModelSelected,
                     )
 
                     CompactSettingField(
@@ -145,8 +145,11 @@ fun ConfigurationScreenLayout(
                     // Tau Recovery - only enabled for Bartram model
                     CompactSettingField(
                         title = "Tau Recovery (τ)",
-                        description = if (requirements.usesTau) "Individualized recovery time constant"
-                                     else "Not used by this model",
+                        description = if (requirements.usesTau) {
+                            "Individualized recovery time constant"
+                        } else {
+                            "Not used by this model"
+                        },
                         value = configuration.tauRecovery,
                         unit = "s",
                         onValueChange = onTauRecoveryChange,
@@ -239,7 +242,7 @@ fun ConfigurationScreenLayout(
 @Composable
 fun ModelSelectionDropdown(
     selectedModel: WPrimeModelType,
-    onModelSelected: (WPrimeModelType) -> Unit
+    onModelSelected: (WPrimeModelType) -> Unit,
 ) {
     val models = WPrimeModelType.entries
     var expanded by remember { mutableStateOf(false) }
@@ -251,7 +254,7 @@ fun ModelSelectionDropdown(
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = !expanded },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             TextField(
                 value = formatModelName(selectedModel),
@@ -260,12 +263,12 @@ fun ModelSelectionDropdown(
                 label = { Text("W' Model") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier
-                    .menuAnchor(type = MenuAnchorType.PrimaryNotEditable)
+                    .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                     .fillMaxWidth(),
             )
             ExposedDropdownMenu(
                 expanded = expanded,
-                onDismissRequest = { expanded = false }
+                onDismissRequest = { expanded = false },
             ) {
                 models.forEach { model ->
                     DropdownMenuItem(
@@ -273,7 +276,7 @@ fun ModelSelectionDropdown(
                         onClick = {
                             onModelSelected(model)
                             expanded = false
-                        }
+                        },
                     )
                 }
             }
@@ -281,15 +284,13 @@ fun ModelSelectionDropdown(
     }
 }
 
-private fun formatModelName(model: WPrimeModelType): String {
-    return when (model) {
-        WPrimeModelType.SKIBA_2012 -> "Skiba 2012"
-        WPrimeModelType.SKIBA_DIFFERENTIAL -> "Skiba Differential (2014)"
-        WPrimeModelType.BARTRAM -> "Bartram 2018"
-        WPrimeModelType.CAEN_LIEVENS -> "Caen/Lievens (Domain)"
-        WPrimeModelType.CHORLEY -> "Chorley 2023 (Bi-Exp)"
-        WPrimeModelType.WEIGEND -> "Weigend 2022 (Hydraulic)"
-    }
+private fun formatModelName(model: WPrimeModelType): String = when (model) {
+    WPrimeModelType.SKIBA_2012 -> "Skiba 2012"
+    WPrimeModelType.SKIBA_DIFFERENTIAL -> "Skiba Differential (2014)"
+    WPrimeModelType.BARTRAM -> "Bartram 2018"
+    WPrimeModelType.CAEN_LIEVENS -> "Caen/Lievens (Domain)"
+    WPrimeModelType.CHORLEY -> "Chorley 2023 (Bi-Exp)"
+    WPrimeModelType.WEIGEND -> "Weigend 2022 (Hydraulic)"
 }
 
 /**
@@ -297,20 +298,19 @@ private fun formatModelName(model: WPrimeModelType): String {
  */
 data class ModelParameterRequirements(
     val usesTau: Boolean,
-    val usesKIn: Boolean
+    val usesKIn: Boolean,
 )
 
-private fun getModelRequirements(model: WPrimeModelType): ModelParameterRequirements {
-    return when (model) {
-        WPrimeModelType.SKIBA_2012,
-        WPrimeModelType.SKIBA_DIFFERENTIAL,
-        WPrimeModelType.CAEN_LIEVENS,
-        WPrimeModelType.CHORLEY -> ModelParameterRequirements(usesTau = false, usesKIn = false)
+private fun getModelRequirements(model: WPrimeModelType): ModelParameterRequirements = when (model) {
+    WPrimeModelType.SKIBA_2012,
+    WPrimeModelType.SKIBA_DIFFERENTIAL,
+    WPrimeModelType.CAEN_LIEVENS,
+    WPrimeModelType.CHORLEY,
+    -> ModelParameterRequirements(usesTau = false, usesKIn = false)
 
-        WPrimeModelType.BARTRAM -> ModelParameterRequirements(usesTau = true, usesKIn = false)
+    WPrimeModelType.BARTRAM -> ModelParameterRequirements(usesTau = true, usesKIn = false)
 
-        WPrimeModelType.WEIGEND -> ModelParameterRequirements(usesTau = false, usesKIn = true)
-    }
+    WPrimeModelType.WEIGEND -> ModelParameterRequirements(usesTau = false, usesKIn = true)
 }
 
 // --- Previews ---
@@ -327,7 +327,7 @@ fun ConfigurationScreenPreview() {
                 tauRecovery = 320.0,
                 kIn = 0.002,
                 recordFit = true,
-                modelType = WPrimeModelType.BARTRAM
+                modelType = WPrimeModelType.BARTRAM,
             ),
             onCriticalPowerChange = {},
             onAnaerobicCapacityChange = {},
@@ -335,7 +335,7 @@ fun ConfigurationScreenPreview() {
             onKInChange = {},
             onRecordFitChange = {},
             onModelSelected = {},
-            onBackClick = {}
+            onBackClick = {},
         )
     }
 }
@@ -346,7 +346,7 @@ fun ModelSelectionDropdownPreview() {
     WPrimeExtensionTheme {
         ModelSelectionDropdown(
             selectedModel = WPrimeModelType.SKIBA_DIFFERENTIAL,
-            onModelSelected = {}
+            onModelSelected = {},
         )
     }
 }

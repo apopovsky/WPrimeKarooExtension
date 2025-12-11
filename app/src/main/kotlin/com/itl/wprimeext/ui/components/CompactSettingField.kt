@@ -53,15 +53,21 @@ fun CompactSettingField(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = if (enabled) MaterialTheme.colorScheme.onSurface
-                       else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                color = if (enabled) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                },
             )
             if (!description.isNullOrBlank()) {
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant
-                           else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+                    color = if (enabled) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                    },
                 )
             }
         }
@@ -93,8 +99,11 @@ fun CompactSettingField(
             text = unit,
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.Bold,
-            color = if (enabled) MaterialTheme.colorScheme.primary
-                   else MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
+            color = if (enabled) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.38f)
+            },
         )
 
         if (showSaved && enabled) {

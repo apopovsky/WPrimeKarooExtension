@@ -21,7 +21,7 @@ data class WPrimeConfiguration(
     val tauRecovery: Double = 300.0,
     val kIn: Double = 0.002,
     val recordFit: Boolean = true,
-    val modelType: WPrimeModelType = WPrimeModelType.SKIBA_DIFFERENTIAL
+    val modelType: WPrimeModelType = WPrimeModelType.SKIBA_DIFFERENTIAL,
 )
 
 class WPrimeSettings(private val context: Context) {
@@ -45,7 +45,7 @@ class WPrimeSettings(private val context: Context) {
             tauRecovery = preferences[TAU_RECOVERY_KEY] ?: 300.0,
             kIn = preferences[K_IN_KEY] ?: 0.002,
             recordFit = preferences[RECORD_FIT_KEY] ?: true,
-            modelType = modelType
+            modelType = modelType,
         )
 
         val isDefault = preferences[CRITICAL_POWER_KEY] == null
@@ -109,5 +109,4 @@ class WPrimeSettings(private val context: Context) {
         }
         WPrimeLogger.i(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_SAVED + " - Model Type")
     }
-
 }
