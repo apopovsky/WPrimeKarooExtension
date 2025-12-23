@@ -1,7 +1,7 @@
 # W Prime Extension for Hammerhead Karoo 3
 
-[![CI/CD](https://github.com/apopovsky/WPrimeExtension/actions/workflows/ci.yml/badge.svg)](https://github.com/apopovsky/WPrimeExtension/actions/workflows/ci.yml)
-[![Code Quality](https://github.com/apopovsky/WPrimeExtension/actions/workflows/code-quality.yml/badge.svg)](https://github.com/apopovsky/WPrimeExtension/actions/workflows/code-quality.yml)
+[![CI/CD - Build and Release](https://github.com/apopovsky/WPrimeKarooExtension/actions/workflows/ci.yml/badge.svg)](https://github.com/apopovsky/WPrimeKarooExtension/actions/workflows/ci.yml)
+[![Code Quality](https://github.com/apopovsky/WPrimeKarooExtension/actions/workflows/code-quality.yml/badge.svg)](https://github.com/apopovsky/WPrimeKarooExtension/actions/workflows/code-quality.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Karoo%203-orange.svg)](https://www.hammerhead.io/)
 
