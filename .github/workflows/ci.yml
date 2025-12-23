@@ -58,15 +58,16 @@ jobs:
         path: app/build/outputs/apk/debug/WPrimeExtension-*.apk
         retention-days: 30
 
-    - name: Upload Test Results
-      if: always()
-      uses: actions/upload-artifact@v6
-      with:
-        name: test-results
-        path: |
-          app/build/test-results/**/*.xml
-          app/build/reports/tests/
-        retention-days: 7
+    # Uncomment when tests are implemented
+    # - name: Upload Test Results
+    #   if: always()
+    #   uses: actions/upload-artifact@v6
+    #   with:
+    #     name: test-results
+    #     path: |
+    #       app/build/test-results/**/*.xml
+    #       app/build/reports/tests/
+    #     retention-days: 7
 
   lint:
     name: Lint Check
@@ -149,20 +150,10 @@ jobs:
     - name: Build Release APK
       run: ./gradlew assembleRelease --stacktrace
 
-    - name: Get APK path
-      id: apk-path
-      run: |
-        APK_PATH=$(find app/build/outputs/apk/release -name "*.apk" | head -n 1)
-        echo "path=$APK_PATH" >> $GITHUB_OUTPUT
-        echo "name=$(basename $APK_PATH)" >> $GITHUB_OUTPUT
-
     - name: Upload Release APK to GitHub Release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/tags/')
       with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ${{ steps.apk-path.outputs.path }}
-        asset_name: ${{ steps.apk-path.outputs.name }}
-        asset_content_type: application/vnd.android.package-archive
+        files: app/build/outputs/apk/release/*.apk
+        token: ${{ secrets.GITHUB_TOKEN }}
 
