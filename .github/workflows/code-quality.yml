@@ -93,6 +93,7 @@ jobs:
   codeql:
     name: CodeQL Security Analysis
     runs-on: ubuntu-latest
+    if: false  # Disabled until CodeQL supports Kotlin 2.3.0+
     permissions:
       security-events: write
       actions: read
