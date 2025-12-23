@@ -95,6 +95,7 @@ dependencies {
     implementation(libs.nordic.ble.client)
 
     // Hilt
+    ksp("org.jetbrains.kotlin:kotlin-metadata-jvm:2.3.0")
     ksp(libs.hilt.android.compiler)
     implementation(libs.hilt.android)
     implementation(libs.androidx.hilt.navigation.compose)

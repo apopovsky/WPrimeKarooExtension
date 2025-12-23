@@ -1,15 +1,15 @@
 [versions]
-activity = "1.12.1"
-agp = "8.13.1"
+activity = "1.12.2"
+agp = "8.13.2"
 dokka = "2.1.0"
-kotlin = "2.2.21"
+kotlin = "2.3.0"
 coreKtx = "1.17.0"
 coroutines = "1.10.2"
 lifecycle = "2.10.0"
 glance = "1.1.1"
 hilt = "2.57.2"
 datastore = "1.2.0"
-ksp = "2.3.3"
+ksp = "2.3.4"
 nordicBleClient = "2.0.0-alpha12"
 
 [libraries]
@@ -34,7 +34,7 @@ androidx-glance-appwidget-preview = { module = "androidx.glance:glance-appwidget
 androidx-glance-preview = { group = "androidx.glance", name = "glance-preview", version.ref = "glance" }
 
 # compose
-androidx-compose-bom = { module = "androidx.compose:compose-bom", version = "2025.12.00" }
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version = "2025.12.01" }
 androidx-material3 = { module = "androidx.compose.material3:material3" }
 androidx-ui = { module = "androidx.compose.ui:ui" }
 androidx-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }

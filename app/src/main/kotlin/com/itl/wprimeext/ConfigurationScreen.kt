@@ -169,7 +169,7 @@ fun ConfigurationScreenLayout(
                     }
 
                     // Toggle para grabar datos W' al archivo FIT
-                    androidx.compose.material3.Card(
+                    Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
                     ) {
@@ -253,7 +253,7 @@ fun ModelSelectionDropdown(
     ) {
         ExposedDropdownMenuBox(
             expanded = expanded,
-            onExpandedChange = { expanded = !expanded },
+            onExpandedChange = { expanded = it },
             modifier = Modifier.fillMaxWidth(),
         ) {
             TextField(
