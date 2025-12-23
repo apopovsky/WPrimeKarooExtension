@@ -1,6 +1,32 @@
 # W Prime Extension for Hammerhead Karoo 3
 
+[![CI/CD](https://github.com/YOUR_USERNAME/WPrimeExtension/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/WPrimeExtension/actions/workflows/ci.yml)
+[![Code Quality](https://github.com/YOUR_USERNAME/WPrimeExtension/actions/workflows/code-quality.yml/badge.svg)](https://github.com/YOUR_USERNAME/WPrimeExtension/actions/workflows/code-quality.yml)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Karoo%203-orange.svg)](https://www.hammerhead.io/)
+
 > **Track your anaerobic capacity in real-time and never blow up on climbs or sprints again.**
+
+<p align="center">
+  <img src="media/screencap.gif" width="540" height="900" alt="W Prime Extension in Action"/>
+</p>
+---
+
+## Table of Contents
+
+- [What is This Extension?](#what-is-this-extension)
+- [Quick Start](#quick-start-for-karoo-users)
+- [Screenshots](#screenshots)
+- [Understanding W Prime](#understanding-w-prime)
+- [Choose Your Algorithm](#choose-your-algorithm)
+- [Configuration Guide](#configuration-guide)
+- [FAQ](#frequently-asked-questions)
+- [Installation & Setup](#installation--setup)
+- [Technical Details](#technical-details-for-developers)
+- [Contributing](#contributing)
+- [Support & Community](#support--community)
+
+---
 
 ## What is This Extension?
 
@@ -64,6 +90,33 @@ Or transfer the APK to your Karoo and install via file manager.
 
 Watch your W Prime drop during climbs or sprints, then recover during easy pedaling.
 
+---
+
+## Screenshots
+
+### Configuration Interface
+
+The extension provides an intuitive configuration screen where you can set all parameters:
+
+<p align="center">
+  <img src="media/config1.png" width="480" alt="W Prime Configuration Screen - Parameters"/>
+  &nbsp;&nbsp;&nbsp;
+  <img src="media/config2.png" width="480" alt="W Prime Configuration Screen - Algorithm Selection"/>
+</p>
+
+### In-Ride Display
+
+See your W Prime balance in real-time during your rides:
+
+<p align="center">
+  <img src="media/main1.png" width="480" alt="W Prime Data Field on Karoo"/>
+  &nbsp;&nbsp;&nbsp;
+  <img src="media/screencap.gif" width="540" alt="W Prime in Action"/>
+</p>
+
+The data field updates every second, showing your remaining anaerobic capacity as you ride.
+
+---
 
 ## Understanding W Prime
 
