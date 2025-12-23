@@ -103,10 +103,10 @@ dependencies {
     implementation(libs.mapbox.sdk.turf)
 
     constraints {
-        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.0.0") {
+        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.3.0") {
             because("kotlin-stdlib-jdk7 is now a part of kotlin-stdlib")
         }
-        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.0") {
+        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.0") {
             because("kotlin-stdlib-jdk8 is now a part of kotlin-stdlib")
         }
     }
