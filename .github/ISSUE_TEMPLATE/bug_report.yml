@@ -1,0 +1,106 @@
+name: Bug Report
+description: Report a bug or issue with the W Prime Extension
+title: "[BUG] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the form below.
+
+  - type: input
+    id: extension-version
+    attributes:
+      label: Extension Version
+      description: What version of the W Prime Extension are you using?
+      placeholder: "e.g., 1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: karoo-firmware
+    attributes:
+      label: Karoo Firmware Version
+      description: What firmware version is your Karoo 3 running?
+      placeholder: "e.g., 1.482.2310"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: algorithm
+    attributes:
+      label: W Prime Algorithm
+      description: Which algorithm are you using?
+      options:
+        - Skiba 2014 Differential
+        - Skiba 2012 Monoexponential
+        - Bartram 2018
+        - Caen/Lievens
+        - Chorley 2023
+        - Weigend 2022
+        - Not sure / Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: configuration
+    attributes:
+      label: Configuration
+      description: What values do you have configured?
+      placeholder: |
+        Critical Power (CP): 250W
+        Anaerobic Capacity (W'): 15000J
+        Tau: 300s (if applicable)
+        FIT Recording: Enabled/Disabled
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Tell us what happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Tell us what you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Configure extension with...
+        2. Start a ride...
+        3. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (if available)
+      description: |
+        If possible, provide logcat output:
+        `adb logcat | grep WPrime`
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here.
+      placeholder: Screenshots, videos, or other relevant information
+    validations:
+      required: false

@@ -1,0 +1,138 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  schedule:
+    - cron: '0 0 * * 1' # Weekly on Mondays
+
+jobs:
+  detekt:
+    name: Detekt Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Create local.properties
+      run: |
+        echo "sdk.dir=$ANDROID_HOME" > local.properties
+        
+    - name: Setup Gradle properties for karoo-ext
+      env:
+        GPR_USER: ${{ secrets.GPR_USER }}
+        GPR_TOKEN: ${{ secrets.GPR_TOKEN }}
+      run: |
+        mkdir -p ~/.gradle
+        echo "gpr.user=${GPR_USER:-${{ github.actor }}}" >> ~/.gradle/gradle.properties
+        echo "gpr.key=${GPR_TOKEN:-${{ secrets.GITHUB_TOKEN }}}" >> ~/.gradle/gradle.properties
+        
+    - name: Run Detekt
+      run: ./gradlew detekt || true
+      continue-on-error: true
+      
+    - name: Upload Detekt Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: detekt-report
+        path: |
+          app/build/reports/detekt/
+          lib/build/reports/detekt/
+        retention-days: 7
+        if-no-files-found: ignore
+
+  kotlinter:
+    name: Kotlin Style Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Create local.properties
+      run: |
+        echo "sdk.dir=$ANDROID_HOME" > local.properties
+        
+    - name: Setup Gradle properties for karoo-ext
+      env:
+        GPR_USER: ${{ secrets.GPR_USER }}
+        GPR_TOKEN: ${{ secrets.GPR_TOKEN }}
+      run: |
+        mkdir -p ~/.gradle
+        echo "gpr.user=${GPR_USER:-${{ github.actor }}}" >> ~/.gradle/gradle.properties
+        echo "gpr.key=${GPR_TOKEN:-${{ secrets.GITHUB_TOKEN }}}" >> ~/.gradle/gradle.properties
+        
+    - name: Check Kotlin Code Style
+      run: ./gradlew lintKotlin || true
+      continue-on-error: true
+
+  codeql:
+    name: CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: java-kotlin
+        
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Create local.properties
+      run: |
+        echo "sdk.dir=$ANDROID_HOME" > local.properties
+        
+    - name: Setup Gradle properties for karoo-ext
+      env:
+        GPR_USER: ${{ secrets.GPR_USER }}
+        GPR_TOKEN: ${{ secrets.GPR_TOKEN }}
+      run: |
+        mkdir -p ~/.gradle
+        echo "gpr.user=${GPR_USER:-${{ github.actor }}}" >> ~/.gradle/gradle.properties
+        echo "gpr.key=${GPR_TOKEN:-${{ secrets.GITHUB_TOKEN }}}" >> ~/.gradle/gradle.properties
+        
+    - name: Build project
+      run: ./gradlew build --stacktrace
+      
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+
