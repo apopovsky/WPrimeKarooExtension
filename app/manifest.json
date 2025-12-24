@@ -1,8 +1,8 @@
 {
   "label": "W Prime Extension",
   "packageName": "com.itl.wprimeext",
-  "iconUrl": "https://github.com/itl/wprime-extension/releases/latest/download/wprime-icon.png",
-  "latestApkUrl": "https://github.com/itl/wprime-extension/releases/latest/download/wprime-extension.apk",
+  "iconUrl": "https://github.com/apopovsky/WPrimeKarooExtension/releases/latest/download/wprime-icon.png",
+  "latestApkUrl": "https://github.com/apopovsky/WPrimeKarooExtension/releases/latest/download/WPrimeExtension-v1.0-release.apk",
   "latestVersion": "1.0",
   "latestVersionCode": 8,
   "developer": "ITL",

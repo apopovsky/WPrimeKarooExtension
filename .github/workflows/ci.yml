@@ -154,6 +154,9 @@ jobs:
       uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: app/build/outputs/apk/release/*.apk
+        files: |
+          app/build/outputs/apk/release/WPrimeExtension-*.apk
+          app/manifest.json
+          assets/wprime-icon.png
         token: ${{ secrets.GITHUB_TOKEN }}
 
