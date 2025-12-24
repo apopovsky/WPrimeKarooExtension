@@ -72,6 +72,7 @@ GitHub Copilot should:
 - Reference official documentation and sample code when suggesting API usage
 - Avoid suggesting generic Android code when Karoo-specific solutions exist
 - Assist with modular design for future expansion (e.g., notifications)
+- **NEVER create separate MD documentation files for resolved issues or fixes** - just fix the code and commit
 
 Copilot should behave like a **Karoo-aware Android assistant**, not a general Android suggester.
 
