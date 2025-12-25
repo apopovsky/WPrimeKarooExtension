@@ -57,13 +57,29 @@ If you're a cyclist who:
 
 ### 1. Install the Extension
 
-Download the latest APK from the [Releases](https://github.com/apopovsky/WPrimeExtension/releases) page, then:
+Download the latest APK from the [Releases](https://github.com/apopovsky/WPrimeExtension/releases) page.
+
+**Option 1: Companion App (Recommended - Easiest)**
+
+The easiest way to install is using the Hammerhead Companion App on your smartphone:
+
+1. On your phone, open the [Releases page](https://github.com/apopovsky/WPrimeExtension/releases) in your browser
+2. Find the latest release APK file link
+3. Long-press the APK download URL and select "Share" → **Hammerhead Companion App**
+4. The APK will transfer to your Karoo
+5. Tap **Install** on your Karoo when prompted
+
+*Prerequisites:* Karoo firmware 1.538.2049+, Companion App (Android 1.36.0+ or iOS 1.12.0+), Wi-Fi enabled on Karoo.
+
+For detailed instructions, see the [official Hammerhead guide](https://support.hammerhead.io/hc/en-us/articles/31576497036827-Companion-App-Sideloading).
+
+**Option 2: ADB (Advanced Users)**
+
+If you prefer command-line installation:
 
 ```bash
-adb install WPrimeExtension-v1.0-debug.apk
+adb install WPrimeExtension-vX.X.X.apk
 ```
-
-Or transfer the APK to your Karoo and install via file manager.
 
 ### 2. Configure Your Settings
 
@@ -282,11 +298,33 @@ Yes, but W Prime is most useful for **variable power** rides (races, group rides
 ## Installation & Setup
 
 ### Requirements
-- Hammerhead Karoo 3 (firmware 1.x or later)
+- Hammerhead Karoo 3 (firmware 1.538.2049 or later for Companion App install)
 - Power meter connected to Karoo
-- ADB access for installation (or transfer APK via USB)
+- Hammerhead Companion App (optional, for easy installation)
+- ADB access (optional, for advanced installation)
 
 ### Step-by-Step Installation
+
+#### Option 1: Install via Companion App (Recommended)
+
+This method requires no cables or developer options.
+
+1. **Prepare your devices**
+   - Ensure Karoo is connected to Wi-Fi
+   - Ensure phone has internet connection
+   - Update Companion App to latest version
+
+2. **Sideload the APK**
+   - On your phone, go to the [Releases page](https://github.com/apopovsky/WPrimeExtension/releases)
+   - Long-press the APK link (or share the downloaded file)
+   - Select **Hammerhead Companion App** from the share menu
+   - Watch for the "Transferring" screen on your phone
+
+3. **Install on Karoo**
+   - When the transfer completes, an "Install" prompt appears on Karoo
+   - Tap **Install** to finish
+
+#### Option 2: Install via ADB (Advanced)
 
 1. **Enable Developer Options on Karoo**
    - Go to Settings → About
@@ -297,7 +335,7 @@ Yes, but W Prime is most useful for **variable power** rides (races, group rides
 2. **Install via ADB**
    ```bash
    adb connect <KAROO_IP>:5555
-   adb install WPrimeExtension-v1.0-debug.apk
+   adb install WPrimeExtension-vX.X.X.apk
    ```
 
 3. **Configure Extension**
