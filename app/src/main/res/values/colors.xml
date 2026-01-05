@@ -4,5 +4,12 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
+
+    <!-- Alert colors -->
+    <color name="alert_warning_yellow">#FFE6DE26</color>
+    <color name="alert_warning_orange">#FFE5683C</color>
+    <color name="alert_critical_red">#FFC7292A</color>
+    <color name="alert_background">#FF1A1A1A</color>
+    <color name="alert_text">#FFFFFFFF</color>
 </resources>
 

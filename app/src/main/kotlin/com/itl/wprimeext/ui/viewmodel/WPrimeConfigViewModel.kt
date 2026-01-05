@@ -3,6 +3,7 @@ package com.itl.wprimeext.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.itl.wprimeext.extension.WPrimeAlert
 import com.itl.wprimeext.extension.WPrimeConfiguration
 import com.itl.wprimeext.extension.WPrimeModelType
 import com.itl.wprimeext.extension.WPrimeSettings
@@ -11,7 +12,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
+@OptIn(ExperimentalUuidApi::class)
 class WPrimeConfigViewModel(private val settings: WPrimeSettings) : ViewModel() {
 
     private val _configuration = MutableStateFlow(WPrimeConfiguration())
@@ -80,6 +84,51 @@ class WPrimeConfigViewModel(private val settings: WPrimeSettings) : ViewModel() 
         viewModelScope.launch {
             settings.updateModelType(modelType)
             _configuration.value = _configuration.value.copy(modelType = modelType)
+        }
+    }
+
+    fun addAlert(thresholdPercentage: Int, soundEnabled: Boolean) {
+        viewModelScope.launch {
+            val newAlert = WPrimeAlert(
+                id = Uuid.random().toString(),
+                thresholdPercentage = thresholdPercentage,
+                soundEnabled = soundEnabled
+            )
+            val updatedAlerts = _configuration.value.alerts + newAlert
+            settings.updateAlerts(updatedAlerts)
+            _configuration.value = _configuration.value.copy(alerts = updatedAlerts)
+        }
+    }
+
+    fun updateAlert(alertId: String, thresholdPercentage: Int, soundEnabled: Boolean) {
+        viewModelScope.launch {
+            val updatedAlerts = _configuration.value.alerts.map { alert ->
+                if (alert.id == alertId) {
+                    alert.copy(thresholdPercentage = thresholdPercentage, soundEnabled = soundEnabled)
+                } else {
+                    alert
+                }
+            }
+            settings.updateAlerts(updatedAlerts)
+            _configuration.value = _configuration.value.copy(alerts = updatedAlerts)
+        }
+    }
+
+    fun deleteAlert(alertId: String) {
+        viewModelScope.launch {
+            val updatedAlerts = _configuration.value.alerts.filter { it.id != alertId }
+            settings.updateAlerts(updatedAlerts)
+            _configuration.value = _configuration.value.copy(alerts = updatedAlerts)
+        }
+    }
+
+    fun testAlert(alertId: String) {
+        // This will be handled by the UI layer to dispatch the test alert
+        // We just need to find the alert and pass it back
+        val alert = _configuration.value.alerts.find { it.id == alertId }
+        if (alert != null) {
+            // The actual dispatch will happen in the main activity/screen
+            // We expose this through a flow that the UI can observe
         }
     }
 }

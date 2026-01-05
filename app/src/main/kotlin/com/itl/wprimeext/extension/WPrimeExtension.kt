@@ -152,6 +152,32 @@ class WPrimeExtension : KarooExtension("wprime-id", "1.0") {
                 }
             }
             launch {
+                // Handle test alerts from configuration screen
+                callbackFlow {
+                    val intentFilter = IntentFilter("io.hammerhead.wprime.TEST_ALERT")
+                    val receiver = object : BroadcastReceiver() {
+                        override fun onReceive(context: Context, intent: Intent) {
+                            trySend(intent)
+                        }
+                    }
+                    registerReceiver(receiver, intentFilter)
+                    awaitClose { unregisterReceiver(receiver) }
+                }
+                    .collect { intent ->
+                        val alertId = intent.getStringExtra("alertId")
+                        val threshold = intent.getIntExtra("threshold", 0)
+                        val soundEnabled = intent.getBooleanExtra("soundEnabled", false)
+
+                        if (alertId != null) {
+                            WPrimeLogger.d(WPrimeLogger.Module.EXTENSION, "Testing alert: $alertId, threshold: $threshold%, sound: $soundEnabled")
+
+                            val alert = WPrimeAlert(alertId, threshold, soundEnabled)
+                            val alertManager = WPrimeAlertManager(karooSystem)
+                            alertManager.testAlert(alert, threshold.toDouble())
+                        }
+                    }
+            }
+            launch {
                 // Handle actions that can't be shown in MainActivity because
                 // they are for in-ride scenarios. Receiving these intents is like
                 // if an extension got a command from a sensor or API that maps to the in-ride actions.

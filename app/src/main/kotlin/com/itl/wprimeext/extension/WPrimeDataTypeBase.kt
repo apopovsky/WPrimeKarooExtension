@@ -62,6 +62,7 @@ abstract class WPrimeDataTypeBase(
             anaerobicCapacity = 12000.0,
             tauRecovery = 300.0,
         )
+    private val alertManager = WPrimeAlertManager(karooSystem)
 
     /**
      * Internal data passed to Glance composition. Always uses current W' (Joules) plus configuration
@@ -310,6 +311,7 @@ abstract class WPrimeDataTypeBase(
 
     private fun streamRealWPrimeData(): Flow<WPrimeDisplayData> = flow {
         val powerFlow = karooSystem.streamDataFlow(DataType.Type.POWER)
+        val manager = alertManager // Capture reference for use inside flow
         powerFlow.collect { power ->
             val config = wprimeSettings.configuration.first()
             when (power) {
@@ -317,9 +319,15 @@ abstract class WPrimeDataTypeBase(
                     val powerValue = power.dataPoint.singleValue ?: 0.0
                     wprimeCalculator.updatePower(powerValue, System.currentTimeMillis())
                     val wPrimeJ = wprimeCalculator.getCurrentWPrime()
+                    val wPrimePercentage = wprimeCalculator.getWPrimePercentage()
                     val (backgroundColor, textColor) = calculateDisplayColors(powerValue)
                     val criticalPower = wprimeCalculator.getCriticalPower()
                     val anaerobicCapacity = wprimeCalculator.getAnaerobicCapacity()
+
+                    // Check for alert conditions
+                    if (config.alerts.isNotEmpty()) {
+                        manager.checkAlerts(wPrimePercentage, config.alerts)
+                    }
 
                     emit(
                         WPrimeDisplayData(
