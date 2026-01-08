@@ -284,6 +284,16 @@ class WPrimeCalculator(
     fun getWPrimePercentage(): Double = model.getWPrimePercentage()
     fun getCriticalPower(): Double = criticalPower
     fun getAnaerobicCapacity(): Double = anaerobicCapacity
+
+    /**
+     * Resets W' balance to full capacity and clears timestamp.
+     * Should be called at the start of a new ride.
+     */
+    fun reset() {
+        model.reset()
+        lastUpdateTime = 0
+        WPrimeLogger.i(WPrimeLogger.Module.CALCULATOR, "WPrimeCalculator reset to full capacity")
+    }
 }
 
 // --- Model Factory and Enum ---

@@ -96,6 +96,10 @@ abstract class WPrimeDataTypeBase(
 
     override fun startStream(emitter: Emitter<StreamState>) {
         WPrimeLogger.d(WPrimeLogger.Module.DATA_TYPE, "Starting W Prime data stream for $typeId...")
+
+        // Reset calculator to ensure W' starts at 100%
+        wprimeCalculator.reset()
+
         val job =
             CoroutineScope(Dispatchers.IO).launch {
                 // Configure the calculator with persistent settings
