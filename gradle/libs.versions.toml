@@ -34,7 +34,7 @@ androidx-glance-appwidget-preview = { module = "androidx.glance:glance-appwidget
 androidx-glance-preview = { group = "androidx.glance", name = "glance-preview", version.ref = "glance" }
 
 # compose
-androidx-compose-bom = { module = "androidx.compose:compose-bom", version = "2025.12.01" }
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version = "2026.01.00" }
 androidx-material3 = { module = "androidx.compose.material3:material3" }
 androidx-ui = { module = "androidx.compose.ui:ui" }
 androidx-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
