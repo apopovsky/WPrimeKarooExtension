@@ -92,7 +92,7 @@ dependencies {
     // datastore
     implementation(libs.androidx.datastore.preferences)
 
-    implementation(libs.nordic.ble.client)
+
 
     // Hilt
     ksp("org.jetbrains.kotlin:kotlin-metadata-jvm:2.3.0")

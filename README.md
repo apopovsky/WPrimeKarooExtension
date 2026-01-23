@@ -3,7 +3,7 @@
 [![CI/CD - Build and Release](https://github.com/apopovsky/WPrimeKarooExtension/actions/workflows/ci.yml/badge.svg)](https://github.com/apopovsky/WPrimeKarooExtension/actions/workflows/ci.yml)
 [![Code Quality](https://github.com/apopovsky/WPrimeKarooExtension/actions/workflows/code-quality.yml/badge.svg)](https://github.com/apopovsky/WPrimeKarooExtension/actions/workflows/code-quality.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Karoo%203-orange.svg)](https://www.hammerhead.io/)
+[![Platform](https://img.shields.io/badge/Platform-Karoo%202%20%26%203-orange.svg)](https://www.hammerhead.io/)
 
 > **Track your anaerobic capacity in real-time and never blow up on climbs or sprints again.**
 
@@ -31,7 +31,7 @@
 
 ## What is This Extension?
 
-This extension brings **W Prime (W') balance tracking** to your Karoo 3 cycling computer. W Prime represents your finite anaerobic energy reserve - think of it as a battery that depletes when you push hard above your threshold and recharges when you ease off.
+This extension brings **W Prime (W') balance tracking** to your Karoo 2 & 3 cycling computers. W Prime represents your finite anaerobic energy reserve - think of it as a battery that depletes when you push hard above your threshold and recharges when you ease off.
 
 ### Why Should You Care?
 
