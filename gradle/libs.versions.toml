@@ -57,7 +57,7 @@ kotlinx-coroutines-rx2 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-rx
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 
 nordic-ble-client = { module = "no.nordicsemi.kotlin.ble:client-android", version.ref = "nordicBleClient" }
-kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.9.0" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.10.0" }
 mapbox-sdk-turf = { module = "com.mapbox.mapboxsdk:mapbox-sdk-turf", version = "7.3.1" }
 timber = { module = "com.jakewharton.timber:timber", version = "5.0.1" }
 
