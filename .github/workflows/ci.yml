@@ -52,7 +52,7 @@ jobs:
       run: ./gradlew assembleDebug --stacktrace
 
     - name: Upload Debug APK
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: wprime-debug-apk
         path: app/build/outputs/apk/debug/WPrimeExtension-*.apk
@@ -61,7 +61,7 @@ jobs:
     # Uncomment when tests are implemented
     # - name: Upload Test Results
     #   if: always()
-    #   uses: actions/upload-artifact@v6
+    #   uses: actions/upload-artifact@v7
     #   with:
     #     name: test-results
     #     path: |
@@ -106,7 +106,7 @@ jobs:
 
     - name: Upload Lint Results
       if: always()
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: lint-results
         path: |
