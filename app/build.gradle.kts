@@ -2,19 +2,18 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.google.dagger.hilt.android)
     alias(libs.plugins.google.devtools.ksp)
-    alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.jetbrains.kotlin.serialization)
     alias(libs.plugins.jetbrains.kotlin.compose)
 }
 
-android {
+configure<com.android.build.api.dsl.ApplicationExtension> {
     namespace = "com.itl.wprimeext"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.itl.wprimeext"
         minSdk = 23
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 9
         versionName = "1.0.1"
         base.archivesName.set("WPrimeExtension-v${versionName}")
@@ -30,15 +29,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-    }
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-        }
-    }
-    @Suppress("UnstableApiUsage")
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
     }
 
     buildFeatures {
@@ -95,7 +85,7 @@ dependencies {
     implementation(libs.nordic.ble.client)
 
     // Hilt
-    ksp("org.jetbrains.kotlin:kotlin-metadata-jvm:2.3.0")
+    ksp(libs.kotlinMetadataJvm)
     ksp(libs.hilt.android.compiler)
     implementation(libs.hilt.android)
     implementation(libs.androidx.hilt.navigation.compose)
@@ -103,10 +93,10 @@ dependencies {
     implementation(libs.mapbox.sdk.turf)
 
     constraints {
-        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.3.0") {
+        implementation(libs.kotlinStdlibJdk7) {
             because("kotlin-stdlib-jdk7 is now a part of kotlin-stdlib")
         }
-        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.0") {
+        implementation(libs.kotlinStdlibJdk8) {
             because("kotlin-stdlib-jdk8 is now a part of kotlin-stdlib")
         }
     }
