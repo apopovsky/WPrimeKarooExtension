@@ -68,6 +68,37 @@ adb shell am broadcast -a io.hammerhead.wprime.IN_RIDE_ACTION --es action io.ham
 adb shell am broadcast -a io.hammerhead.wprime.TEST_ALERT --es alertId test1 --ei threshold 25 --ez soundEnabled true
 ```
 
+## Taking Screenshots from Karoo via ADB
+
+**Device specs (Karoo 3 / k24):** 480×800 px physical, 300 dpi, Android 12.
+
+```bash
+# Single screenshot → pull to media/ folder
+adb shell screencap -p /sdcard/screen.png
+adb pull /sdcard/screen.png media/screen.png
+adb shell rm /sdcard/screen.png
+
+# One-liner (capture + pull + cleanup)
+adb shell screencap -p /sdcard/screen.png && adb pull /sdcard/screen.png media/screen.png && adb shell rm /sdcard/screen.png
+
+# PowerShell one-liner (Windows)
+adb shell screencap -p /sdcard/screen.png; adb pull /sdcard/screen.png media/screen.png; adb shell rm /sdcard/screen.png
+
+# Timestamped capture (useful for session comparisons)
+$ts = Get-Date -Format "yyyyMMdd_HHmmss"; adb shell screencap -p /sdcard/screen.png; adb pull /sdcard/screen.png "media/screen_$ts.png"; adb shell rm /sdcard/screen.png
+
+# Record a short video (max 180 s, Ctrl+C to stop early)
+adb shell screenrecord /sdcard/karoo.mp4
+adb pull /sdcard/karoo.mp4 media/karoo.mp4
+adb shell rm /sdcard/karoo.mp4
+```
+
+**Notes:**
+- `screencap -p` writes a PNG directly (no intermediate raw format needed).
+- Screenshots land in `media/` at the repo root – already tracked by git for UI documentation.
+- The Karoo screen is portrait 480×800 but data fields render in landscape sub-regions; field pixel sizes reported by `config.viewSize` will differ from full-screen dimensions.
+- Use `adb shell wm size` / `adb shell wm density` to confirm current override values if you have applied `wm size` overrides during testing.
+
 ## Logging Convention
 All logs use `WPrimeLogger` (never `Log.d` directly):
 ```kotlin

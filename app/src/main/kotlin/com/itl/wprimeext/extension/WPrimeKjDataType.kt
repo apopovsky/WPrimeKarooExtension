@@ -16,7 +16,6 @@ package com.itl.wprimeext.extension
 import android.content.Context
 import io.hammerhead.karooext.KarooSystemService
 import io.hammerhead.karooext.models.DataType
-import kotlin.math.roundToInt
 
 class WPrimeKjDataType(
     karooSystem: KarooSystemService,
@@ -24,22 +23,22 @@ class WPrimeKjDataType(
     extension: String,
 ) : WPrimeDataTypeBase(karooSystem, context, extension, "wprime-kj") {
 
-    // Display text uses raw Joules rounded
-    override fun getDisplayText(joulesValue: Double): String = joulesValue.roundToInt().toString()
+    // Display in kJ with 1 decimal (e.g. "7.5", "12.0") – 4 chars max
+    override fun getDisplayText(joulesValue: Double): String = "%.1f".format(joulesValue / 1000.0)
 
     override fun getFormatDataTypeId(): String {
         return DataType.Type.POWER // Use power-like numeric format (no percent)
     }
 
-    override fun getUnitText(): String = "J"
+    override fun getUnitText(): String = "kJ"
 
-    override fun getFieldLabel(): String = "W' (J)"
+    override fun getFieldLabel(): String = "W' (kJ)"
 
-    // Stream mapping: emit Joules directly
-    override fun getInitialStreamValue(): Double = getAnaerobicCapacity()
-    override fun mapJoulesToStreamValue(joules: Double): Double = joules
+    // Stream mapping: emit kJ directly
+    override fun getInitialStreamValue(): Double = getAnaerobicCapacity() / 1000.0
+    override fun mapJoulesToStreamValue(joules: Double): Double = joules / 1000.0
 
-    override fun getTargetHeightFraction(): Float = 0.43f // smaller
-    override fun getFixedCharCount(): Int = 5 // size for 5 chars (e.g., 12000)
-    override fun getSizeScale(): Float = 0.85f // further shrink
+    override fun getTargetHeightFraction(): Float = 0.5f  // same as base default
+    override fun getFixedCharCount(): Int = 4             // "12.0" → 4 chars max
+    override fun getSizeScale(): Float = 1.0f             // no extra reduction needed
 }
