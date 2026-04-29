@@ -34,6 +34,7 @@ class WPrimeAlertManager(
 
     companion object {
         private const val ALERT_COOLDOWN_MS = 30_000L // 30 seconds
+        private const val ALERT_AUTO_DISMISS_MS = 10_000L // 10 seconds
         // Higher, more pleasant frequencies
         private const val BEEP_FREQUENCY_HIGH = 2800 // Hz - Critical alerts
         private const val BEEP_FREQUENCY_MID_HIGH = 2600 // Hz
@@ -126,10 +127,10 @@ class WPrimeAlertManager(
         // Dispatch in-ride alert
         val inRideAlert = InRideAlert(
             id = "wprime_alert_${alert.id}",
-            icon = R.drawable.ic_wprime,
+            icon = R.drawable.ic_wprime_alert,
             title = title,
             detail = "W' at ${alert.thresholdPercentage}% (${currentPercentage.toInt()}%)",
-            autoDismissMs = 3000L,
+            autoDismissMs = ALERT_AUTO_DISMISS_MS,
             backgroundColor = backgroundColor,
             textColor = R.color.alert_text,
         )
