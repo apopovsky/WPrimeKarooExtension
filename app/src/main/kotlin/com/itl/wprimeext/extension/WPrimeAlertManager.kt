@@ -184,15 +184,6 @@ class WPrimeAlertManager(
     }
 
     /**
-     * Reset alert state (e.g., when ride starts/ends)
-     */
-    fun reset() {
-        lastAlertTimestamps.clear()
-        previousWPrimePercentage = null
-        WPrimeLogger.d(WPrimeLogger.Module.DATA_TYPE, "Alert manager reset")
-    }
-
-    /**
      * Manually trigger an alert for testing purposes.
      * This bypasses the cooldown and threshold checking.
      */
