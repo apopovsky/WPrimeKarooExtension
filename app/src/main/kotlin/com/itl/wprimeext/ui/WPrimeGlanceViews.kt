@@ -130,7 +130,9 @@ fun WPrimeGlanceView(
         },
         fixedCharCount = fixedCharCount,
     )
-    val autoTextSp = (baseAutoSp * sizeScale).toInt().coerceAtLeast(8)
+    // Reduce text 10% for single-column (SMALL) fields to avoid oversized 2-char values
+    val columnScaleFactor = if (fieldSize == "SMALL") 0.90f else 1.0f
+    val autoTextSp = (baseAutoSp * sizeScale * columnScaleFactor).toInt().coerceAtLeast(8)
 
     Box(
         modifier = GlanceModifier
@@ -406,8 +408,8 @@ private fun pickTextSizeSp(
     val widthFactorChars = value.length
     val widthFactorAdjustment = when {
         widthFactorChars <= 2 -> 1.0f
-        widthFactorChars == 3 -> if (isWide) 1.0f else 2.0f // Narrow 3-char: prevent truncation after LINE_HEIGHT_FACTOR increase
-        widthFactorChars == 4 -> if (isWide) 1.0f else 2.0f // Narrow 4-char: real char width ≈ 0.6×sp → factor compensates CHAR_WIDTH_FACTOR=0.30
+        widthFactorChars == 3 -> if (isWide) 1.0f else 1.85f // Must fit "100" in narrow: ~47sp avoids truncation
+        widthFactorChars == 4 -> if (isWide) 1.0f else 1.6f // Reduced from 2.0 → less aggressive for "10.3"-style values
         widthFactorChars == 5 -> if (isWide) 1.05f else 1.7f
         else -> if (isWide) 1.2f else 1.8f
     }
