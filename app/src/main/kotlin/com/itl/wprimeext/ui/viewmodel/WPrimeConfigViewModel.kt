@@ -3,6 +3,7 @@ package com.itl.wprimeext.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.itl.wprimeext.extension.AlertType
 import com.itl.wprimeext.extension.WPrimeAlert
 import com.itl.wprimeext.extension.WPrimeConfiguration
 import com.itl.wprimeext.extension.WPrimeModelType
@@ -87,12 +88,13 @@ class WPrimeConfigViewModel(private val settings: WPrimeSettings) : ViewModel() 
         }
     }
 
-    fun addAlert(thresholdPercentage: Int, soundEnabled: Boolean) {
+    fun addAlert(thresholdPercentage: Int, soundEnabled: Boolean, alertType: AlertType = AlertType.DROP) {
         viewModelScope.launch {
             val newAlert = WPrimeAlert(
                 id = Uuid.random().toString(),
                 thresholdPercentage = thresholdPercentage,
-                soundEnabled = soundEnabled
+                soundEnabled = soundEnabled,
+                alertType = alertType,
             )
             val updatedAlerts = _configuration.value.alerts + newAlert
             settings.updateAlerts(updatedAlerts)
@@ -100,11 +102,11 @@ class WPrimeConfigViewModel(private val settings: WPrimeSettings) : ViewModel() 
         }
     }
 
-    fun updateAlert(alertId: String, thresholdPercentage: Int, soundEnabled: Boolean) {
+    fun updateAlert(alertId: String, thresholdPercentage: Int, soundEnabled: Boolean, alertType: AlertType) {
         viewModelScope.launch {
             val updatedAlerts = _configuration.value.alerts.map { alert ->
                 if (alert.id == alertId) {
-                    alert.copy(thresholdPercentage = thresholdPercentage, soundEnabled = soundEnabled)
+                    alert.copy(thresholdPercentage = thresholdPercentage, soundEnabled = soundEnabled, alertType = alertType)
                 } else {
                     alert
                 }

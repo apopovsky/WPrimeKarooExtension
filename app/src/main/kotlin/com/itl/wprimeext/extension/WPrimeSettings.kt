@@ -19,10 +19,14 @@ import kotlinx.serialization.json.Json
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "wprime_settings")
 
 @Serializable
+enum class AlertType { DROP, REPLENISH }
+
+@Serializable
 data class WPrimeAlert(
     val id: String,
     val thresholdPercentage: Int, // 0-100
     val soundEnabled: Boolean,
+    val alertType: AlertType = AlertType.DROP, // DROP = fires when W' falls through; REPLENISH = fires when W' rises through
 )
 
 data class WPrimeConfiguration(

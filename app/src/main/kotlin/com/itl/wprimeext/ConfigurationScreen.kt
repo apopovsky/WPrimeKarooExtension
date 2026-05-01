@@ -49,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.itl.wprimeext.extension.AlertType
 import com.itl.wprimeext.extension.WPrimeConfiguration
 import com.itl.wprimeext.extension.WPrimeModelType
 import com.itl.wprimeext.extension.WPrimeSettings
@@ -85,8 +86,7 @@ fun ConfigurationScreen() {
         onUseColorsChange = viewModel::updateUseColors,
         onModelSelected = viewModel::updateModelType,
         onAddAlert = viewModel::addAlert,
-        onUpdateAlert = viewModel::updateAlert,
-        onDeleteAlert = viewModel::deleteAlert,
+        onUpdateAlert = viewModel::updateAlert,        onDeleteAlert = viewModel::deleteAlert,
         onTestAlert = { alertId ->
             // Find the alert and send broadcast to test it
             val alert = configuration.alerts.find { it.id == alertId }
@@ -120,8 +120,8 @@ fun ConfigurationScreenLayout(
     onShowArrowChange: (Boolean) -> Unit,
     onUseColorsChange: (Boolean) -> Unit,
     onModelSelected: (WPrimeModelType) -> Unit,
-    onAddAlert: (Int, Boolean) -> Unit,
-    onUpdateAlert: (String, Int, Boolean) -> Unit,
+    onAddAlert: (Int, Boolean, AlertType) -> Unit,
+    onUpdateAlert: (String, Int, Boolean, AlertType) -> Unit,
     onDeleteAlert: (String) -> Unit,
     onTestAlert: (String) -> Unit,
     onBackClick: () -> Unit,
@@ -422,8 +422,8 @@ fun ConfigurationTab(
 @Composable
 fun AlertsTab(
     alerts: List<com.itl.wprimeext.extension.WPrimeAlert>,
-    onAddAlert: (Int, Boolean) -> Unit,
-    onUpdateAlert: (String, Int, Boolean) -> Unit,
+    onAddAlert: (Int, Boolean, AlertType) -> Unit,
+    onUpdateAlert: (String, Int, Boolean, AlertType) -> Unit,
     onDeleteAlert: (String) -> Unit,
     onTestAlert: (String) -> Unit,
 ) {
@@ -439,7 +439,7 @@ fun AlertsTab(
         )
 
         Text(
-            text = "Get notified when W' drops to critical levels. Alerts will only fire when crossing downward through the threshold, with a 30-second cooldown.",
+            text = "Set Drop alerts when W' falls through a threshold (yellow), and Recover alerts when W' rises back through one (green).",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -472,8 +472,8 @@ fun AlertsTab(
             alerts.sortedBy { it.thresholdPercentage }.forEach { alert ->
                 AlertItem(
                     alert = alert,
-                    onUpdate = { threshold, sound ->
-                        onUpdateAlert(alert.id, threshold, sound)
+                    onUpdate = { threshold, sound, type ->
+                        onUpdateAlert(alert.id, threshold, sound, type)
                     },
                     onDelete = { onDeleteAlert(alert.id) },
                     onTest = { onTestAlert(alert.id) }
@@ -498,12 +498,18 @@ fun AlertsTab(
         if (showNewAlertDialog) {
             NewAlertDialog(
                 onDismiss = { showNewAlertDialog = false },
-                onConfirm = { threshold, sound ->
-                    onAddAlert(threshold, sound)
+                onConfirm = { threshold, sound, type ->
+                    onAddAlert(threshold, sound, type)
                     showNewAlertDialog = false
                 }
             )
         }
+
+        Text(
+            text = "Each alert fires at most once every 5 min to avoid spam during repeated efforts.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -608,8 +614,8 @@ fun ConfigurationScreenPreview() {
             onShowArrowChange = {},
             onUseColorsChange = {},
             onModelSelected = {},
-            onAddAlert = { _, _ -> },
-            onUpdateAlert = { _, _, _ -> },
+            onAddAlert = { _, _, _ -> },
+            onUpdateAlert = { _, _, _, _ -> },
             onDeleteAlert = {},
             onTestAlert = {},
             onBackClick = {},

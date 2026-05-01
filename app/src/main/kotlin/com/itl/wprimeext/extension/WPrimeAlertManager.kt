@@ -33,7 +33,7 @@ class WPrimeAlertManager(
     private var previousWPrimePercentage: Double? = null
 
     companion object {
-        private const val ALERT_COOLDOWN_MS = 30_000L // 30 seconds
+        private const val ALERT_COOLDOWN_MS = 300_000L // 5 minutes – avoids spam during repeated short efforts
         private const val ALERT_AUTO_DISMISS_MS = 10_000L // 10 seconds
         // Higher, more pleasant frequencies
         private const val BEEP_FREQUENCY_HIGH = 2800 // Hz - Critical alerts
@@ -80,12 +80,16 @@ class WPrimeAlertManager(
         for (alert in sortedAlerts) {
             val threshold = alert.thresholdPercentage.toDouble()
 
-            // Check if we crossed downward through this threshold
-            // Example: previous=100, current=98, threshold=99 → TRUE (100 > 99 && 98 <= 99)
-            // Example: previous=98, current=100, threshold=99 → FALSE (going up, ignored)
-            val crossedDownward = previousPct > threshold && currentWPrimePercentage <= threshold
+            val triggered = when (alert.alertType) {
+                AlertType.DROP ->
+                    // Fire when W' crosses DOWNWARD through threshold
+                    previousPct > threshold && currentWPrimePercentage <= threshold
+                AlertType.REPLENISH ->
+                    // Fire when W' crosses UPWARD through threshold
+                    previousPct < threshold && currentWPrimePercentage >= threshold
+            }
 
-            if (crossedDownward) {
+            if (triggered) {
                 val lastAlertTime = lastAlertTimestamps[alert.id] ?: 0L
                 val timeSinceLastAlert = now - lastAlertTime
 
@@ -108,20 +112,30 @@ class WPrimeAlertManager(
     private fun dispatchAlert(alert: WPrimeAlert, currentPercentage: Double) {
         WPrimeLogger.i(
             WPrimeLogger.Module.DATA_TYPE,
-            "Dispatching W' alert - Threshold: ${alert.thresholdPercentage}%, Current: ${"%.1f".format(currentPercentage)}%, Sound: ${alert.soundEnabled}"
+            "Dispatching W' alert - Type: ${alert.alertType}, Threshold: ${alert.thresholdPercentage}%, Current: ${"%.1f".format(currentPercentage)}%, Sound: ${alert.soundEnabled}"
         )
 
         // Determine alert severity based on threshold
-        val backgroundColor = when {
-            alert.thresholdPercentage <= 10 -> R.color.alert_critical_red
-            alert.thresholdPercentage <= 25 -> R.color.alert_warning_orange
-            else -> R.color.alert_warning_yellow
+        val backgroundColor = when (alert.alertType) {
+            AlertType.REPLENISH -> R.color.alert_replenish_green
+            AlertType.DROP -> when {
+                alert.thresholdPercentage <= 10 -> R.color.alert_warning_orange
+                else -> R.color.alert_warning_yellow
+            }
         }
 
-        val title = when {
-            alert.thresholdPercentage <= 10 -> "W' Critical!"
-            alert.thresholdPercentage <= 25 -> "W' Low"
-            else -> "W' Alert"
+        val title = when (alert.alertType) {
+            AlertType.REPLENISH -> "W' Recovered"
+            AlertType.DROP -> when {
+                alert.thresholdPercentage <= 10 -> "W' Critical!"
+                alert.thresholdPercentage <= 25 -> "W' Low"
+                else -> "W' Alert"
+            }
+        }
+
+        val detail = when (alert.alertType) {
+            AlertType.REPLENISH -> "W' recovered to ${"%.0f".format(currentPercentage)}%"
+            AlertType.DROP -> "W' dropped to ${"%.0f".format(currentPercentage)}%"
         }
 
         // Dispatch in-ride alert
@@ -129,7 +143,7 @@ class WPrimeAlertManager(
             id = "wprime_alert_${alert.id}",
             icon = R.drawable.ic_wprime_alert,
             title = title,
-            detail = "W' at ${alert.thresholdPercentage}% (${currentPercentage.toInt()}%)",
+            detail = detail,
             autoDismissMs = ALERT_AUTO_DISMISS_MS,
             backgroundColor = backgroundColor,
             textColor = R.color.alert_text,
@@ -138,17 +152,28 @@ class WPrimeAlertManager(
 
         // Dispatch beep pattern if enabled
         if (alert.soundEnabled) {
-            val beepPattern = createBeepPattern(alert.thresholdPercentage)
+            val beepPattern = createBeepPattern(alert)
             karooSystem.dispatch(beepPattern)
         }
     }
 
-    private fun createBeepPattern(thresholdPercentage: Int): PlayBeepPattern {
+    private fun createBeepPattern(alert: WPrimeAlert): PlayBeepPattern {
         // Create different beep patterns based on severity with pleasant melodies
-        return when {
-            thresholdPercentage <= 10 -> {
-                // Critical: High urgency pattern - descending tones (urgent but not harsh)
+        return when (alert.alertType) {
+            AlertType.REPLENISH -> {
+                // Ascending tones – positive/recovery notification
                 PlayBeepPattern(
+                    tones = listOf(
+                        PlayBeepPattern.Tone(BEEP_FREQUENCY_LOW, BEEP_DURATION_SHORT),
+                        PlayBeepPattern.Tone(null, BEEP_GAP_SHORT),
+                        PlayBeepPattern.Tone(BEEP_FREQUENCY_MID, BEEP_DURATION_SHORT),
+                        PlayBeepPattern.Tone(null, BEEP_GAP_SHORT),
+                        PlayBeepPattern.Tone(BEEP_FREQUENCY_HIGH, BEEP_DURATION_LONG),
+                    )
+                )
+            }
+            AlertType.DROP -> when {
+                alert.thresholdPercentage <= 10 -> PlayBeepPattern(
                     tones = listOf(
                         PlayBeepPattern.Tone(BEEP_FREQUENCY_HIGH, BEEP_DURATION_SHORT),
                         PlayBeepPattern.Tone(null, BEEP_GAP_SHORT),
@@ -157,10 +182,7 @@ class WPrimeAlertManager(
                         PlayBeepPattern.Tone(BEEP_FREQUENCY_MID_HIGH, BEEP_DURATION_LONG),
                     )
                 )
-            }
-            thresholdPercentage <= 25 -> {
-                // Warning: Medium urgency pattern - alternating tones
-                PlayBeepPattern(
+                alert.thresholdPercentage <= 25 -> PlayBeepPattern(
                     tones = listOf(
                         PlayBeepPattern.Tone(BEEP_FREQUENCY_MID, BEEP_DURATION_SHORT),
                         PlayBeepPattern.Tone(null, BEEP_GAP_SHORT),
@@ -169,10 +191,7 @@ class WPrimeAlertManager(
                         PlayBeepPattern.Tone(BEEP_FREQUENCY_MID_HIGH, BEEP_DURATION_LONG),
                     )
                 )
-            }
-            else -> {
-                // Standard: Gentle notification - ascending tones (informative, not alarming)
-                PlayBeepPattern(
+                else -> PlayBeepPattern(
                     tones = listOf(
                         PlayBeepPattern.Tone(BEEP_FREQUENCY_LOW, BEEP_DURATION_SHORT),
                         PlayBeepPattern.Tone(null, BEEP_GAP_SHORT),

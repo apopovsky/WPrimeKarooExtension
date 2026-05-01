@@ -171,7 +171,9 @@ class WPrimeExtension : KarooExtension("wprime-id", "1.0") {
                         if (alertId != null) {
                             WPrimeLogger.d(WPrimeLogger.Module.EXTENSION, "Testing alert: $alertId, threshold: $threshold%, sound: $soundEnabled")
 
-                            val alert = WPrimeAlert(alertId, threshold, soundEnabled)
+                            val alertTypeStr = intent.getStringExtra("alertType")
+                            val alertType = runCatching { AlertType.valueOf(alertTypeStr ?: "") }.getOrDefault(AlertType.DROP)
+                            val alert = WPrimeAlert(alertId, threshold, soundEnabled, alertType)
                             val alertManager = WPrimeAlertManager(karooSystem)
                             alertManager.testAlert(alert, threshold.toDouble())
                         }
