@@ -146,29 +146,12 @@ fun WPrimeGlanceView(
             verticalAlignment = Alignment.Top,
             modifier = GlanceModifier.fillMaxSize(),
         ) {
-            // Escalar título según clasificación del campo (basado en width Y height)
-            val fieldAreaPx = viewSize.first * viewSize.second
-            val isWidePx = viewSize.first > 400 // Ancho en pixels
-            val isTallPx = viewSize.second > 180 // Alto en pixels
-
-            val titleIconSize = when {
-                fieldAreaPx > 80000 || (isWidePx && isTallPx) -> 32.dp // Campos grandes
-                isWidePx && !isTallPx -> 16.dp // Campos anchos pero bajos: ultra compacto
-                fieldAreaPx > 30000 -> 24.dp // Campos medianos
-                else -> 18.dp // Campos pequeños
-            }
-            val titleRowHeight = when {
-                fieldAreaPx > 80000 || (isWidePx && isTallPx) -> 32.dp
-                isWidePx && !isTallPx -> 16.dp
-                fieldAreaPx > 30000 -> 24.dp
-                else -> 18.dp
-            }
-            val titleTextSize = when {
-                fieldAreaPx > 80000 || (isWidePx && isTallPx) -> 20
-                isWidePx && !isTallPx -> 11
-                fieldAreaPx > 30000 -> 16
-                else -> 12
-            }
+            // Title sizing: near-constant so it looks the same regardless of field size.
+            // Wide (full-width, >400 px wide) is the base; narrow (single-column) is 0.90×.
+            val isWidePx = viewSize.first > 400
+            val titleIconSize   = if (isWidePx) 30.dp else 26.dp
+            val titleRowHeight  = if (isWidePx) 32.dp else 28.dp
+            val titleTextSize   = if (isWidePx) 20 else 18
 
             TitleRow(fieldLabel, textAlign, horizontalAlignment, textColor, titleRowHeight, titleIconSize, titleTextSize)
 
@@ -375,26 +358,13 @@ private fun pickTextSizeSp(
     // Subtract reserved space (arrow) only once
     val availW = (widgetWidth - reservedHorizontal - 4.dp).coerceAtLeast(0.dp).value
 
-    // Clasificación de campo basada en ÁREA y PROPORCIONES (width Y height)
     val fieldArea = widgetWidth.value * widgetHeight.value
     val isWide = widgetWidth.value > 200
-    val isTall = widgetHeight.value > 90
-    val isWideButLow = isWide && !isTall // Campo ancho pero bajo (ej: 239x71dp)
 
-    // More efficient vertical space usage - escalado según clasificación del campo
-    val titleRowHeight = when {
-        fieldArea > 20000 || (isWide && isTall) -> 32.dp // Campos grandes
-        isWideButLow -> 16.dp // Campos anchos pero bajos: ULTRA compacto
-        fieldArea > 12000 -> 24.dp // Campos medianos
-        else -> 18.dp // Campos pequeños
-    }
-    // Reducir márgenes verticales al mínimo para dar más espacio al texto
-    val verticalMargins = when {
-        fieldArea > 20000 -> 4.dp
-        isWideButLow -> 1.dp // Mínimo para campos anchos pero bajos
-        fieldArea > 12000 -> 2.dp
-        else -> 1.dp
-    }
+    // Title row height mirrors WPrimeGlanceView: wide = 32 dp, narrow = 28 dp.
+    // Keep in sync with the titleRowHeight block above or text sizing will be off.
+    val titleRowHeight = if (isWide) 32.dp else 28.dp
+    val verticalMargins = if (fieldArea > 20000) 4.dp else 2.dp
     val availH = (widgetHeight - titleRowHeight - verticalMargins).coerceAtLeast(0.dp).value
     if (availW <= 0f || availH <= 0f) {
         return safeMax
