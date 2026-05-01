@@ -149,9 +149,9 @@ fun WPrimeGlanceView(
             // Title sizing: near-constant so it looks the same regardless of field size.
             // Wide (full-width, >400 px wide) is the base; narrow (single-column) is 0.90×.
             val isWidePx = viewSize.first > 400
-            val titleIconSize   = if (isWidePx) 30.dp else 26.dp
-            val titleRowHeight  = if (isWidePx) 32.dp else 28.dp
-            val titleTextSize   = if (isWidePx) 20 else 18
+            val titleIconSize = if (isWidePx) 30.dp else 26.dp
+            val titleRowHeight = if (isWidePx) 32.dp else 28.dp
+            val titleTextSize = if (isWidePx) 20 else 18
 
             TitleRow(fieldLabel, textAlign, horizontalAlignment, textColor, titleRowHeight, titleIconSize, titleTextSize)
 
