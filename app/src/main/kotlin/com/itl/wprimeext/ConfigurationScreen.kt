@@ -10,11 +10,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,9 +27,11 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
@@ -44,10 +49,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.itl.wprimeext.extension.AlertType
 import com.itl.wprimeext.extension.WPrimeConfiguration
 import com.itl.wprimeext.extension.WPrimeModelType
 import com.itl.wprimeext.extension.WPrimeSettings
+import com.itl.wprimeext.ui.components.AlertItem
 import com.itl.wprimeext.ui.components.CompactSettingField
+import com.itl.wprimeext.ui.components.NewAlertDialog
 import com.itl.wprimeext.ui.theme.WPrimeExtensionTheme
 import com.itl.wprimeext.ui.viewmodel.WPrimeConfigViewModel
 import com.itl.wprimeext.ui.viewmodel.WPrimeConfigViewModelFactory
@@ -77,6 +85,20 @@ fun ConfigurationScreen() {
         onShowArrowChange = viewModel::updateShowArrow,
         onUseColorsChange = viewModel::updateUseColors,
         onModelSelected = viewModel::updateModelType,
+        onAddAlert = viewModel::addAlert,
+        onUpdateAlert = viewModel::updateAlert, onDeleteAlert = viewModel::deleteAlert,
+        onTestAlert = { alertId ->
+            // Find the alert and send broadcast to test it
+            val alert = configuration.alerts.find { it.id == alertId }
+            if (alert != null) {
+                // Send broadcast to trigger test alert
+                val intent = android.content.Intent("io.hammerhead.wprime.TEST_ALERT")
+                intent.putExtra("alertId", alertId)
+                intent.putExtra("threshold", alert.thresholdPercentage)
+                intent.putExtra("soundEnabled", alert.soundEnabled)
+                context.sendBroadcast(intent)
+            }
+        },
         onBackClick = { (context as? MainActivity)?.finish() },
     )
 }
@@ -98,17 +120,30 @@ fun ConfigurationScreenLayout(
     onShowArrowChange: (Boolean) -> Unit,
     onUseColorsChange: (Boolean) -> Unit,
     onModelSelected: (WPrimeModelType) -> Unit,
+    onAddAlert: (Int, Boolean, AlertType) -> Unit,
+    onUpdateAlert: (String, Int, Boolean, AlertType) -> Unit,
+    onDeleteAlert: (String) -> Unit,
+    onTestAlert: (String) -> Unit,
     onBackClick: () -> Unit,
 ) {
     val requirements = getModelRequirements(configuration.modelType)
+    var selectedTabIndex by remember { mutableStateOf(0) }
+    val tabs = listOf("Configuration", "Alerts")
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("W Prime Settings", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        "W Prime Settings",
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                 ),
+                modifier = Modifier.height(48.dp),
             )
         },
     ) { paddingValues ->
@@ -117,187 +152,54 @@ fun ConfigurationScreenLayout(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(paddingValues)
-                        .padding(16.dp)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                        .padding(paddingValues),
                 ) {
-                    Text(
-                        text = "W Prime Parameters",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-
-                    ModelSelectionDropdown(
-                        selectedModel = configuration.modelType,
-                        onModelSelected = onModelSelected,
-                    )
-
-                    CompactSettingField(
-                        title = "Critical Power (CP)",
-                        value = configuration.criticalPower,
-                        unit = "W",
-                        onValueChange = onCriticalPowerChange,
-                    )
-                    CompactSettingField(
-                        title = "Anaerobic Capacity (W')",
-                        value = configuration.anaerobicCapacity,
-                        unit = "J",
-                        onValueChange = onAnaerobicCapacityChange,
-                    )
-
-                    // Tau Recovery - only enabled for Bartram model
-                    CompactSettingField(
-                        title = "Tau Recovery (τ)",
-                        description = if (requirements.usesTau) {
-                            "Individualized recovery time constant"
-                        } else {
-                            "Not used by this model"
-                        },
-                        value = configuration.tauRecovery,
-                        unit = "s",
-                        onValueChange = onTauRecoveryChange,
-                        enabled = requirements.usesTau,
-                    )
-
-                    // kIn - only enabled for Weigend model
-                    if (requirements.usesKIn) {
-                        CompactSettingField(
-                            title = "Hydraulic Rate (kIn)",
-                            description = "Inflow rate coefficient",
-                            value = configuration.kIn,
-                            unit = "",
-                            onValueChange = onKInChange,
-                            enabled = true,
-                        )
-                    }
-
-                    Text(
-                        text = "Display Settings",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-
-                    // Toggle for Show Arrow
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp),
+                    // Tab Row
+                    PrimaryTabRow(
+                        selectedTabIndex = selectedTabIndex,
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Column(modifier = Modifier.fillMaxWidth(0.75f)) {
-                                Text(
-                                    text = "Show Trend Arrow",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                                Text(
-                                    text = "Display arrow indicating W' trend",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            Switch(
-                                checked = configuration.showArrow,
-                                onCheckedChange = onShowArrowChange,
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
-                                ),
+                        tabs.forEachIndexed { index, title ->
+                            Tab(
+                                selected = selectedTabIndex == index,
+                                onClick = { selectedTabIndex = index },
+                                text = { Text(title) },
                             )
                         }
                     }
 
-                    // Toggle for Use Colors
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp),
+                    // Tab Content
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(20.dp),
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Column(modifier = Modifier.fillMaxWidth(0.75f)) {
-                                Text(
-                                    text = "Use Dynamic Colors",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                                Text(
-                                    text = "Colorize background based on W' depletion",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            Switch(
-                                checked = configuration.useColors,
-                                onCheckedChange = onUseColorsChange,
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
-                                ),
+                        when (selectedTabIndex) {
+                            0 -> ConfigurationTab(
+                                configuration = configuration,
+                                requirements = requirements,
+                                onCriticalPowerChange = onCriticalPowerChange,
+                                onAnaerobicCapacityChange = onAnaerobicCapacityChange,
+                                onTauRecoveryChange = onTauRecoveryChange,
+                                onKInChange = onKInChange,
+                                onShowArrowChange = onShowArrowChange,
+                                onUseColorsChange = onUseColorsChange,
+                                onRecordFitChange = onRecordFitChange,
+                                onModelSelected = onModelSelected,
+                            )
+                            1 -> AlertsTab(
+                                alerts = configuration.alerts,
+                                onAddAlert = onAddAlert,
+                                onUpdateAlert = onUpdateAlert,
+                                onDeleteAlert = onDeleteAlert,
+                                onTestAlert = onTestAlert,
                             )
                         }
+
+                        Spacer(modifier = Modifier.height(56.dp))
                     }
-
-                    Text(
-                        text = "System Integration",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-
-                    // Toggle para grabar datos W' al archivo FIT
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp),
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Column(modifier = Modifier.fillMaxWidth(0.75f)) {
-                                Text(
-                                    text = "Record W' to FIT",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                                Text(
-                                    text = "Add W' fields to FIT file",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            Switch(
-                                checked = configuration.recordFit,
-                                onCheckedChange = onRecordFitChange,
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
-                                ),
-                            )
-                        }
-                    }
-
-                    Text(
-                        text = "Changes saved automatically",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
-
-                    Spacer(modifier = Modifier.height(56.dp))
                 }
             }
 
@@ -321,6 +223,293 @@ fun ConfigurationScreenLayout(
                 )
             }
         }
+    }
+}
+
+@Composable
+fun ConfigurationTab(
+    configuration: WPrimeConfiguration,
+    requirements: ModelParameterRequirements,
+    onCriticalPowerChange: (Double) -> Unit,
+    onAnaerobicCapacityChange: (Double) -> Unit,
+    onTauRecoveryChange: (Double) -> Unit,
+    onKInChange: (Double) -> Unit,
+    onShowArrowChange: (Boolean) -> Unit,
+    onUseColorsChange: (Boolean) -> Unit,
+    onRecordFitChange: (Boolean) -> Unit,
+    onModelSelected: (WPrimeModelType) -> Unit,
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+    ) {
+        Text(
+            text = "W Prime Parameters",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+        )
+
+        ModelSelectionDropdown(
+            selectedModel = configuration.modelType,
+            onModelSelected = onModelSelected,
+        )
+
+        CompactSettingField(
+            title = "Critical Power (CP)",
+            value = configuration.criticalPower,
+            unit = "W",
+            onValueChange = onCriticalPowerChange,
+        )
+        CompactSettingField(
+            title = "Anaerobic Capacity (W')",
+            value = configuration.anaerobicCapacity,
+            unit = "J",
+            onValueChange = onAnaerobicCapacityChange,
+        )
+
+        // Tau Recovery - only enabled for Bartram model
+        CompactSettingField(
+            title = "Tau Recovery (τ)",
+            description = if (requirements.usesTau) {
+                "Individualized recovery time constant"
+            } else {
+                "Not used by this model"
+            },
+            value = configuration.tauRecovery,
+            unit = "s",
+            onValueChange = onTauRecoveryChange,
+            enabled = requirements.usesTau,
+        )
+
+        // kIn - only enabled for Weigend model
+        if (requirements.usesKIn) {
+            CompactSettingField(
+                title = "Hydraulic Rate (kIn)",
+                description = "Inflow rate coefficient",
+                value = configuration.kIn,
+                unit = "",
+                onValueChange = onKInChange,
+                enabled = true,
+            )
+        }
+
+        Text(
+            text = "Display Settings",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+        )
+
+        // Toggle for Show Arrow
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(modifier = Modifier.fillMaxWidth(0.75f)) {
+                    Text(
+                        text = "Show Trend Arrow",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = "Display arrow indicating W' trend",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = configuration.showArrow,
+                    onCheckedChange = onShowArrowChange,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.primary,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                    ),
+                )
+            }
+        }
+
+        // Toggle for Use Colors
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(modifier = Modifier.fillMaxWidth(0.75f)) {
+                    Text(
+                        text = "Use Dynamic Colors",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = "Colorize background based on W' depletion",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = configuration.useColors,
+                    onCheckedChange = onUseColorsChange,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.primary,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                    ),
+                )
+            }
+        }
+
+        Text(
+            text = "System Integration",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+        )
+
+        // Toggle para grabar datos W' al archivo FIT
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(modifier = Modifier.fillMaxWidth(0.75f)) {
+                    Text(
+                        text = "Record W' to FIT",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = "Add W' fields to FIT file",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = configuration.recordFit,
+                    onCheckedChange = onRecordFitChange,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.primary,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                    ),
+                )
+            }
+        }
+
+        Text(
+            text = "Changes saved automatically",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+    }
+}
+
+@Composable
+fun AlertsTab(
+    alerts: List<com.itl.wprimeext.extension.WPrimeAlert>,
+    onAddAlert: (Int, Boolean, AlertType) -> Unit,
+    onUpdateAlert: (String, Int, Boolean, AlertType) -> Unit,
+    onDeleteAlert: (String) -> Unit,
+    onTestAlert: (String) -> Unit,
+) {
+    var showNewAlertDialog by remember { mutableStateOf(false) }
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+    ) {
+        Text(
+            text = "W' Alerts",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+        )
+
+        Text(
+            text = "Set Drop alerts when W' falls through a threshold (yellow), and Recover alerts when W' rises back through one (green).",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        if (alerts.isEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = "No alerts configured",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Add alerts to get notified when W' reaches critical levels",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        } else {
+            alerts.sortedBy { it.thresholdPercentage }.forEach { alert ->
+                AlertItem(
+                    alert = alert,
+                    onUpdate = { threshold, sound, type ->
+                        onUpdateAlert(alert.id, threshold, sound, type)
+                    },
+                    onDelete = { onDeleteAlert(alert.id) },
+                    onTest = { onTestAlert(alert.id) },
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+
+        Button(
+            onClick = { showNewAlertDialog = true },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = "Add alert",
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Add Alert")
+        }
+
+        if (showNewAlertDialog) {
+            NewAlertDialog(
+                onDismiss = { showNewAlertDialog = false },
+                onConfirm = { threshold, sound, type ->
+                    onAddAlert(threshold, sound, type)
+                    showNewAlertDialog = false
+                },
+            )
+        }
+
+        Text(
+            text = "Each alert fires at most once every 5 min to avoid spam during repeated efforts.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -425,6 +614,10 @@ fun ConfigurationScreenPreview() {
             onShowArrowChange = {},
             onUseColorsChange = {},
             onModelSelected = {},
+            onAddAlert = { _, _, _ -> },
+            onUpdateAlert = { _, _, _, _ -> },
+            onDeleteAlert = {},
+            onTestAlert = {},
             onBackClick = {},
         )
     }
