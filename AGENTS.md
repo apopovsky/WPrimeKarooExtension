@@ -51,25 +51,78 @@ app/src/main/kotlin/com/itl/wprimeext/
 - `karooSystem.connect()` is called in `onCreate()`; `disconnect()` in `onDestroy()`
 - Always call `removeConsumer(listenerId)` inside `awaitClose {}` – see `Extensions.kt` helpers
 
+### Alert Types – InRideAlert vs System Alerts
+There are **two distinct alert mechanisms** in karoo-ext — do NOT confuse them:
+
+| Type | Where it shows | How to trigger |
+|---|---|---|
+| **`InRideAlert`** | On-screen toast/overlay during a ride (what we use) | `karooSystem.dispatch(InRideAlert(...))` in `WPrimeAlertManager` |
+| **System/notification alerts** | Separate dedicated tab on the device (not on the ride screen) | Different API, not used in this extension |
+
+`WPrimeAlertManager` uses `InRideAlert` — the popup appears overlaid on the ride screen, auto-dismisses after ~10 s, and has a 5-minute cooldown per threshold to avoid spam.
+
 ### Glance Layout Rules (critical – Karoo differs from standard Android)
 - **Use `config.viewSize` (pixels) NOT `LocalSize.current`** – `LocalSize.current` returns `NaN` on Karoo
 - Convert pixels to dp: `widthDp = (pixels / 2.0f).dp`
-- Breakpoints: small field ≈ 480×240 px, large ≈ 960×480 px
-- **No custom `weight(Xf)` values** – use `defaultWeight()` for flex items and fixed `width()` for fixed columns
+- **Confirmed real pixel sizes (Karoo 3 / k24, 480×800 screen):**
+  - Full-width field ("wide", spans 2 grid columns): **≥ 480 px wide** → `viewSize.first > 400`
+  - Half-width field ("narrow", single grid column): **< 400 px wide** → `viewSize.first ≤ 400`
+  - Use `viewSize.first > 400` as the canonical wide/narrow split — NOT area, NOT gridSize alone
 - Wide mode detection: `val wideMode = config.gridSize.first == 60`
+- **No custom `weight(Xf)` values** – use `defaultWeight()` for flex items and fixed `width()` for fixed columns
 
-### KarooSystemService Extension Helpers (`Extensions.kt`)
+### Title / Header Sizing Rule (WPrimeGlanceViews.kt)
+Use a **near-constant title size** so the label looks visually similar regardless of field size.
+Do NOT scale title aggressively with field area (that makes it look tiny in large fields).
+
 ```kotlin
-// Wrap karoo callbacks as Flows:
-karooSystem.streamDataFlow("dataTypeId")   // Flow<StreamState>
-karooSystem.consumerFlow<RideState>()      // Flow<T: KarooEvent>
+// Canonical rule — keep in sync between WPrimeGlanceView composable AND pickTextSizeSp:
+val titleIconSize  = if (isWidePx) 30.dp else 26.dp   // isWidePx = viewSize.first > 400
+val titleRowHeight = if (isWidePx) 32.dp else 28.dp
+val titleTextSize  = if (isWidePx) 20    else 18       // ratio 18/20 = 0.90
 ```
 
-## Calculator: Adding a New Algorithm
-1. Implement `IWPrimeModel` (or extend `BaseWPrimeModel`)
-2. Add entry to `WPrimeModelType` enum
-3. Add a `create(...)` case to `WPrimeFactory`
-4. Add UI option in `ConfigurationScreen.kt` + persist via `WPrimeSettings.updateModelType()`
+Reference: title should look comparable in size to Karoo's own field headers (e.g. "3S POWER").
+
+### W′bal Recovery During Stops (WPrimeDataTypeBase + WPrimeExtension)
+W′bal is event-driven (only updates on power stream events). During autopause / coffee stops the
+stream goes silent and W′bal freezes. Fix: **recovery ticker** in each calculation context.
+
+Pattern used in `startStream`, `streamRealWPrimeData` (channelFlow), and `startFit`:
+```kotlin
+// Track last real sample; ticker fires every 3 s; injects 0 W if silent for 5+ s
+val RECOVERY_TICK_INTERVAL_MS  = 3_000L
+val RECOVERY_STALE_THRESHOLD_MS = 5_000L
+
+launch {
+    while (true) {
+        delay(RECOVERY_TICK_INTERVAL_MS)
+        val now = System.currentTimeMillis()
+        if (lastSampleMs > 0L && (now - lastSampleMs) > RECOVERY_STALE_THRESHOLD_MS) {
+            calculator.updatePower(0.0, now)   // model applies correct recovery over elapsed dt
+            // emit updated value to Karoo / view
+        }
+    }
+}
+```
+`streamRealWPrimeData` must be `channelFlow { }` (not `flow { }`) to allow `launch { }` inside.
+
+## Development Workflow (verify before committing)
+
+**Always follow this order for visual / behaviour changes:**
+
+1. Make code changes
+2. `./gradlew installDebug` – build and install directly on the connected Karoo
+3. Wait ~4 s for the extension service to restart
+4. Take a screenshot and review:
+   ```powershell
+   Start-Sleep -Seconds 4
+   adb shell screencap -p /sdcard/screen.png; adb pull /sdcard/screen.png media/screen.png; adb shell rm /sdcard/screen.png
+   ```
+5. Open `media/screen.png` and confirm the fix looks correct
+6. Only then `git add` + `git commit` with a descriptive message
+
+**Never commit before verifying on device** (or at minimum in the `WPrimeRemoteViewActivity` preview).
 
 ## Build & Developer Commands
 ```bash
@@ -168,4 +221,6 @@ Two Hilt modules provide `KarooSystemService` at different scopes:
 - **Do not create separate `.md` files for bug fixes or resolved issues** – fix the code directly
 - Do not use `LocalSize.current` in Glance composables
 - Do not block the main thread; always use `Dispatchers.IO` for stream/FIT coroutines and `Dispatchers.Main` for `glance.compose()` / `emitter.updateView()` calls
-
+- **Do not commit visual changes without first installing and verifying on the Karoo** (see Development Workflow above)
+- Do not scale title/header text aggressively with field area — use the near-constant rule documented in "Title / Header Sizing Rule"
+- Do not use `flow { }` with concurrent `launch { }` inside — use `channelFlow { }` instead
