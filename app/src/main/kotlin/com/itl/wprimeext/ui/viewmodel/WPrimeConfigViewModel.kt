@@ -123,16 +123,6 @@ class WPrimeConfigViewModel(private val settings: WPrimeSettings) : ViewModel() 
             _configuration.value = _configuration.value.copy(alerts = updatedAlerts)
         }
     }
-
-    fun testAlert(alertId: String) {
-        // This will be handled by the UI layer to dispatch the test alert
-        // We just need to find the alert and pass it back
-        val alert = _configuration.value.alerts.find { it.id == alertId }
-        if (alert != null) {
-            // The actual dispatch will happen in the main activity/screen
-            // We expose this through a flow that the UI can observe
-        }
-    }
 }
 
 class WPrimeConfigViewModelFactory(private val settings: WPrimeSettings) : ViewModelProvider.Factory {
