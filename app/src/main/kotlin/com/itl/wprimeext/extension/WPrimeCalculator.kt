@@ -185,7 +185,8 @@ class WPrimeCalculator(
     private var modelType: WPrimeModelType = WPrimeModelType.SKIBA_DIFFERENTIAL,
 ) {
     private var model: IWPrimeModel = WPrimeFactory.create(modelType, criticalPower, anaerobicCapacity, tauRecovery, kIn)
-    private var lastUpdateTime: Long = 0
+
+    @Volatile private var lastUpdateTime: Long = 0
 
     companion object {
         private const val MILLISECONDS_TO_SECONDS = 1000.0

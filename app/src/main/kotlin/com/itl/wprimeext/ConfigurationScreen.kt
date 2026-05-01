@@ -27,11 +27,11 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Tab
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
@@ -86,7 +86,7 @@ fun ConfigurationScreen() {
         onUseColorsChange = viewModel::updateUseColors,
         onModelSelected = viewModel::updateModelType,
         onAddAlert = viewModel::addAlert,
-        onUpdateAlert = viewModel::updateAlert,        onDeleteAlert = viewModel::deleteAlert,
+        onUpdateAlert = viewModel::updateAlert, onDeleteAlert = viewModel::deleteAlert,
         onTestAlert = { alertId ->
             // Find the alert and send broadcast to test it
             val alert = configuration.alerts.find { it.id == alertId }
@@ -137,13 +137,13 @@ fun ConfigurationScreenLayout(
                     Text(
                         "W Prime Settings",
                         fontWeight = FontWeight.Bold,
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                 ),
-                modifier = Modifier.height(48.dp)
+                modifier = Modifier.height(48.dp),
             )
         },
     ) { paddingValues ->
@@ -152,7 +152,7 @@ fun ConfigurationScreenLayout(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(paddingValues)
+                        .padding(paddingValues),
                 ) {
                     // Tab Row
                     PrimaryTabRow(
@@ -163,7 +163,7 @@ fun ConfigurationScreenLayout(
                             Tab(
                                 selected = selectedTabIndex == index,
                                 onClick = { selectedTabIndex = index },
-                                text = { Text(title) }
+                                text = { Text(title) },
                             )
                         }
                     }
@@ -453,18 +453,18 @@ fun AlertsTab(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
                         text = "No alerts configured",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Add alerts to get notified when W' reaches critical levels",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -476,7 +476,7 @@ fun AlertsTab(
                         onUpdateAlert(alert.id, threshold, sound, type)
                     },
                     onDelete = { onDeleteAlert(alert.id) },
-                    onTest = { onTestAlert(alert.id) }
+                    onTest = { onTestAlert(alert.id) },
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -485,11 +485,11 @@ fun AlertsTab(
         Button(
             onClick = { showNewAlertDialog = true },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp)
+            shape = RoundedCornerShape(14.dp),
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
-                contentDescription = "Add alert"
+                contentDescription = "Add alert",
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text("Add Alert")
@@ -501,7 +501,7 @@ fun AlertsTab(
                 onConfirm = { threshold, sound, type ->
                     onAddAlert(threshold, sound, type)
                     showNewAlertDialog = false
-                }
+                },
             )
         }
 

@@ -38,7 +38,7 @@ class WPrimeKjDataType(
     override fun getInitialStreamValue(): Double = getAnaerobicCapacity() / 1000.0
     override fun mapJoulesToStreamValue(joules: Double): Double = joules / 1000.0
 
-    override fun getTargetHeightFraction(): Float = 0.5f  // same as base default
-    override fun getFixedCharCount(): Int = 4             // "12.0" → 4 chars max
-    override fun getSizeScale(): Float = 1.0f             // no extra reduction needed
+    override fun getTargetHeightFraction(): Float = 0.5f // same as base default
+    override fun getFixedCharCount(): Int = 4 // "12.0" → 4 chars max
+    override fun getSizeScale(): Float = 1.0f // no extra reduction needed
 }

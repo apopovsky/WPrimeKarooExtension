@@ -12,10 +12,28 @@ app/src/main/kotlin/com/itl/wprimeext/
 │   ├── WPrimeDataType.kt         # % display field
 │   ├── WPrimeKjDataType.kt       # kJ display field
 │   ├── WPrimeCalculator.kt       # IWPrimeModel interface + 6 model classes + WPrimeFactory
-│   ├── WPrimeSettings.kt         # DataStore persistence; WPrimeConfiguration data class
-│   └── WPrimeAlertManager.kt     # Threshold crossing alerts with 30s cooldown
-├── ui/WPrimeGlanceViews.kt       # Glance composables for the data field UI
-└── utils/WPrimeLogger.kt         # Timber wrapper with module tags (WPrime:Extension, etc.)
+│   ├── WPrimeSettings.kt         # DataStore persistence; WPrimeConfiguration + WPrimeAlert data classes
+│   ├── WPrimeAlertManager.kt     # Threshold crossing alerts with 5-minute cooldown; AlertType enum
+│   ├── Extensions.kt             # karooSystem.streamDataFlow / consumerFlow extension helpers
+│   └── ServiceModule.kt          # Hilt @ServiceScoped KarooSystemService provider
+├── ui/
+│   ├── WPrimeGlanceViews.kt      # Glance composables for the data field UI
+│   ├── WPrimeColors.kt           # calculateWPrimeColors() – power-ratio color bands
+│   ├── viewmodel/
+│   │   └── WPrimeConfigViewModel.kt  # MVVM ViewModel + WPrimeConfigViewModelFactory
+│   ├── components/
+│   │   ├── AlertComponents.kt    # AlertItem / NewAlertDialog composables
+│   │   ├── CompactSettingField.kt
+│   │   └── ConfigurationCard.kt
+│   └── theme/Theme.kt
+├── ConfigurationScreen.kt        # Main settings UI (Jetpack Compose)
+├── MainActivity.kt               # App entry point
+├── ViewModelModule.kt            # Hilt @ViewModelScoped KarooSystemService provider
+├── WPrimeApplication.kt          # Application class (Hilt entry point)
+├── WPrimeRemoteViewActivity.kt   # Stand-alone preview activity for data-field RemoteViews (dev use)
+└── utils/
+    ├── WPrimeLogger.kt           # Timber wrapper with module tags (WPrime:Extension, etc.)
+    └── LogConstants.kt           # String constants for structured log messages
 ```
 
 ## Architecture & Data Flow
@@ -108,6 +126,43 @@ WPrimeLogger.d(WPrimeLogger.Module.CALCULATOR, "message")
 
 ## Settings Persistence
 `WPrimeSettings` wraps DataStore. The `configuration: Flow<WPrimeConfiguration>` is collected in both DataType stream coroutines and the FIT coroutine to hot-reload parameters without restarting the ride.
+
+`WPrimeConfiguration` fields (all persisted, all hot-reloaded):
+- `criticalPower: Double` (default 250.0)
+- `anaerobicCapacity: Double` (default 12000.0)
+- `tauRecovery: Double` (default 300.0) – Bartram model only
+- `kIn: Double` (default 0.002) – Weigend model only
+- `recordFit: Boolean` (default true)
+- `modelType: WPrimeModelType` (default `SKIBA_DIFFERENTIAL`)
+- `showArrow: Boolean` (default true) – trend arrow in Glance view
+- `useColors: Boolean` (default true) – power-ratio color coding
+- `alerts: List<WPrimeAlert>` (default empty) – threshold alerts
+
+`WPrimeAlert` is `@Serializable`, stored as JSON in DataStore:
+```kotlin
+data class WPrimeAlert(id: String, thresholdPercentage: Int, soundEnabled: Boolean, alertType: AlertType)
+enum class AlertType { DROP, REPLENISH }  // DROP = W' falls through; REPLENISH = W' rises through
+```
+Alert cooldown is **5 minutes** (`ALERT_COOLDOWN_MS = 300_000L`); auto-dismiss after 10 seconds.
+
+## Glance Color Coding
+`WPrimeColors.kt` provides `calculateWPrimeColors(currentPower, criticalPower, wPrimePercentage)` → `WPrimeColors(backgroundColor, textColor)`. Power-ratio bands (power / CP):
+- At 100% W' with power < CP → light blue `#94D8E0` / black text (stable state)
+- < 0.90 → recovery green `#109C77` / white
+- < 1.00 → light green `#59C496` / black
+- < 1.10 → yellow `#E6DE26` / black
+- < 1.25 → mid orange `#E48F73` / black
+- < 1.40 → orange `#E5683C` / white
+- < 1.60 → red `#C7292A` / white
+- ≥ 1.60 → violet `#AF26A0` / white
+
+## Hilt DI Structure
+Two Hilt modules provide `KarooSystemService` at different scopes:
+- `ServiceModule` – `@ServiceScoped`, installed in `ServiceComponent` (used by the extension service)
+- `ViewModelModule` – `@ViewModelScoped`, installed in `ViewModelComponent` (used by config UI)
+
+## Development Preview
+`WPrimeRemoteViewActivity` renders a data field's `RemoteViews` directly on-screen without a real Karoo ride. Launch via intent with `typeId = "wprime"` (%) or `"wprime-kj"`. Uses a mock `IHandler` + `ViewEmitter` with a fixed `ViewConfig(gridSize = Pair(60,15), viewSize = Pair(800,200))`.
 
 ## Never Do
 - **Do not create separate `.md` files for bug fixes or resolved issues** – fix the code directly

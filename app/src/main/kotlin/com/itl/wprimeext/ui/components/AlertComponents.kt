@@ -62,32 +62,41 @@ fun AlertItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = cardColor)
+        colors = CardDefaults.cardColors(containerColor = cardColor),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp)
+                .padding(12.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = if (alertType == AlertType.DROP) "Drop to ${threshold.toInt()}%"
-                           else "Recover to ${threshold.toInt()}%",
+                    text = if (alertType == AlertType.DROP) {
+                        "Drop to ${threshold.toInt()}%"
+                    } else {
+                        "Recover to ${threshold.toInt()}%"
+                    },
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
                 )
                 Row {
                     IconButton(onClick = onTest) {
-                        Icon(imageVector = Icons.Default.Notifications, contentDescription = "Test alert",
-                            tint = MaterialTheme.colorScheme.primary)
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Test alert",
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
                     }
                     IconButton(onClick = onDelete) {
-                        Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete alert",
-                            tint = MaterialTheme.colorScheme.error)
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete alert",
+                            tint = MaterialTheme.colorScheme.error,
+                        )
                     }
                 }
             }
@@ -98,19 +107,25 @@ fun AlertItem(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
                     selected = alertType == AlertType.DROP,
-                    onClick = { alertType = AlertType.DROP; onUpdate(threshold.toInt(), soundEnabled, AlertType.DROP) },
+                    onClick = {
+                        alertType = AlertType.DROP
+                        onUpdate(threshold.toInt(), soundEnabled, AlertType.DROP)
+                    },
                     label = { Text("↓ Drop") },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer
-                    )
+                        selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    ),
                 )
                 FilterChip(
                     selected = alertType == AlertType.REPLENISH,
-                    onClick = { alertType = AlertType.REPLENISH; onUpdate(threshold.toInt(), soundEnabled, AlertType.REPLENISH) },
+                    onClick = {
+                        alertType = AlertType.REPLENISH
+                        onUpdate(threshold.toInt(), soundEnabled, AlertType.REPLENISH)
+                    },
                     label = { Text("↑ Recover") },
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = Color(0xFF4CAF50)
-                    )
+                        selectedContainerColor = Color(0xFF4CAF50),
+                    ),
                 )
             }
 
@@ -118,39 +133,57 @@ fun AlertItem(
 
             // Threshold slider
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "Threshold:", style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.width(80.dp))
+                Text(
+                    text = "Threshold:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.width(80.dp),
+                )
                 Slider(
                     value = threshold,
                     onValueChange = { threshold = it },
                     onValueChangeFinished = { onUpdate(threshold.toInt(), soundEnabled, alertType) },
                     valueRange = 0f..100f,
                     steps = 99,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
-                Text(text = "${threshold.toInt()}%", style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold, modifier = Modifier.width(50.dp))
+                Text(
+                    text = "${threshold.toInt()}%",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.width(50.dp),
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             // Sound toggle
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(imageVector = if (soundEnabled) Icons.AutoMirrored.Filled.VolumeUp
-                                       else Icons.AutoMirrored.Filled.VolumeOff,
-                        contentDescription = null)
+                    Icon(
+                        imageVector = if (soundEnabled) {
+                            Icons.AutoMirrored.Filled.VolumeUp
+                        } else {
+                            Icons.AutoMirrored.Filled.VolumeOff
+                        },
+                        contentDescription = null,
+                    )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = "Sound Alert", style = MaterialTheme.typography.bodyMedium)
                 }
                 Switch(
                     checked = soundEnabled,
-                    onCheckedChange = { soundEnabled = it; onUpdate(threshold.toInt(), soundEnabled, alertType) },
+                    onCheckedChange = {
+                        soundEnabled = it
+                        onUpdate(threshold.toInt(), soundEnabled, alertType)
+                    },
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = MaterialTheme.colorScheme.primary,
-                        checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
-                    )
+                        checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                    ),
                 )
             }
         }
@@ -178,25 +211,28 @@ fun NewAlertDialog(
                         onClick = { alertType = AlertType.DROP },
                         label = { Text("↓ Drop") },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer
-                        )
+                            selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        ),
                     )
                     FilterChip(
                         selected = alertType == AlertType.REPLENISH,
                         onClick = { alertType = AlertType.REPLENISH },
                         label = { Text("↑ Recover") },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color(0xFF4CAF50)
-                        )
+                            selectedContainerColor = Color(0xFF4CAF50),
+                        ),
                     )
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = if (alertType == AlertType.DROP) "Alert when W' drops to:"
-                           else "Alert when W' recovers to:",
-                    style = MaterialTheme.typography.bodyMedium
+                    text = if (alertType == AlertType.DROP) {
+                        "Alert when W' drops to:"
+                    } else {
+                        "Alert when W' recovers to:"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -206,17 +242,23 @@ fun NewAlertDialog(
                         onValueChange = { threshold = it },
                         valueRange = 0f..100f,
                         steps = 99,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "${threshold.toInt()}%", style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold)
+                    Text(
+                        text = "${threshold.toInt()}%",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text("Enable sound")
                     Switch(checked = soundEnabled, onCheckedChange = { soundEnabled = it })
                 }
@@ -224,11 +266,11 @@ fun NewAlertDialog(
         },
         confirmButton = {
             androidx.compose.material3.TextButton(
-                onClick = { onConfirm(threshold.toInt(), soundEnabled, alertType) }
+                onClick = { onConfirm(threshold.toInt(), soundEnabled, alertType) },
             ) { Text("Add") }
         },
         dismissButton = {
             androidx.compose.material3.TextButton(onClick = onDismiss) { Text("Cancel") }
-        }
+        },
     )
 }

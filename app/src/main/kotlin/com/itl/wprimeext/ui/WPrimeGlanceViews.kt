@@ -431,7 +431,6 @@ private fun pickTextSizeSp(
     val raw = fromWidth.coerceAtMost(fromHeight)
     val clamped = raw.coerceIn(minSp.toFloat(), safeMax.toFloat())
 
-
     if (fixedCharCount != null) return clamped.toInt()
 
     // Expandir steps para incluir tamaños más grandes para campos grandes

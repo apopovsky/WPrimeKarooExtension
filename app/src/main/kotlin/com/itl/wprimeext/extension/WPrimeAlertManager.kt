@@ -35,6 +35,7 @@ class WPrimeAlertManager(
     companion object {
         private const val ALERT_COOLDOWN_MS = 300_000L // 5 minutes – avoids spam during repeated short efforts
         private const val ALERT_AUTO_DISMISS_MS = 10_000L // 10 seconds
+
         // Higher, more pleasant frequencies
         private const val BEEP_FREQUENCY_HIGH = 2800 // Hz - Critical alerts
         private const val BEEP_FREQUENCY_MID_HIGH = 2600 // Hz
@@ -102,7 +103,7 @@ class WPrimeAlertManager(
                 } else {
                     WPrimeLogger.d(
                         WPrimeLogger.Module.DATA_TYPE,
-                        "Alert ${alert.id} in cooldown (${(ALERT_COOLDOWN_MS - timeSinceLastAlert) / 1000}s remaining)"
+                        "Alert ${alert.id} in cooldown (${(ALERT_COOLDOWN_MS - timeSinceLastAlert) / 1000}s remaining)",
                     )
                 }
             }
@@ -112,7 +113,7 @@ class WPrimeAlertManager(
     private fun dispatchAlert(alert: WPrimeAlert, currentPercentage: Double) {
         WPrimeLogger.i(
             WPrimeLogger.Module.DATA_TYPE,
-            "Dispatching W' alert - Type: ${alert.alertType}, Threshold: ${alert.thresholdPercentage}%, Current: ${"%.1f".format(currentPercentage)}%, Sound: ${alert.soundEnabled}"
+            "Dispatching W' alert - Type: ${alert.alertType}, Threshold: ${alert.thresholdPercentage}%, Current: ${"%.1f".format(currentPercentage)}%, Sound: ${alert.soundEnabled}",
         )
 
         // Determine alert severity based on threshold
@@ -169,7 +170,7 @@ class WPrimeAlertManager(
                         PlayBeepPattern.Tone(BEEP_FREQUENCY_MID, BEEP_DURATION_SHORT),
                         PlayBeepPattern.Tone(null, BEEP_GAP_SHORT),
                         PlayBeepPattern.Tone(BEEP_FREQUENCY_HIGH, BEEP_DURATION_LONG),
-                    )
+                    ),
                 )
             }
             AlertType.DROP -> when {
@@ -180,7 +181,7 @@ class WPrimeAlertManager(
                         PlayBeepPattern.Tone(BEEP_FREQUENCY_HIGH, BEEP_DURATION_SHORT),
                         PlayBeepPattern.Tone(null, BEEP_GAP_SHORT),
                         PlayBeepPattern.Tone(BEEP_FREQUENCY_MID_HIGH, BEEP_DURATION_LONG),
-                    )
+                    ),
                 )
                 alert.thresholdPercentage <= 25 -> PlayBeepPattern(
                     tones = listOf(
@@ -189,14 +190,14 @@ class WPrimeAlertManager(
                         PlayBeepPattern.Tone(BEEP_FREQUENCY_MID, BEEP_DURATION_SHORT),
                         PlayBeepPattern.Tone(null, BEEP_GAP_LONG),
                         PlayBeepPattern.Tone(BEEP_FREQUENCY_MID_HIGH, BEEP_DURATION_LONG),
-                    )
+                    ),
                 )
                 else -> PlayBeepPattern(
                     tones = listOf(
                         PlayBeepPattern.Tone(BEEP_FREQUENCY_LOW, BEEP_DURATION_SHORT),
                         PlayBeepPattern.Tone(null, BEEP_GAP_SHORT),
                         PlayBeepPattern.Tone(BEEP_FREQUENCY_MID, BEEP_DURATION_LONG),
-                    )
+                    ),
                 )
             }
         }
@@ -209,9 +210,8 @@ class WPrimeAlertManager(
     fun testAlert(alert: WPrimeAlert, currentWPrimePercentage: Double = alert.thresholdPercentage.toDouble()) {
         WPrimeLogger.i(
             WPrimeLogger.Module.DATA_TYPE,
-            "Testing alert - Threshold: ${alert.thresholdPercentage}%, Sound: ${alert.soundEnabled}"
+            "Testing alert - Threshold: ${alert.thresholdPercentage}%, Sound: ${alert.soundEnabled}",
         )
         dispatchAlert(alert, currentWPrimePercentage)
     }
 }
-
