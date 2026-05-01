@@ -39,6 +39,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
@@ -62,6 +63,26 @@ abstract class WPrimeDataTypeBase(
             anaerobicCapacity = 12000.0,
             tauRecovery = 300.0,
         )
+    private val alertManager = WPrimeAlertManager(karooSystem)
+
+    /**
+     * Timestamp of the last real power sample received (across both stream and view coroutines).
+     * Updated whenever StreamState.Streaming arrives; the recovery ticker uses this to detect
+     * data gaps (autopause, sensor dropout, coffee stop) and inject 0 W recovery updates.
+     */
+    @Volatile private var lastPowerSampleTimeMs: Long = 0L
+
+    companion object {
+        /** How often the recovery ticker fires to check for data gaps. */
+        private const val RECOVERY_TICK_INTERVAL_MS = 3_000L
+
+        /**
+         * Minimum silence before the ticker injects a 0 W recovery step.
+         * 5 s is conservative enough to avoid false recovery on momentary sensor gaps
+         * (3 s-smoothed power typically arrives every 1–3 s during normal riding).
+         */
+        private const val RECOVERY_STALE_THRESHOLD_MS = 5_000L
+    }
 
     /**
      * Internal data passed to Glance composition. Always uses current W' (Joules) plus configuration
@@ -95,6 +116,11 @@ abstract class WPrimeDataTypeBase(
 
     override fun startStream(emitter: Emitter<StreamState>) {
         WPrimeLogger.d(WPrimeLogger.Module.DATA_TYPE, "Starting W Prime data stream for $typeId...")
+
+        // Reset calculator and sample-time tracker so W' starts at 100%
+        wprimeCalculator.reset()
+        lastPowerSampleTimeMs = 0L
+
         val job =
             CoroutineScope(Dispatchers.IO).launch {
                 // Configure the calculator with persistent settings
@@ -124,11 +150,41 @@ abstract class WPrimeDataTypeBase(
                     ),
                 )
 
+                // Recovery ticker: when no real power sample arrives for RECOVERY_STALE_THRESHOLD_MS
+                // (e.g. autopause, coffee stop, sensor dropout), inject a 0 W update so the model
+                // can apply physiologically correct recovery over the elapsed time.
+                launch {
+                    while (true) {
+                        delay(RECOVERY_TICK_INTERVAL_MS)
+                        val now = System.currentTimeMillis()
+                        val lastSample = lastPowerSampleTimeMs
+                        if (lastSample > 0L && (now - lastSample) > RECOVERY_STALE_THRESHOLD_MS) {
+                            val recoveredWPrime = wprimeCalculator.updatePower(0.0, now)
+                            val streamValue = mapJoulesToStreamValue(recoveredWPrime)
+                            WPrimeLogger.d(
+                                WPrimeLogger.Module.DATA_TYPE,
+                                "Stream recovery tick [$typeId]: W'=${recoveredWPrime.toInt()}J " +
+                                    "(${wprimeCalculator.getWPrimePercentage().toInt()}%) " +
+                                    "after ${(now - lastSample) / 1000}s gap",
+                            )
+                            emitter.onNext(
+                                StreamState.Streaming(
+                                    DataPoint(
+                                        dataTypeId,
+                                        values = mapOf(DataType.Field.SINGLE to streamValue),
+                                    ),
+                                ),
+                            )
+                        }
+                    }
+                }
+
                 // Stream 3s smoothed power data for W' calculation
                 val powerFlow = karooSystem.streamDataFlow(DataType.Type.SMOOTHED_3S_AVERAGE_POWER)
                 powerFlow.collect { power ->
                     when (power) {
                         is StreamState.Streaming -> {
+                            lastPowerSampleTimeMs = System.currentTimeMillis()
                             val powerValue = power.dataPoint.singleValue ?: 0.0
                             val currentWPrimeJ =
                                 wprimeCalculator.updatePower(
@@ -308,20 +364,72 @@ abstract class WPrimeDataTypeBase(
         }
     }
 
-    private fun streamRealWPrimeData(): Flow<WPrimeDisplayData> = flow {
+    private fun streamRealWPrimeData(): Flow<WPrimeDisplayData> = channelFlow {
         val powerFlow = karooSystem.streamDataFlow(DataType.Type.POWER)
+        val manager = alertManager // Capture reference for use inside flow
+
+        // Local tracker: only updated when real Streaming data arrives.
+        // The stream-level lastPowerSampleTimeMs is shared, but we keep a local one too
+        // so this ticker doesn't count updates that came from startStream's ticker.
+        var lastRealSampleMs = 0L
+
+        // Recovery ticker: keeps the view alive during autopause / long stops.
+        // Fires every RECOVERY_TICK_INTERVAL_MS; injects a 0 W update when the power
+        // stream has been silent for RECOVERY_STALE_THRESHOLD_MS.
+        launch {
+            while (true) {
+                delay(RECOVERY_TICK_INTERVAL_MS)
+                val now = System.currentTimeMillis()
+                if (lastRealSampleMs > 0L && (now - lastRealSampleMs) > RECOVERY_STALE_THRESHOLD_MS) {
+                    // updatePower(0W) applies physiological recovery over the elapsed dt.
+                    // Because startStream's ticker may have already partially advanced lastUpdateTime,
+                    // the dt here covers only the remaining gap — no double-counting.
+                    wprimeCalculator.updatePower(0.0, now)
+                    val config = wprimeSettings.configuration.first()
+                    val wPrimeJ = wprimeCalculator.getCurrentWPrime()
+                    val wPrimePercentage = wprimeCalculator.getWPrimePercentage()
+                    val (backgroundColor, textColor) = calculateDisplayColors(0.0)
+                    WPrimeLogger.d(
+                        WPrimeLogger.Module.DATA_TYPE,
+                        "View recovery tick [$typeId]: W'=${wPrimeJ.toInt()}J " +
+                            "(${wPrimePercentage.toInt()}%) after ${(now - lastRealSampleMs) / 1000}s gap",
+                    )
+                    send(
+                        WPrimeDisplayData(
+                            wPrimeJoules = wPrimeJ,
+                            backgroundColor = backgroundColor,
+                            textColor = textColor,
+                            currentPower = 0,
+                            criticalPower = wprimeCalculator.getCriticalPower().toInt(),
+                            anaerobicCapacity = wprimeCalculator.getAnaerobicCapacity(),
+                            showArrow = config.showArrow,
+                            useColors = config.useColors,
+                        ),
+                    )
+                }
+            }
+        }
+
         powerFlow.collect { power ->
             val config = wprimeSettings.configuration.first()
             when (power) {
                 is StreamState.Streaming -> {
+                    lastRealSampleMs = System.currentTimeMillis()
+                    lastPowerSampleTimeMs = lastRealSampleMs // keep shared tracker current
                     val powerValue = power.dataPoint.singleValue ?: 0.0
                     wprimeCalculator.updatePower(powerValue, System.currentTimeMillis())
                     val wPrimeJ = wprimeCalculator.getCurrentWPrime()
+                    val wPrimePercentage = wprimeCalculator.getWPrimePercentage()
                     val (backgroundColor, textColor) = calculateDisplayColors(powerValue)
                     val criticalPower = wprimeCalculator.getCriticalPower()
                     val anaerobicCapacity = wprimeCalculator.getAnaerobicCapacity()
 
-                    emit(
+                    // Check for alert conditions
+                    if (config.alerts.isNotEmpty()) {
+                        manager.checkAlerts(wPrimePercentage, config.alerts)
+                    }
+
+                    send(
                         WPrimeDisplayData(
                             wPrimeJoules = wPrimeJ,
                             backgroundColor = backgroundColor,
@@ -340,7 +448,7 @@ abstract class WPrimeDataTypeBase(
                     val anaerobicCapacity = wprimeCalculator.getAnaerobicCapacity()
                     val wPrimeJ = wprimeCalculator.getCurrentWPrime()
 
-                    emit(
+                    send(
                         WPrimeDisplayData(
                             wPrimeJoules = wPrimeJ,
                             backgroundColor = backgroundColor,
@@ -359,7 +467,7 @@ abstract class WPrimeDataTypeBase(
                     val anaerobicCapacity = wprimeCalculator.getAnaerobicCapacity()
                     val wPrimeJ = wprimeCalculator.getCurrentWPrime()
 
-                    emit(
+                    send(
                         WPrimeDisplayData(
                             wPrimeJoules = wPrimeJ,
                             backgroundColor = backgroundColor,

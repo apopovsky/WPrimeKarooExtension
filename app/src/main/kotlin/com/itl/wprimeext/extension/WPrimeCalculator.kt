@@ -185,7 +185,8 @@ class WPrimeCalculator(
     private var modelType: WPrimeModelType = WPrimeModelType.SKIBA_DIFFERENTIAL,
 ) {
     private var model: IWPrimeModel = WPrimeFactory.create(modelType, criticalPower, anaerobicCapacity, tauRecovery, kIn)
-    private var lastUpdateTime: Long = 0
+
+    @Volatile private var lastUpdateTime: Long = 0
 
     companion object {
         private const val MILLISECONDS_TO_SECONDS = 1000.0
@@ -284,6 +285,16 @@ class WPrimeCalculator(
     fun getWPrimePercentage(): Double = model.getWPrimePercentage()
     fun getCriticalPower(): Double = criticalPower
     fun getAnaerobicCapacity(): Double = anaerobicCapacity
+
+    /**
+     * Resets W' balance to full capacity and clears timestamp.
+     * Should be called at the start of a new ride.
+     */
+    fun reset() {
+        model.reset()
+        lastUpdateTime = 0
+        WPrimeLogger.i(WPrimeLogger.Module.CALCULATOR, "WPrimeCalculator reset to full capacity")
+    }
 }
 
 // --- Model Factory and Enum ---

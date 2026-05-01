@@ -12,8 +12,21 @@ import com.itl.wprimeext.utils.LogConstants
 import com.itl.wprimeext.utils.WPrimeLogger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "wprime_settings")
+
+@Serializable
+enum class AlertType { DROP, REPLENISH }
+
+@Serializable
+data class WPrimeAlert(
+    val id: String,
+    val thresholdPercentage: Int, // 0-100
+    val soundEnabled: Boolean,
+    val alertType: AlertType = AlertType.DROP, // DROP = fires when W' falls through; REPLENISH = fires when W' rises through
+)
 
 data class WPrimeConfiguration(
     val criticalPower: Double = 250.0,
@@ -24,6 +37,7 @@ data class WPrimeConfiguration(
     val modelType: WPrimeModelType = WPrimeModelType.SKIBA_DIFFERENTIAL,
     val showArrow: Boolean = true,
     val useColors: Boolean = true,
+    val alerts: List<WPrimeAlert> = emptyList(),
 )
 
 class WPrimeSettings(private val context: Context) {
@@ -37,11 +51,26 @@ class WPrimeSettings(private val context: Context) {
         private val MODEL_TYPE_KEY = stringPreferencesKey("model_type")
         private val SHOW_ARROW_KEY = booleanPreferencesKey("show_arrow")
         private val USE_COLORS_KEY = booleanPreferencesKey("use_colors")
+        private val ALERTS_KEY = stringPreferencesKey("alerts")
+
+        private val json = Json { ignoreUnknownKeys = true }
     }
 
     val configuration: Flow<WPrimeConfiguration> = context.dataStore.data.map { preferences ->
         val modelName = preferences[MODEL_TYPE_KEY] ?: WPrimeModelType.SKIBA_DIFFERENTIAL.name
         val modelType = WPrimeModelType.valueOf(modelName)
+
+        val alertsJson = preferences[ALERTS_KEY]
+        val alerts = if (alertsJson != null) {
+            try {
+                json.decodeFromString<List<WPrimeAlert>>(alertsJson)
+            } catch (e: Exception) {
+                WPrimeLogger.w(WPrimeLogger.Module.SETTINGS, e, "Failed to parse alerts")
+                emptyList()
+            }
+        } else {
+            emptyList()
+        }
 
         val config = WPrimeConfiguration(
             criticalPower = preferences[CRITICAL_POWER_KEY] ?: 250.0,
@@ -52,6 +81,7 @@ class WPrimeSettings(private val context: Context) {
             modelType = modelType,
             showArrow = preferences[SHOW_ARROW_KEY] ?: true,
             useColors = preferences[USE_COLORS_KEY] ?: true,
+            alerts = alerts,
         )
 
         val isDefault = preferences[CRITICAL_POWER_KEY] == null
@@ -62,7 +92,7 @@ class WPrimeSettings(private val context: Context) {
         }
         WPrimeLogger.d(
             WPrimeLogger.Module.SETTINGS,
-            "Loaded configuration - Model: ${config.modelType}, CP: ${config.criticalPower}, W': ${config.anaerobicCapacity}, Tau: ${config.tauRecovery}, kIn: ${config.kIn}, recordFit: ${config.recordFit}, showArrow: ${config.showArrow}, useColors: ${config.useColors}",
+            "Loaded configuration - Model: ${config.modelType}, CP: ${config.criticalPower}, W': ${config.anaerobicCapacity}, Tau: ${config.tauRecovery}, kIn: ${config.kIn}, recordFit: ${config.recordFit}, showArrow: ${config.showArrow}, useColors: ${config.useColors}, alerts: ${config.alerts.size}",
         )
 
         config
@@ -130,5 +160,13 @@ class WPrimeSettings(private val context: Context) {
             preferences[MODEL_TYPE_KEY] = modelType.name
         }
         WPrimeLogger.i(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_SAVED + " - Model Type")
+    }
+
+    suspend fun updateAlerts(alerts: List<WPrimeAlert>) {
+        WPrimeLogger.d(WPrimeLogger.Module.SETTINGS, "Updating Alerts: ${alerts.size} alerts")
+        context.dataStore.edit { preferences ->
+            preferences[ALERTS_KEY] = json.encodeToString(alerts)
+        }
+        WPrimeLogger.i(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_SAVED + " - Alerts")
     }
 }

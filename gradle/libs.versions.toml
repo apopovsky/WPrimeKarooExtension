@@ -1,13 +1,13 @@
 [versions]
 activity = "1.12.2"
-agp = "8.13.2"
+agp = "9.2.0"
 dokka = "2.1.0"
 kotlin = "2.3.0"
 coreKtx = "1.17.0"
 coroutines = "1.10.2"
 lifecycle = "2.10.0"
 glance = "1.1.1"
-hilt = "2.57.2"
+hilt = "2.59"
 datastore = "1.2.0"
 ksp = "2.3.4"
 nordicBleClient = "2.0.0-alpha12"
@@ -48,6 +48,9 @@ hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt"
 hilt-android-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
 
 junit = { group = "junit", name = "junit", version = "4.13.2" }
+kotlinMetadataJvm = { module = "org.jetbrains.kotlin:kotlin-metadata-jvm", version.ref = "kotlin" }
+kotlinStdlibJdk7 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk7", version.ref = "kotlin" }
+kotlinStdlibJdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
 
 # coroutines
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }

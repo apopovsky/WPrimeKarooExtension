@@ -40,6 +40,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -58,6 +59,14 @@ class WPrimeExtension : KarooExtension("wprime-id", "1.0") {
     lateinit var karooSystem: KarooSystemService
 
     private var serviceJob: Job? = null
+
+    companion object {
+        /** How often the FIT recovery ticker fires to check for data gaps. */
+        private const val FIT_RECOVERY_TICK_INTERVAL_MS = 3_000L
+
+        /** Minimum silence before the FIT ticker injects a 0 W recovery step. */
+        private const val FIT_RECOVERY_STALE_THRESHOLD_MS = 5_000L
+    }
 
     override val types by lazy {
         listOf(
@@ -110,6 +119,26 @@ class WPrimeExtension : KarooExtension("wprime-id", "1.0") {
                 }
             }
 
+            // Recovery ticker for FIT: when the power stream is silent (autopause / stop),
+            // inject 0 W updates so the FIT-recorded W' recovers physiologically.
+            var lastFitSampleMs = 0L
+            launch {
+                while (true) {
+                    delay(FIT_RECOVERY_TICK_INTERVAL_MS)
+                    if (!recordFitEnabled) continue
+                    val now = System.currentTimeMillis()
+                    if (lastFitSampleMs > 0L && (now - lastFitSampleMs) > FIT_RECOVERY_STALE_THRESHOLD_MS) {
+                        calculator.updatePower(0.0, now)
+                        WPrimeLogger.d(
+                            WPrimeLogger.Module.EXTENSION,
+                            "FIT recovery tick: W'=${calculator.getCurrentWPrime().toInt()}J " +
+                                "(${calculator.getWPrimePercentage().toInt()}%) " +
+                                "after ${(now - lastFitSampleMs) / 1000}s gap",
+                        )
+                    }
+                }
+            }
+
             karooSystem.streamDataFlow(DataType.Type.POWER)
                 .combine(karooSystem.consumerFlow<RideState>()) { powerState, rideState ->
                     Pair(powerState, rideState)
@@ -118,8 +147,11 @@ class WPrimeExtension : KarooExtension("wprime-id", "1.0") {
                     if (!recordFitEnabled) return@collectLatest // Skip all FIT writes if disabled
                     val streaming = powerState as? StreamState.Streaming
                     val power = streaming?.dataPoint?.singleValue ?: 0.0
+                    val now = System.currentTimeMillis()
+                    // Track real sample arrival so the recovery ticker knows when data is stale
+                    if (streaming != null) lastFitSampleMs = now
                     // Update calculator with 3s smoothed power for more stable W' calculations
-                    calculator.updatePower(power, System.currentTimeMillis())
+                    calculator.updatePower(power, now)
                     val wPrimeJ = calculator.getCurrentWPrime().roundToInt().coerceAtLeast(0)
                     val wPrimePct = calculator.getWPrimePercentage().roundToInt().coerceIn(0, 100)
                     val fieldJ = FieldValue(wPrimeJField, wPrimeJ.toDouble())
@@ -150,6 +182,34 @@ class WPrimeExtension : KarooExtension("wprime-id", "1.0") {
                 } else {
                     WPrimeLogger.w(WPrimeLogger.Module.EXTENSION, "Failed to connect to Karoo service")
                 }
+            }
+            launch {
+                // Handle test alerts from configuration screen
+                callbackFlow {
+                    val intentFilter = IntentFilter("io.hammerhead.wprime.TEST_ALERT")
+                    val receiver = object : BroadcastReceiver() {
+                        override fun onReceive(context: Context, intent: Intent) {
+                            trySend(intent)
+                        }
+                    }
+                    registerReceiver(receiver, intentFilter)
+                    awaitClose { unregisterReceiver(receiver) }
+                }
+                    .collect { intent ->
+                        val alertId = intent.getStringExtra("alertId")
+                        val threshold = intent.getIntExtra("threshold", 0)
+                        val soundEnabled = intent.getBooleanExtra("soundEnabled", false)
+
+                        if (alertId != null) {
+                            WPrimeLogger.d(WPrimeLogger.Module.EXTENSION, "Testing alert: $alertId, threshold: $threshold%, sound: $soundEnabled")
+
+                            val alertTypeStr = intent.getStringExtra("alertType")
+                            val alertType = runCatching { AlertType.valueOf(alertTypeStr ?: "") }.getOrDefault(AlertType.DROP)
+                            val alert = WPrimeAlert(alertId, threshold, soundEnabled, alertType)
+                            val alertManager = WPrimeAlertManager(karooSystem)
+                            alertManager.testAlert(alert, threshold.toDouble())
+                        }
+                    }
             }
             launch {
                 // Handle actions that can't be shown in MainActivity because
