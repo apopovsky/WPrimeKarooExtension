@@ -54,7 +54,7 @@ import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
 @AndroidEntryPoint
-class WPrimeExtension : KarooExtension("wprime-id", "1.0") {
+class WPrimeExtension : KarooExtension("wprime-id", "1.1") {
     @Inject
     lateinit var karooSystem: KarooSystemService
 
@@ -173,7 +173,7 @@ class WPrimeExtension : KarooExtension("wprime-id", "1.0") {
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate() {
         super.onCreate()
-        WPrimeLogger.i(WPrimeLogger.Module.EXTENSION, LogConstants.EXTENSION_STARTED + " - Version 1.0")
+        WPrimeLogger.i(WPrimeLogger.Module.EXTENSION, LogConstants.EXTENSION_STARTED + " - Version 1.1.0")
 
         serviceJob = CoroutineScope(Dispatchers.IO).launch {
             karooSystem.connect { connected ->

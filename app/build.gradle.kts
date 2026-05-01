@@ -14,8 +14,8 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
         applicationId = "com.itl.wprimeext"
         minSdk = 23
         targetSdk = 37
-        versionCode = 9
-        versionName = "1.0.1"
+        versionCode = 10
+        versionName = "1.1.0"
         base.archivesName.set("WPrimeExtension-v${versionName}")
     }
 
