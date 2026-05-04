@@ -1,15 +1,15 @@
 [versions]
 activity = "1.12.2"
 agp = "9.2.0"
-dokka = "2.1.0"
+dokka = "2.2.0"
 kotlin = "2.3.21"
-coreKtx = "1.17.0"
+coreKtx = "1.18.0"
 coroutines = "1.10.2"
 lifecycle = "2.10.0"
 glance = "1.1.1"
-hilt = "2.59"
+hilt = "2.59.2"
 datastore = "1.2.0"
-ksp = "2.3.4"
+ksp = "2.3.7"
 nordicBleClient = "2.0.0-alpha12"
 
 [libraries]
