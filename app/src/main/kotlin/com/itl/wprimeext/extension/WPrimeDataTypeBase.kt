@@ -298,7 +298,6 @@ abstract class WPrimeDataTypeBase(
                                         anaerobicCapacity = data.anaerobicCapacity,
                                         textSize = config.textSize,
                                         alignment = config.alignment,
-                                        targetHeightFraction = getTargetHeightFraction(),
                                         fixedCharCount = getFixedCharCount(),
                                         sizeScale = getSizeScale(),
                                         showArrow = data.showArrow,

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="karoo_field_bg_default">#FF000000</color>
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
@@ -9,8 +8,6 @@
     <color name="alert_replenish_green">#FF2E7D32</color>
     <color name="alert_warning_yellow">#FFE6DE26</color>
     <color name="alert_warning_orange">#FFE5683C</color>
-    <color name="alert_critical_red">#FFC7292A</color>
-    <color name="alert_background">#FF1A1A1A</color>
     <color name="alert_text">#FFFFFFFF</color>
 </resources>
 

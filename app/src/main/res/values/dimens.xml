@@ -1,5 +1,3 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="karoo_field_corner_radius">8dp</dimen>
 </resources>
-

@@ -1,6 +1,6 @@
 [versions]
 activity = "1.13.0"
-agp = "9.2.0"
+agp = "9.2.1"
 dokka = "2.2.0"
 kotlin = "2.3.21"
 coreKtx = "1.18.0"
@@ -10,7 +10,7 @@ glance = "1.1.1"
 hilt = "2.59.2"
 datastore = "1.2.1"
 ksp = "2.3.7"
-nordicBleClient = "2.0.0-alpha12"
+nordicBleClient = "2.0.0-alpha19"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
@@ -19,7 +19,7 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version = "2.2.1" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version = "1.3.0" }
-androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version = "1.10.0" }
+androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling", version = "1.11.2" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 
 # lifecycle
@@ -34,14 +34,14 @@ androidx-glance-appwidget-preview = { module = "androidx.glance:glance-appwidget
 androidx-glance-preview = { group = "androidx.glance", name = "glance-preview", version.ref = "glance" }
 
 # compose
-androidx-compose-bom = { module = "androidx.compose:compose-bom", version = "2026.05.00" }
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version = "2026.05.01" }
 androidx-material3 = { module = "androidx.compose.material3:material3" }
 androidx-ui = { module = "androidx.compose.ui:ui" }
 androidx-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
 androidx-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version = "1.3.0" }
-androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version = "2.9.6" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version = "2.9.8" }
 
 # hilt
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
