@@ -52,7 +52,6 @@ fun WPrimeGlanceView(
     textSize: Int = 56,
     alignment: ViewConfig.Alignment = ViewConfig.Alignment.RIGHT,
     maxPowerDeltaForFullRotation: Int = 150,
-    targetHeightFraction: Float = 0.5f,
     fixedCharCount: Int? = null,
     sizeScale: Float = 1f,
     showArrow: Boolean = true,

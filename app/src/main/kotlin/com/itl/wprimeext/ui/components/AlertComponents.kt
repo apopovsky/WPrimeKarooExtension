@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import com.itl.wprimeext.extension.AlertType
 import com.itl.wprimeext.extension.WPrimeAlert
 
@@ -136,7 +137,7 @@ fun AlertItem(
                 Text(
                     text = "Threshold:",
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.width(80.dp),
+                    modifier = Modifier.width(56.dp),
                 )
                 Slider(
                     value = threshold,
@@ -202,6 +203,10 @@ fun NewAlertDialog(
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add W' Alert") },
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        modifier = Modifier
+            .fillMaxWidth(0.95f)
+            .padding(horizontal = 8.dp),
         text = {
             Column {
                 // Type selector
