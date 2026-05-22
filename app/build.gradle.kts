@@ -32,6 +32,7 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
     }
 
     buildFeatures {
+        buildConfig = true
         viewBinding = true
         compose = true
     }

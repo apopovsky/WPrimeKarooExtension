@@ -21,6 +21,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import com.itl.wprimeext.BuildConfig
 import com.itl.wprimeext.utils.LogConstants
 import com.itl.wprimeext.utils.WPrimeLogger
 import dagger.hilt.android.AndroidEntryPoint
@@ -54,7 +55,7 @@ import kotlin.uuid.ExperimentalUuidApi
 
 @OptIn(ExperimentalUuidApi::class)
 @AndroidEntryPoint
-class WPrimeExtension : KarooExtension("wprime-id", "1.1.1") {
+class WPrimeExtension : KarooExtension("wprime-id", BuildConfig.VERSION_NAME) {
     @Inject
     lateinit var karooSystem: KarooSystemService
 
@@ -173,7 +174,10 @@ class WPrimeExtension : KarooExtension("wprime-id", "1.1.1") {
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate() {
         super.onCreate()
-        WPrimeLogger.i(WPrimeLogger.Module.EXTENSION, LogConstants.EXTENSION_STARTED + " - Version 1.1.1")
+        WPrimeLogger.i(
+            WPrimeLogger.Module.EXTENSION,
+            LogConstants.EXTENSION_STARTED + " - Version ${BuildConfig.VERSION_NAME}",
+        )
 
         serviceJob = CoroutineScope(Dispatchers.IO).launch {
             karooSystem.connect { connected ->
