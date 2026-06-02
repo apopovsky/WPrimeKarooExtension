@@ -10,7 +10,7 @@ Real-time W' / W Prime balance tracking for the Hammerhead Karoo 3.
 W' is your finite anaerobic energy reserve: it depletes when you ride above Critical Power and replenishes when you ease off. This extension adds that balance to Karoo ride pages so you can pace climbs, attacks, intervals, and repeated hard efforts without guessing how much is left in the tank.
 
 <p align="center">
-  <img src="media/screencap.gif" width="540" alt="W Prime Extension in action"/>
+  <img src="media/wprime-demo-20260602.gif" width="540" alt="W Prime Extension in action"/>
 </p>
 
 ## Features
