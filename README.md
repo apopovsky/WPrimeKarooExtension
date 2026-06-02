@@ -5,603 +5,235 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Karoo%203-orange.svg)](https://www.hammerhead.io/)
 
-> **Track your anaerobic capacity in real-time and never blow up on climbs or sprints again.**
+Real-time W' / W Prime balance tracking for the Hammerhead Karoo 3.
+
+W' is your finite anaerobic energy reserve: it depletes when you ride above Critical Power and replenishes when you ease off. This extension adds that balance to Karoo ride pages so you can pace climbs, attacks, intervals, and repeated hard efforts without guessing how much is left in the tank.
 
 <p align="center">
-  <img src="media/screencap.gif" width="540" alt="W Prime Extension in Action"/>
+  <img src="media/screencap.gif" width="540" alt="W Prime Extension in action"/>
 </p>
 
----
+## Features
 
-## Table of Contents
+- Real-time W' balance during rides
+- Two graphical data fields:
+  - **W Prime (%)** for 0-100% remaining
+  - **W Prime (kJ)** for absolute energy
+- Six selectable W' models, with **Skiba Differential (2014)** as the default
+- Configurable Critical Power, W' capacity, tau recovery, and kIn
+- Optional trend arrow and power-ratio color coding
+- Configurable in-ride threshold alerts for W' drop and replenishment
+- FIT developer fields for post-ride analysis:
+  - `WPrimeJ`
+  - `WPrimePct`
+- Settings hot-reload while the extension is running
+- Free and open source
 
-- [What is This Extension?](#what-is-this-extension)
-- [Quick Start](#quick-start-for-karoo-users)
-- [Screenshots](#screenshots)
-- [Understanding W Prime](#understanding-w-prime)
-- [Choose Your Algorithm](#choose-your-algorithm)
-- [Configuration Guide](#configuration-guide)
-- [FAQ](#frequently-asked-questions)
-- [Installation & Setup](#installation--setup)
-- [Technical Details](#technical-details-for-developers)
-- [Contributing](#contributing)
-- [Support & Community](#support--community)
+## Requirements
 
----
+- Hammerhead Karoo 3
+- Power meter connected to the Karoo
+- Karoo firmware with sideloading support
+- Hammerhead Companion App for the easiest install path, or ADB for manual install
 
-## What is This Extension?
+## Install
 
-This extension brings **W Prime (W') balance tracking** to your Karoo 3 cycling computer. W Prime represents your finite anaerobic energy reserve - think of it as a battery that depletes when you push hard above your threshold and recharges when you ease off.
+Download the latest APK from:
 
-### Why Should You Care?
+https://github.com/apopovsky/WPrimeKarooExtension/releases/latest
 
-If you're a cyclist who:
-- **Races or does group rides** with surges and attacks
-- **Climbs steep hills** and wants to pace efforts optimally
-- **Does interval training** and wants to track recovery between efforts
-- **Competes in criteriums, cyclocross, or mountain biking** with repeated hard efforts
+### Companion App
 
-...then W Prime tracking can help you **avoid "blowing up"** by showing exactly how much anaerobic energy you have left in the tank.
+1. Open the release page on your phone.
+2. Long-press or share the APK download link.
+3. Select **Hammerhead Companion App**.
+4. Wait for the transfer to the Karoo.
+5. Tap **Install** on the Karoo when prompted.
 
-### What Makes This Extension Different?
+For details, see Hammerhead's sideloading guide:
 
-✅ **Six scientific algorithms** - Choose the model that fits your training style  
-✅ **Real-time tracking** - Updated every second during your ride  
-✅ **Dual display options** - View as percentage (%) or absolute energy (Joules)  
-✅ **FIT file integration** - Your W Prime data is saved in every activity  
-✅ **Fully configurable** - Set your Critical Power, W', and algorithm parameters  
-✅ **Zero subscriptions** - Free and open source
+https://support.hammerhead.io/hc/en-us/articles/31576497036827-Companion-App-Sideloading
 
-
-## Quick Start for Karoo Users
-
-### 1. Install the Extension
-
-Download the latest APK from the [Releases](https://github.com/apopovsky/WPrimeExtension/releases) page.
-
-**Option 1: Companion App (Recommended - Easiest)**
-
-The easiest way to install is using the Hammerhead Companion App on your smartphone:
-
-1. On your phone, open the [Releases page](https://github.com/apopovsky/WPrimeExtension/releases) in your browser
-2. Find the latest release APK file link
-3. Long-press the APK download URL and select "Share" → **Hammerhead Companion App**
-4. The APK will transfer to your Karoo
-5. Tap **Install** on your Karoo when prompted
-
-*Prerequisites:* Karoo firmware 1.538.2049+, Companion App (Android 1.36.0+ or iOS 1.12.0+), Wi-Fi enabled on Karoo.
-
-For detailed instructions, see the [official Hammerhead guide](https://support.hammerhead.io/hc/en-us/articles/31576497036827-Companion-App-Sideloading).
-
-**Option 2: ADB (Advanced Users)**
-
-If you prefer command-line installation:
+### ADB
 
 ```bash
 adb install WPrimeExtension-vX.X.X.apk
 ```
 
-### 2. Configure Your Settings
+## Setup
 
-1. Open the **W Prime** app from your Karoo's app drawer
-2. Enter your physiological parameters:
-   - **Critical Power (CP)**: Your functional threshold power × 0.95 (e.g., 250W for FTP of 263W)
-   - **Anaerobic Capacity (W')**: Typically 12,000-20,000 J (start with 15,000 if unsure)
-   - **Algorithm**: Start with "Skiba 2014 Differential" (the default)
-3. Save your settings
+1. Open the **W Prime** app from the Karoo app drawer.
+2. Set your physiological values:
+   - **Critical Power (CP)**: a practical starting point is FTP x 0.95.
+   - **W' capacity**: start around 12,000-20,000 J if you do not know your measured value.
+   - **Model**: start with **Skiba Differential (2014)**.
+3. Optional: enable/disable FIT recording, trend arrow, colors, and alerts.
+4. Add one or both data fields to a ride profile:
+   - **W Prime (%)**
+   - **W Prime (kJ)**
 
-### 3. Add Data Fields to Your Ride Profile
+During a ride:
 
-1. Go to **Settings → Profiles** on your Karoo
-2. Select your ride profile (e.g., "Road Cycling")
-3. Edit a data page
-4. Add one or both W Prime fields:
-   - **W Prime (%)** - Shows 0-100% remaining (most intuitive)
-   - **W Prime (kJ)** - Shows absolute energy in kilojoules
-
-### 4. Start Riding!
-
-- **100%** = Full anaerobic capacity (fresh)
-- **50%** = Half depleted (approach hard efforts cautiously)
-- **0%** = Fully depleted (recovery mode - back off!)
-
-Watch your W Prime drop during climbs or sprints, then recover during easy pedaling.
-
----
+- **100%** means your modeled W' is full.
+- **50%** means about half remains.
+- **0%** means the model considers W' depleted. Back off and let it recover.
 
 ## Screenshots
 
-### Configuration Interface
-
-The extension provides an intuitive configuration screen where you can set all parameters:
+### Configuration
 
 <p align="center">
-  <img src="media/config1.png" width="480" alt="W Prime Configuration Screen - Parameters"/>
+  <img src="media/config-parameters.png" width="240" alt="W Prime configuration parameters"/>
   &nbsp;&nbsp;&nbsp;
-  <img src="media/config2.png" width="480" alt="W Prime Configuration Screen - Algorithm Selection"/>
+  <img src="media/config-fit.png" width="240" alt="W Prime FIT recording setting"/>
 </p>
-
-### In-Ride Display
-
-See your W Prime balance in real-time during your rides:
 
 <p align="center">
-  <img src="media/main1.png" width="480" alt="W Prime Data Field on Karoo"/>
+  <img src="media/config-alert-drop.png" width="240" alt="W Prime drop alert configuration"/>
   &nbsp;&nbsp;&nbsp;
-  <img src="media/screencap.gif" width="540" alt="W Prime in Action"/>
+  <img src="media/config-alert-recover.png" width="240" alt="W Prime recovery alert configuration"/>
 </p>
 
-The data field updates every second, showing your remaining anaerobic capacity as you ride.
+### Ride Fields
 
----
+<p align="center">
+  <img src="media/ride-overview.png" width="240" alt="W Prime data field in a Karoo profile"/>
+  &nbsp;&nbsp;&nbsp;
+  <img src="media/ride-orange.png" width="240" alt="W Prime orange effort state"/>
+</p>
 
-## Understanding W Prime
+<p align="center">
+  <img src="media/ride-red.png" width="240" alt="W Prime red effort state"/>
+  &nbsp;&nbsp;&nbsp;
+  <img src="media/ride-recovery.png" width="240" alt="W Prime recovery state"/>
+  &nbsp;&nbsp;&nbsp;
+  <img src="media/ride-replenish.png" width="240" alt="W Prime replenishment state"/>
+</p>
 
-### The Science Made Simple
+## Choosing a Model
 
-Your body has two main energy systems for cycling:
+Most riders should start with **Skiba Differential (2014)**. It is the default and is a good general-purpose model for racing, group rides, climbs, and intervals.
 
-1. **Aerobic (sustainable)**: Powered by oxygen, can run indefinitely at Critical Power
-2. **Anaerobic (limited)**: Used above Critical Power, finite capacity measured as W Prime
+| Model | Best for | Notes |
+| --- | --- | --- |
+| Skiba Differential (2014) | Most riders | Default, simple, broadly useful |
+| Skiba 2012 Monoexponential | Structured workouts | Conservative recovery behavior |
+| Bartram 2018 | Lab-informed setup | Uses a configurable tau recovery value |
+| Caen/Lievens Domain | Repeated surges | Recovery changes by power domain |
+| Chorley 2023 Bi-Exponential | Physiological experimentation | Fast and slow recovery components |
+| Weigend 2022 Hydraulic | Experimental use | Uses configurable kIn inflow |
 
-When you ride **above CP**, you drain your W Prime battery. When you ride **below CP**, it recharges - but recovery is slower than depletion.
+For formulas and implementation notes, see [docs/wprime-algorithms.md](docs/wprime-algorithms.md).
 
-### Example: The Sprint Scenario
+## FIT Recording
 
-Imagine you have:
-- **CP**: 250W
-- **W'**: 15,000 J (15 kJ)
+FIT recording is enabled by default and writes W' balance into developer fields:
 
-**Sprint Attack (500W for 30 seconds):**
-- Power above CP: 500W - 250W = 250W deficit
-- Energy used: 250W × 30s = **7,500 J** (50% of W')
-- Time to recover 50%: ~3-5 minutes at easy pace
+- `WPrimeJ`: W' balance in Joules
+- `WPrimePct`: W' balance as a percentage
 
-**The Extension shows this in real-time**, so you know when you can attack again!
+These fields can be used by tools that support FIT developer fields, such as WKO5, Golden Cheetah, and Intervals.icu. Disable this from the W Prime settings screen if you do not want custom FIT fields.
 
+## Alerts
 
-## Choose Your Algorithm
+You can configure alerts from the **Alerts** tab in the W Prime app.
 
-The extension includes **six scientific W Prime models**. Each has different characteristics for depletion and recovery.
+- **Drop** alerts fire when W' falls through a threshold.
+- **Replenish** alerts fire when W' recovers through a threshold.
+- Sound can be enabled per alert.
+- Alerts use Karoo in-ride alerts, so they appear on the ride screen.
 
-### Recommended Algorithms
+## Troubleshooting
 
-| Algorithm | Best For | Recovery Speed | Complexity |
-|-----------|----------|----------------|------------|
-| **Skiba 2014 Differential** | Most riders, general use | Moderate | Simple ⭐ |
-| **Caen/Lievens** | Criteriums, short intervals | Domain-dependent | Moderate ⭐⭐ |
-| **Bartram 2018** | Elite athletes, lab-tested | Individualized | Advanced ⭐⭐⭐ |
+### The data field shows `--`
 
-### All Available Models
+- Make sure a power meter is connected.
+- Open the W Prime app and confirm CP and W' are configured.
+- Confirm the extension is enabled in Karoo settings.
 
-#### 1. **Skiba 2014 Differential** (Default) ⭐ RECOMMENDED
-- **Parameters**: CP, W'
-- **Best for**: Road racing, gran fondos, general training
-- **Recovery**: Exponential recovery based on power deficit
-- **Why use it**: Most tested model, works well for most athletes
+### Values feel wrong
 
-#### 2. **Skiba 2012 Monoexponential**
-- **Parameters**: CP, W'
-- **Best for**: Structured ERG workouts
-- **Recovery**: Classic exponential with tau function
-- **Why use it**: Original W Prime model, very conservative recovery
+- Re-check Critical Power. A common starting point is FTP x 0.95.
+- Re-check W' capacity. Many riders land somewhere around 10-25 kJ.
+- Try Skiba Differential first, then Caen/Lievens if your rides include lots of short surges.
 
-#### 3. **Bartram 2018** (Advanced)
-- **Parameters**: CP, W', Tau (τ)
-- **Best for**: Athletes with lab-tested recovery constants
-- **Recovery**: Personalized tau calculation (τ = 2287 × D_CP^-0.688)
-- **Why use it**: Most accurate if you know your specific recovery profile
+### The extension does not appear after install
 
-#### 4. **Caen/Lievens Domain Model**
-- **Parameters**: CP, W'
-- **Best for**: Criteriums, cyclocross, mountain biking
-- **Recovery**: Different recovery rates by intensity zone:
-  - <60% CP: Fast recovery (τ=350s)
-  - 60-90% CP: Moderate recovery (τ=700s)
-  - \>90% CP: Slow recovery (τ=1000s)
-- **Why use it**: Better models repeated surges and varied intensity
+- Reboot the Karoo.
+- If using ADB, inspect logs with:
 
-#### 5. **Chorley 2023 Bi-Exponential**
-- **Parameters**: CP, W'
-- **Best for**: Analysis and post-ride review
-- **Recovery**: Fast (30%) + slow (70%) recovery components
-- **Why use it**: Most physiologically accurate, computationally intensive
-
-#### 6. **Weigend 2022 Hydraulic**
-- **Parameters**: CP, W', kIn (inflow constant)
-- **Best for**: Experimental use
-- **Recovery**: Adaptive "filling tank" model
-- **Why use it**: Research and experimentation
-
-
-## Configuration Guide
-
-### Finding Your Critical Power (CP)
-
-**Option 1: From FTP**
-```
-CP ≈ FTP × 0.95
-Example: 260W FTP → 247W CP
+```bash
+adb logcat | grep WPrime
 ```
 
-**Option 2: Power Duration Curve**
-- Do maximal efforts of 3, 5, and 12 minutes
-- Use online CP calculator (e.g., Cycling Analytics)
-- Most accurate method
+## Build from Source
 
-**Option 3: 20-Minute Test**
-```
-CP ≈ 20-min average power × 0.95
+```bash
+./gradlew clean assembleDebug
+./gradlew installDebug
+./gradlew test
 ```
 
-### Finding Your W Prime (W')
+Debug APK output:
 
-**Starting Point by Rider Type:**
-- **Sprinter/Track**: 18,000-25,000 J
-- **All-rounder**: 12,000-18,000 J
-- **Endurance/Climber**: 10,000-15,000 J
-
-**To Refine:**
-1. Start with estimate (e.g., 15,000 J)
-2. Do a maximal effort to exhaustion above CP
-3. Time to exhaustion = W' ÷ (Power - CP)
-4. Adjust W' based on actual performance
-
-### Advanced Parameters
-
-**Tau (τ)** - Only for Bartram model:
-- Typical range: 200-600 seconds
-- Higher = slower recovery (endurance athletes)
-- Lower = faster recovery (sprinters)
-
-**kIn** - Only for Weigend model:
-- Default: 0.002
-- Controls recovery rate responsiveness
-- Experimental parameter
-
-### FIT File Recording
-
-The extension automatically saves two custom fields to every activity:
-- **WPrimeJ** - W Prime balance in Joules
-- **WPrimePct** - W Prime balance as percentage
-
-This data can be analyzed in:
-- **WKO5** (TrainingPeaks)
-- **Golden Cheetah**
-- **Intervals.icu**
-- Any platform supporting FIT developer fields
-
-**To disable FIT recording**: Toggle "Record to FIT File" off in settings.
-
-
-## Frequently Asked Questions
-
-### Does this replace power-based training?
-No - it complements it! W Prime helps you understand **short-term energy availability** for efforts above threshold, while FTP/power zones guide overall pacing.
-
-### Why does my W Prime recover so slowly?
-Recovery is physiologically slower than depletion. The Skiba 2014 model typically shows ~5-10 minutes for full recovery after moderate depletion. This matches real physiology.
-
-### Which algorithm should I use?
-Start with **Skiba 2014 Differential**. Switch to **Caen/Lievens** if you do lots of short, repeated efforts.
-
-### Can I use this for races?
-Absolutely! That's the primary use case. Add W Prime % to your race profile to manage efforts strategically.
-
-### My W Prime shows 0% but I can still sprint?
-The model is conservative. 0% means you've depleted your calculated W', but you might have more if your parameters are off. Refine your CP and W' values.
-
-### Does this work with ERG mode on trainers?
-Yes, but W Prime is most useful for **variable power** rides (races, group rides, outdoor). For steady ERG intervals, it's less critical.
-
-
-## Installation & Setup
-
-### Requirements
-- Hammerhead Karoo 3 (firmware 1.538.2049 or later for Companion App install)
-- Power meter connected to Karoo
-- Hammerhead Companion App (optional, for easy installation)
-- ADB access (optional, for advanced installation)
-
-### Step-by-Step Installation
-
-#### Option 1: Install via Companion App (Recommended)
-
-This method requires no cables or developer options.
-
-1. **Prepare your devices**
-   - Ensure Karoo is connected to Wi-Fi
-   - Ensure phone has internet connection
-   - Update Companion App to latest version
-
-2. **Sideload the APK**
-   - On your phone, go to the [Releases page](https://github.com/apopovsky/WPrimeExtension/releases)
-   - Long-press the APK link (or share the downloaded file)
-   - Select **Hammerhead Companion App** from the share menu
-   - Watch for the "Transferring" screen on your phone
-
-3. **Install on Karoo**
-   - When the transfer completes, an "Install" prompt appears on Karoo
-   - Tap **Install** to finish
-
-#### Option 2: Install via ADB (Advanced)
-
-1. **Enable Developer Options on Karoo**
-   - Go to Settings → About
-   - Tap "Build Number" 7 times
-   - Return to Settings → Developer Options
-   - Enable "USB Debugging"
-
-2. **Install via ADB**
-   ```bash
-   adb connect <KAROO_IP>:5555
-   adb install WPrimeExtension-vX.X.X.apk
-   ```
-
-3. **Configure Extension**
-   - Open "W Prime" app from Karoo app drawer
-   - Enter your CP, W', and select algorithm
-   - Save settings
-
-4. **Add to Ride Profile**
-   - Settings → Profiles → [Your Profile]
-   - Edit data page
-   - Add "W Prime (%)" or "W Prime (kJ)"
-
-### Troubleshooting
-
-**Extension not showing in app drawer**
-- Reboot Karoo
-- Check Logcat for errors: `adb logcat | grep WPrime`
-
-**Data field shows "--" during ride**
-- Ensure power meter is connected
-- Check that CP and W' are configured (open app)
-- Verify extension is enabled in Settings → Extensions
-
-**Values seem incorrect**
-- Verify your CP is accurate (should be ~FTP × 0.95)
-- Check W' is in reasonable range (10,000-20,000 J)
-- Try a different algorithm (Caen/Lievens vs Skiba 2014)
-
-
-## Technical Details (For Developers)
-
-### Project Structure
-
+```text
+app/build/outputs/apk/debug/WPrimeExtension-v<version>-debug.apk
 ```
+
+## Technical Notes
+
+- Kotlin Android app using MVVM, Hilt, Jetpack Compose, Glance, DataStore, and karoo-ext.
+- The extension registers two graphical data fields via `extension_info.xml`.
+- Each active data field has its own calculator instance.
+- FIT recording runs a separate calculator in the extension service.
+- Settings are exposed as a Flow and hot-reloaded by active stream/FIT coroutines.
+- Recovery continues during silent power periods using a 0 W recovery ticker.
+
+Key source paths:
+
+```text
 app/src/main/kotlin/com/itl/wprimeext/
 ├── extension/
-│   ├── WPrimeExtension.kt          # Main extension service, FIT integration
-│   ├── WPrimeDataType.kt           # Percentage (%) data field
-│   ├── WPrimeKjDataType.kt         # Joules (J) data field
-│   ├── WPrimeDataTypeBase.kt       # Shared logic for both data fields
-│   ├── WPrimeCalculator.kt         # Core algorithms (all 6 models)
-│   └── WPrimeSettings.kt           # DataStore persistence
+│   ├── WPrimeExtension.kt
+│   ├── WPrimeDataTypeBase.kt
+│   ├── WPrimeDataType.kt
+│   ├── WPrimeKjDataType.kt
+│   ├── WPrimeCalculator.kt
+│   ├── WPrimeSettings.kt
+│   └── WPrimeAlertManager.kt
 ├── ui/
-│   ├── viewmodel/
-│   │   └── WPrimeConfigViewModel.kt  # MVVM state management
-│   └── components/
-│       └── ConfigurationCard.kt    # Reusable UI components
-├── ConfigurationScreen.kt          # Main settings UI
-├── MainActivity.kt                 # App entry point
-└── utils/
-    └── WPrimeLogger.kt            # Structured logging
+│   ├── WPrimeGlanceViews.kt
+│   ├── WPrimeColors.kt
+│   └── viewmodel/WPrimeConfigViewModel.kt
+├── ConfigurationScreen.kt
+└── MainActivity.kt
 ```
-
-### Architecture
-
-**Data Flow:**
-1. User configures parameters via Jetpack Compose UI
-2. Settings persisted using DataStore (survives app restarts)
-3. `WPrimeDataType` subscribes to power stream from Karoo
-4. Calculator updates W' balance every second
-5. Value streamed to Karoo data field system
-6. Simultaneously written to FIT file as developer fields
-
-**Algorithm Implementation:**
-- **Interface-based design**: `IWPrimeModel` interface
-- **Six concrete implementations**: One per scientific model
-- **Factory pattern**: `WPrimeFactory` for model selection
-- **State management**: Each model maintains internal W' balance
-- **Performance optimized**: Minimal CPU usage per update
-
-### Key Features
-
-✅ **Multiple Display Formats**
-- Percentage (0-100%) for intuitive understanding
-- Absolute Joules for scientific analysis
-- Both available simultaneously on data pages
-
-✅ **FIT File Integration**
-- Two custom developer fields per activity:
-  - `WPrimeJ`: Raw Joules value
-  - `WPrimePct`: Percentage value
-- Written to both Record and Session messages
-- Compatible with WKO5, Golden Cheetah, intervals.icu
-- Optional (can be disabled in settings)
-
-✅ **Algorithm Flexibility**
-- Six scientifically validated models
-- Runtime switching (no restart required)
-- Each model with specific use case optimization
-- Shared interface for consistent behavior
-
-✅ **Robust Configuration**
-- Persistent storage via DataStore
-- Real-time updates without ride interruption
-- Validation and bounds checking
-- Default values for new installations
-
-### Building from Source
-
-**Requirements:**
-- Android Studio Hedgehog or later
-- JDK 17+
-- Gradle 8.x
-- karoo-ext library (included)
-
-**Build Commands:**
-```bash
-# Clean build
-./gradlew clean assembleDebug
-
-# Install to connected device
-./gradlew installDebug
-
-# Run tests
-./gradlew test
-```
-
-**Output:**
-- APK: `app/build/outputs/apk/debug/WPrimeExtension-v1.0-debug.apk`
-
-### Testing
-
-**Unit Tests:**
-```bash
-./gradlew test
-```
-
-**On-Device Testing:**
-1. Install debug APK
-2. Configure test values (CP=200W, W'=10000J)
-3. Start indoor ride with ERG intervals:
-   - 5min @ 150W (below CP, should recover)
-   - 2min @ 300W (above CP, should deplete)
-   - 5min @ 150W (recovery)
-4. Observe W' balance behavior
-
-**Validation:**
-- At 150W (50W below CP), W' should gradually recover
-- At 300W (100W above CP), W' should deplete ~100J/sec
-- Full recovery typically takes 5-10 minutes
-
-### Dependencies
-
-**Core:**
-- `karoo-ext:1.x` - Official Hammerhead extension framework
-- `androidx.compose.ui` - Modern UI toolkit
-- `androidx.datastore` - Persistent storage
-- `hilt-android` - Dependency injection
-
-**Development:**
-- `timber` - Structured logging
-- `kotlin-reflect` - Runtime reflection for effects
-- `kotlinx-coroutines` - Async operations
-
 
 ## Contributing
 
-This is an open-source project. Contributions welcome!
+Contributions are welcome. Useful areas include:
 
-### Areas for Contribution
-- Additional W Prime algorithms
-- UI/UX improvements
-- Translation to other languages
-- Testing on real-world rides
+- Algorithm improvements
+- UI readability on different Karoo layouts
+- Real-world ride testing
 - Documentation improvements
+- Translations
 
-### How to Contribute
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/new-algorithm`)
-3. Make your changes
-4. Test on Karoo hardware
-5. Submit a pull request
+Before opening a pull request, please test on Karoo hardware when the change affects ride behavior or the Glance data field UI.
 
-### Coding Standards
-- Follow Kotlin style guide
-- Use existing architecture patterns (MVVM, DI)
-- Add unit tests for new algorithms
-- Document algorithm sources (scientific papers)
-- Follow karoo-ext best practices
+## Support
 
+- Issues: https://github.com/apopovsky/WPrimeKarooExtension/issues
+- Discussions: https://github.com/apopovsky/WPrimeKarooExtension/discussions
+- Karoo community: https://reddit.com/r/Karoo
+- Hammerhead extensions forum: https://support.hammerhead.io/hc/en-us/community/topics/31298804001435-Hammerhead-Extensions-Developers
 
-## Scientific References
-
-The algorithms implemented are based on peer-reviewed research:
-
-1. **Skiba et al. (2012)**: "Modeling the Expenditure and Reconstitution of Work Capacity above Critical Power"
-2. **Skiba et al. (2014)**: "Simplified differential equation model of W′ balance"
-3. **Bartram et al. (2018)**: "Accuracy of W′ recovery kinetics in high-performance cyclists"
-4. **Caen & Lievens**: Domain-specific recovery constants
-5. **Chorley et al. (2023)**: "Bi-exponential recovery model for W′"
-6. **Weigend et al. (2022)**: "Hydraulic model of anaerobic energy"
-
-See `docs/wprime-algorithms.md` for detailed formulas and implementation notes.
-
-
-## Support & Community
-
-### Getting Help
-- **Issues**: [GitHub Issues](https://github.com/apopovsky/WPrimeExtension/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/apopovsky/WPrimeExtension/discussions)
-- **Karoo Community**: [r/Karoo on Reddit](https://reddit.com/r/Karoo)
-- **Hammerhead Forum**: [Extensions Developers](https://support.hammerhead.io/hc/en-us/community/topics/31298804001435-Hammerhead-Extensions-Developers)
-
-### Reporting Bugs
-Please include:
-- Karoo firmware version
-- Extension version
-- CP and W' values configured
-- Algorithm selected
-- Description of unexpected behavior
-- Logcat output if possible: `adb logcat | grep WPrime`
-
-
-## Roadmap
-
-### Completed ✅
-- [x] Core W Prime calculation (6 algorithms)
-- [x] Real-time data field integration
-- [x] Dual display formats (% and kJ)
-- [x] FIT file recording
-- [x] Persistent configuration
-- [x] Jetpack Compose UI
-- [x] Algorithm selection
-
-### Planned Features
-- [ ] Visual gauge/graph on data field
-- [ ] Low W' alerts during ride
-- [ ] Post-ride W' analysis chart
-- [ ] Integration with training platforms
-- [ ] Automatic CP/W' estimation from ride data
-- [ ] Multi-athlete profiles
-
+When reporting a bug, please include Karoo firmware version, extension version, CP/W' values, selected model, expected behavior, observed behavior, and logcat output if available.
 
 ## License
 
-```
-Copyright (c) 2024-2025 Ariel Popovsky
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-```
-
-
-## Acknowledgments
-
-- **Hammerhead Navigation** for the excellent karoo-ext framework
-- **Dr. Philip Skiba** for pioneering W Prime balance modeling
-- The **cycling science community** for continued research
-- **Beta testers** from r/Karoo and Hammerhead forums
-
+Apache License 2.0. See [LICENSE](LICENSE).
 
 ## Disclaimer
 
-This extension is provided as-is for educational and training purposes. Always ride safely and use your own judgment. W Prime calculations are estimates based on models and may not perfectly reflect your individual physiology. Consult with a coach or sports scientist for personalized training advice.
-
----
-
-**Made with ❤️ by cyclists, for cyclists.**
-
-For questions, feature requests, or bug reports, please [open an issue](https://github.com/apopovsky/WPrimeExtension/issues).
+This extension is provided for training and educational use. W' balance is model-based and may not perfectly represent individual physiology. Always ride safely and use your own judgment.
