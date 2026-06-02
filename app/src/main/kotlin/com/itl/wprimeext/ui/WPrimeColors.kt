@@ -44,12 +44,24 @@ fun calculateWPrimeColors(currentPower: Double, criticalPower: Double, wPrimePer
     val powerRatio = currentPower / criticalPower
 
     return when {
-        powerRatio < 0.90 -> WPrimeColors(Color(0xFF109C77), Color.White) // recovery green with white text
-        powerRatio < 1.00 -> WPrimeColors(Color(0xFF59C496), Color.Black) // light green with black text
-        powerRatio < 1.10 -> WPrimeColors(Color(0xFFE6DE26), Color.Black) // yellow with black text
-        powerRatio < 1.25 -> WPrimeColors(Color(0xFFE48F73), Color.Black) // mid orange with black text
-        powerRatio < 1.40 -> WPrimeColors(Color(0xFFE5683C), Color.White) // orange with white text
-        powerRatio < 1.60 -> WPrimeColors(Color(0xFFC7292A), Color.White) // red with white text
+        powerRatio < 0.90 -> WPrimeColors(Color(0xFF109C77), Color.White)
+
+        // recovery green with white text
+        powerRatio < 1.00 -> WPrimeColors(Color(0xFF59C496), Color.Black)
+
+        // light green with black text
+        powerRatio < 1.10 -> WPrimeColors(Color(0xFFE6DE26), Color.Black)
+
+        // yellow with black text
+        powerRatio < 1.25 -> WPrimeColors(Color(0xFFE48F73), Color.Black)
+
+        // mid orange with black text
+        powerRatio < 1.40 -> WPrimeColors(Color(0xFFE5683C), Color.White)
+
+        // orange with white text
+        powerRatio < 1.60 -> WPrimeColors(Color(0xFFC7292A), Color.White)
+
+        // red with white text
         else -> WPrimeColors(Color(0xFFAF26A0), Color.White) // max violet with white text
     }
 }

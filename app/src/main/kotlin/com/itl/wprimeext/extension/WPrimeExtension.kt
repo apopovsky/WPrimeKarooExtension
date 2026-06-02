@@ -159,9 +159,11 @@ class WPrimeExtension : KarooExtension("wprime-id", BuildConfig.VERSION_NAME) {
                     val fieldPct = FieldValue(wPrimePctField, wPrimePct.toDouble())
                     when (rideState) {
                         is RideState.Idle -> { /* no write */ }
+
                         is RideState.Paused -> {
                             emitter.onNext(WriteToSessionMesg(listOf(fieldJ, fieldPct)))
                         }
+
                         is RideState.Recording -> {
                             emitter.onNext(WriteToRecordMesg(listOf(fieldJ, fieldPct)))
                         }

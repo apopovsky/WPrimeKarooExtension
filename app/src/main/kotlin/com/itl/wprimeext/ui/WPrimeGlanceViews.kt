@@ -89,8 +89,12 @@ fun WPrimeGlanceView(
     // Field size classification: LARGE / MEDIUM_WIDE / MEDIUM / SMALL
     val fieldSize: String = when {
         fieldArea > 20000 || (isWide && isTall) -> "LARGE"
-        isWide -> "MEDIUM_WIDE" // wide but short (e.g. 239×71 dp)
+
+        isWide -> "MEDIUM_WIDE"
+
+        // wide but short (e.g. 239×71 dp)
         fieldArea > 12000 -> "MEDIUM"
+
         else -> "SMALL"
     }
 
@@ -108,9 +112,15 @@ fun WPrimeGlanceView(
 
     // Escalar maxSp según el tamaño del campo
     val scaledMaxSp = when (fieldSize) {
-        "LARGE" -> (textSize * 3.0f).toInt() // 3.0x
-        "MEDIUM_WIDE" -> (textSize * 2.2f).toInt() // 2.2x para campos anchos pero bajos (NUEVO)
-        "MEDIUM" -> (textSize * 1.8f).toInt() // 1.8x
+        "LARGE" -> (textSize * 3.0f).toInt()
+
+        // 3.0x
+        "MEDIUM_WIDE" -> (textSize * 2.2f).toInt()
+
+        // 2.2x para campos anchos pero bajos (NUEVO)
+        "MEDIUM" -> (textSize * 1.8f).toInt()
+
+        // 1.8x
         else -> (textSize * 1.5f).toInt() // SMALL: 1.5x
     }
 
@@ -377,9 +387,15 @@ private fun pickTextSizeSp(
     val widthFactorChars = value.length
     val widthFactorAdjustment = when {
         widthFactorChars <= 2 -> 1.0f
-        widthFactorChars == 3 -> if (isWide) 1.0f else 1.85f // Must fit "100" in narrow: ~47sp avoids truncation
-        widthFactorChars == 4 -> if (isWide) 1.0f else 1.6f // Reduced from 2.0 → less aggressive for "10.3"-style values
+
+        widthFactorChars == 3 -> if (isWide) 1.0f else 1.85f
+
+        // Must fit "100" in narrow: ~47sp avoids truncation
+        widthFactorChars == 4 -> if (isWide) 1.0f else 1.6f
+
+        // Reduced from 2.0 → less aggressive for "10.3"-style values
         widthFactorChars == 5 -> if (isWide) 1.05f else 1.7f
+
         else -> if (isWide) 1.2f else 1.8f
     }
 

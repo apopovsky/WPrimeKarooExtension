@@ -202,6 +202,7 @@ abstract class WPrimeDataTypeBase(
                                 ),
                             )
                         }
+
                         is StreamState.NotAvailable, is StreamState.Searching -> {
                             WPrimeLogger.d(
                                 WPrimeLogger.Module.DATA_TYPE,
@@ -209,6 +210,7 @@ abstract class WPrimeDataTypeBase(
                             )
                             emitter.onNext(power)
                         }
+
                         else -> {
                             WPrimeLogger.d(
                                 WPrimeLogger.Module.DATA_TYPE,
@@ -441,6 +443,7 @@ abstract class WPrimeDataTypeBase(
                         ),
                     )
                 }
+
                 is StreamState.NotAvailable, is StreamState.Searching -> {
                     val (backgroundColor, textColor) = calculateDisplayColors(0.0)
                     val criticalPower = wprimeCalculator.getCriticalPower()
@@ -460,6 +463,7 @@ abstract class WPrimeDataTypeBase(
                         ),
                     )
                 }
+
                 else -> {
                     val (backgroundColor, textColor) = calculateDisplayColors(0.0)
                     val criticalPower = wprimeCalculator.getCriticalPower()
