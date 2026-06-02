@@ -119,3 +119,10 @@ tasks.withType<Test>().configureEach {
     failOnNoDiscoveredTests = false
 }
 
+// Suppress "annotation applied to value parameter only" warning (Kotlin future behavior opt-in)
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions {
+        freeCompilerArgs.add("-Xannotation-default-target=param-property")
+    }
+}
+

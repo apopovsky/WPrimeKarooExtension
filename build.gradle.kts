@@ -25,6 +25,7 @@ spotless {
                 "ktlint_standard_value-parameter-comment" to "disabled",
                 "ktlint_standard_comment-wrapping" to "disabled",
                 "ktlint_standard_property-naming" to "disabled",
+                "ktlint_standard_kdoc" to "disabled",
                 "ktlint_function_naming_ignore_when_annotated_with" to "Composable"
             )
         )

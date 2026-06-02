@@ -85,6 +85,7 @@ class WPrimeAlertManager(
                 AlertType.DROP ->
                     // Fire when W' crosses DOWNWARD through threshold
                     previousPct > threshold && currentWPrimePercentage <= threshold
+
                 AlertType.REPLENISH ->
                     // Fire when W' crosses UPWARD through threshold
                     previousPct < threshold && currentWPrimePercentage >= threshold
@@ -119,6 +120,7 @@ class WPrimeAlertManager(
         // Determine alert severity based on threshold
         val backgroundColor = when (alert.alertType) {
             AlertType.REPLENISH -> R.color.alert_replenish_green
+
             AlertType.DROP -> when {
                 alert.thresholdPercentage <= 10 -> R.color.alert_warning_orange
                 else -> R.color.alert_warning_yellow
@@ -127,6 +129,7 @@ class WPrimeAlertManager(
 
         val title = when (alert.alertType) {
             AlertType.REPLENISH -> "W' Recovered"
+
             AlertType.DROP -> when {
                 alert.thresholdPercentage <= 10 -> "W' Critical!"
                 alert.thresholdPercentage <= 25 -> "W' Low"
@@ -173,6 +176,7 @@ class WPrimeAlertManager(
                     ),
                 )
             }
+
             AlertType.DROP -> when {
                 alert.thresholdPercentage <= 10 -> PlayBeepPattern(
                     tones = listOf(
@@ -183,6 +187,7 @@ class WPrimeAlertManager(
                         PlayBeepPattern.Tone(BEEP_FREQUENCY_MID_HIGH, BEEP_DURATION_LONG),
                     ),
                 )
+
                 alert.thresholdPercentage <= 25 -> PlayBeepPattern(
                     tones = listOf(
                         PlayBeepPattern.Tone(BEEP_FREQUENCY_MID, BEEP_DURATION_SHORT),
@@ -192,6 +197,7 @@ class WPrimeAlertManager(
                         PlayBeepPattern.Tone(BEEP_FREQUENCY_MID_HIGH, BEEP_DURATION_LONG),
                     ),
                 )
+
                 else -> PlayBeepPattern(
                     tones = listOf(
                         PlayBeepPattern.Tone(BEEP_FREQUENCY_LOW, BEEP_DURATION_SHORT),

@@ -112,8 +112,12 @@ class CaenLievensModel(cp: Double, wPrime: Double) : BaseWPrimeModel(cp, wPrime)
         if (cp <= 0) return 1000.0 // Avoid division by zero
         val ratio = power / cp
         return when {
-            ratio < 0.6 -> 350.0 // Moderate
-            ratio < 0.9 -> 700.0 // Heavy
+            ratio < 0.6 -> 350.0
+
+            // Moderate
+            ratio < 0.9 -> 700.0
+
+            // Heavy
             else -> 1000.0 // Near CP
         }
     }
@@ -259,10 +263,12 @@ class WPrimeCalculator(
                 WPrimeLogger.w(WPrimeLogger.Module.CALCULATOR, "Negative deltaTime: $deltaTime. Ignoring.")
                 0.0
             }
+
             deltaTime > MAX_DELTA_TIME_SECONDS -> {
                 WPrimeLogger.w(WPrimeLogger.Module.CALCULATOR, "Excessive deltaTime: $deltaTime. Capping.")
                 MAX_DELTA_TIME_SECONDS
             }
+
             else -> deltaTime
         }
     }

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
@@ -37,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import com.itl.wprimeext.extension.AlertType
 import com.itl.wprimeext.extension.WPrimeAlert
 
@@ -52,7 +52,9 @@ fun AlertItem(
     var alertType by remember { mutableStateOf(alert.alertType) }
 
     val cardColor = when (alertType) {
-        AlertType.REPLENISH -> Color(0xFF1B5E20) // dark green
+        AlertType.REPLENISH -> Color(0xFF1B5E20)
+
+        // dark green
         AlertType.DROP -> when {
             threshold.toInt() <= 10 -> MaterialTheme.colorScheme.errorContainer
             threshold.toInt() <= 25 -> MaterialTheme.colorScheme.tertiaryContainer

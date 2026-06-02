@@ -190,6 +190,7 @@ fun ConfigurationScreenLayout(
                                 onRecordFitChange = onRecordFitChange,
                                 onModelSelected = onModelSelected,
                             )
+
                             1 -> AlertsTab(
                                 alerts = configuration.alerts,
                                 onAddAlert = onAddAlert,
