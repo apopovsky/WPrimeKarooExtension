@@ -41,7 +41,7 @@ dependencyResolutionManagement {
                     .directory(rootDir)
                     .redirectErrorStream(true)
                     .start()
-                val finished = process.waitFor(2, java.util.concurrent.TimeUnit.SECONDS)
+                val finished = process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)
                 if (!finished) {
                     process.destroyForcibly()
                     null
@@ -56,9 +56,9 @@ dependencyResolutionManagement {
                         ?.takeIf { it.isNotEmpty() }
                         ?.let { encoded ->
                             runCatching {
-                                String(java.util.Base64.getDecoder().decode(encoded))
-                                    .substringAfter(":", "")
-                                    .ifBlank { null }
+                                val decoded = String(java.util.Base64.getDecoder().decode(encoded))
+                                val parts = decoded.split(":", limit = 2)
+                                if (parts.size == 2) parts[1].ifBlank { null } else null
                             }.getOrNull()
                         }
                 }
