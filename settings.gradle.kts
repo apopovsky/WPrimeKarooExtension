@@ -41,19 +41,25 @@ dependencyResolutionManagement {
                     .directory(rootDir)
                     .redirectErrorStream(true)
                     .start()
-                val headers = process.inputStream.bufferedReader().use { it.readLines() }
-                if (process.waitFor() != 0) {
+                val finished = process.waitFor(2, java.util.concurrent.TimeUnit.SECONDS)
+                if (!finished) {
+                    process.destroyForcibly()
+                    null
+                } else if (process.exitValue() != 0) {
                     null
                 } else {
+                    val headers = process.inputStream.bufferedReader().use { it.readLines() }
                     headers
                         .firstOrNull { it.contains("authorization: basic", ignoreCase = true) }
                         ?.substringAfter("basic ", "")
                         ?.trim()
                         ?.takeIf { it.isNotEmpty() }
                         ?.let { encoded ->
-                            String(java.util.Base64.getDecoder().decode(encoded))
-                                .substringAfter(":", "")
-                                .ifBlank { null }
+                            runCatching {
+                                String(java.util.Base64.getDecoder().decode(encoded))
+                                    .substringAfter(":", "")
+                                    .ifBlank { null }
+                            }.getOrNull()
                         }
                 }
             }.getOrNull()
