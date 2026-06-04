@@ -36,16 +36,39 @@ dependencyResolutionManagement {
                     load(localFile.inputStream())
                 }
             }
+            val gitHubTokenFromGitConfig = runCatching {
+                val process = ProcessBuilder("git", "config", "--get-all", "http.https://github.com/.extraheader")
+                    .directory(rootDir)
+                    .redirectErrorStream(true)
+                    .start()
+                val headers = process.inputStream.bufferedReader().use { it.readLines() }
+                if (process.waitFor() != 0) {
+                    null
+                } else {
+                    headers
+                        .firstOrNull { it.contains("authorization: basic", ignoreCase = true) }
+                        ?.substringAfter("basic ", "")
+                        ?.trim()
+                        ?.takeIf { it.isNotEmpty() }
+                        ?.let { encoded ->
+                            String(java.util.Base64.getDecoder().decode(encoded))
+                                .substringAfter(":", "")
+                                .ifBlank { null }
+                        }
+                }
+            }.getOrNull()
             val gprUser = localProperties.getProperty("gpr.user")
                 ?: providers.gradleProperty("gpr.user").getOrNull()
                 ?: System.getenv("GPR_USER")
                 ?: System.getenv("GITHUB_ACTOR")
                 ?: System.getenv("USERNAME")
+                ?: if (gitHubTokenFromGitConfig != null) "x-access-token" else null
             val gprKey = localProperties.getProperty("gpr.key")
                 ?: providers.gradleProperty("gpr.key").getOrNull()
                 ?: System.getenv("GPR_API_KEY")
                 ?: System.getenv("GITHUB_TOKEN")
                 ?: System.getenv("TOKEN")
+                ?: gitHubTokenFromGitConfig
 
             if (gprUser != null && gprKey != null) {
                 credentials {
