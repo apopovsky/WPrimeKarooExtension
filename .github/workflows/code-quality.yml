@@ -93,12 +93,10 @@ jobs:
   codeql:
     name: CodeQL Security Analysis
     runs-on: ubuntu-latest
-    # Disabled: CodeQL only supports Kotlin < 2.2.30, current project uses 2.3.0
-    # Re-enable when CodeQL adds support for Kotlin 2.3.0+
-    if: false
     permissions:
       security-events: write
       actions: read
+      packages: read
       contents: read
     
     steps:
@@ -134,7 +132,7 @@ jobs:
         echo "gpr.key=${GPR_TOKEN:-${{ secrets.GITHUB_TOKEN }}}" >> ~/.gradle/gradle.properties
         
     - name: Build project
-      run: ./gradlew build --stacktrace
+      run: ./gradlew assemble --stacktrace
       
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
