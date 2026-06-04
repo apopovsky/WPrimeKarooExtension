@@ -30,9 +30,15 @@ dependencyResolutionManagement {
         // karoo-ext
         maven {
             url = uri("https://maven.pkg.github.com/hammerheadnav/karoo-ext")
+            val localProperties = java.util.Properties().apply {
+                val localFile = rootDir.resolve("local.properties")
+                if (localFile.exists()) {
+                    load(localFile.inputStream())
+                }
+            }
             credentials {
-                username = providers.gradleProperty("gpr.user").getOrElse(System.getenv("USERNAME"))
-                password = providers.gradleProperty("gpr.key").getOrElse(System.getenv("TOKEN"))
+                username = (localProperties.getProperty("gpr.user") ?: providers.gradleProperty("gpr.user").getOrNull()) ?: System.getenv("USERNAME")
+                password = (localProperties.getProperty("gpr.key") ?: providers.gradleProperty("gpr.key").getOrNull()) ?: System.getenv("TOKEN")
             }
             content {
                 includeGroup("io.hammerhead")
@@ -42,4 +48,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "WPrimeExtension"
-include(":lib", ":app")
+include(":app")

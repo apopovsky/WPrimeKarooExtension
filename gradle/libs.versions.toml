@@ -2,8 +2,8 @@
 activity = "1.13.0"
 agp = "9.2.1"
 dokka = "2.2.0"
-kotlin = "2.3.21"
-coreKtx = "1.18.0"
+kotlin = "2.4.0"
+coreKtx = "1.19.0"
 coroutines = "1.11.0"
 lifecycle = "2.10.0"
 glance = "1.1.1"
@@ -18,6 +18,7 @@ bouncyCastle = "1.84"
 jackson = "2.22.0"
 jose4j = "0.9.6"
 jdom2 = "2.0.6.1"
+karooExt = "1.1.9"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
@@ -86,7 +87,7 @@ jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref
 jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref = "jose4j" }
 jdom2 = { module = "org.jdom:jdom2", version.ref = "jdom2" }
 
-jetbrains-dokka-android = { module = "org.jetbrains.dokka:android-documentation-plugin", version.ref = "dokka" }
+karoo-ext = { group = "io.hammerhead", name = "karoo-ext", version.ref = "karooExt" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

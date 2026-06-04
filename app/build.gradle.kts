@@ -39,8 +39,8 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
 }
 
 dependencies {
-    // Source lib dependency (use this while developing):
-    implementation(project(":lib"))
+    // External karoo-ext dependency
+    implementation(libs.karoo.ext)
 
     // Other dependencies
     implementation(libs.timber)
