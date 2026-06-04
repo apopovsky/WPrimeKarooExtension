@@ -36,9 +36,22 @@ dependencyResolutionManagement {
                     load(localFile.inputStream())
                 }
             }
-            credentials {
-                username = (localProperties.getProperty("gpr.user") ?: providers.gradleProperty("gpr.user").getOrNull()) ?: System.getenv("USERNAME")
-                password = (localProperties.getProperty("gpr.key") ?: providers.gradleProperty("gpr.key").getOrNull()) ?: System.getenv("TOKEN")
+            val gprUser = localProperties.getProperty("gpr.user")
+                ?: providers.gradleProperty("gpr.user").getOrNull()
+                ?: System.getenv("GPR_USER")
+                ?: System.getenv("GITHUB_ACTOR")
+                ?: System.getenv("USERNAME")
+            val gprKey = localProperties.getProperty("gpr.key")
+                ?: providers.gradleProperty("gpr.key").getOrNull()
+                ?: System.getenv("GPR_API_KEY")
+                ?: System.getenv("GITHUB_TOKEN")
+                ?: System.getenv("TOKEN")
+
+            if (gprUser != null && gprKey != null) {
+                credentials {
+                    username = gprUser
+                    password = gprKey
+                }
             }
             content {
                 includeGroup("io.hammerhead")
