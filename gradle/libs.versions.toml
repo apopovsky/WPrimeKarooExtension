@@ -11,6 +11,13 @@ hilt = "2.59.2"
 datastore = "1.2.1"
 ksp = "2.3.9"
 nordicBleClient = "2.0.0-alpha19"
+netty = "4.1.133.Final"
+commonsLang3 = "3.20.0"
+httpclient = "4.5.14"
+bouncyCastle = "1.84"
+jackson = "2.22.0"
+jose4j = "0.9.6"
+jdom2 = "2.0.6.1"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
@@ -63,6 +70,21 @@ nordic-ble-client = { module = "no.nordicsemi.kotlin.ble:client-android", versio
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.11.0" }
 mapbox-sdk-turf = { module = "com.mapbox.mapboxsdk:mapbox-sdk-turf", version = "7.3.1" }
 timber = { module = "com.jakewharton.timber:timber", version = "5.0.1" }
+
+# Security fixes for transitive dependencies
+netty-codec-http2 = { module = "io.netty:netty-codec-http2", version.ref = "netty" }
+netty-codec-http = { module = "io.netty:netty-codec-http", version.ref = "netty" }
+netty-common = { module = "io.netty:netty-common", version.ref = "netty" }
+netty-handler = { module = "io.netty:netty-handler", version.ref = "netty" }
+netty-codec = { module = "io.netty:netty-codec", version.ref = "netty" }
+netty-handler-proxy = { module = "io.netty:netty-handler-proxy", version.ref = "netty" }
+apache-commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commonsLang3" }
+apache-httpclient = { module = "org.apache.httpcomponents:httpclient", version.ref = "httpclient" }
+bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncyCastle" }
+bouncycastle-bcpkix = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncyCastle" }
+jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
+jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref = "jose4j" }
+jdom2 = { module = "org.jdom:jdom2", version.ref = "jdom2" }
 
 jetbrains-dokka-android = { module = "org.jetbrains.dokka:android-documentation-plugin", version.ref = "dokka" }
 

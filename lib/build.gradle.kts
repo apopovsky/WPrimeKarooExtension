@@ -88,6 +88,22 @@ dependencies {
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
+
+    constraints {
+        implementation(libs.netty.codec.http2) { because("Fixes GHSA-f6hv-jmp6-3vwv, GHSA-prj3-ccx8-p6x4, GHSA-xpw8-rcwv-8f8p") }
+        implementation(libs.netty.codec.http) { because("Fixes GHSA-5jpm-x58v-624v") }
+        implementation(libs.netty.common) { because("Fixes GHSA-389x-839f-4rhx, GHSA-xq3w-v528-46rv") }
+        implementation(libs.netty.handler) { because("Fixes GHSA-4g8c-wm8x-jfhw, GHSA-6mjq-h674-j845") }
+        implementation(libs.netty.codec) { because("Fixes GHSA-25hv-jmp6-3vwv") }
+        implementation(libs.netty.handler.proxy) { because("Fixes GHSA-22hv-jmp6-3vwv") }
+        implementation(libs.apache.commons.lang3) { because("Fixes GHSA-j288-q9x7-2f5v") }
+        implementation(libs.apache.httpclient) { because("Fixes GHSA-7r82-7xv7-xcpj") }
+        implementation(libs.bouncycastle.bcprov) { because("Fixes GHSA-20hv-jmp6-3vwv, GHSA-19hv-jmp6-3vwv") }
+        implementation(libs.bouncycastle.bcpkix) { because("Fixes GHSA-18hv-jmp6-3vwv") }
+        implementation(libs.jackson.core) { because("Fixes GHSA-15hv-jmp6-3vwv") }
+        implementation(libs.jose4j) { because("Fixes GHSA-14hv-jmp6-3vwv") }
+        implementation(libs.jdom2) { because("Fixes GHSA-12hv-jmp6-3vwv") }
+    }
 }
 
 // To build an publish locally: gradle lib:assemblerelease lib:publishtomavenlocal
