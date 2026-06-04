@@ -592,7 +592,7 @@ private fun getModelRequirements(model: WPrimeModelType): ModelParameterRequirem
 
 // --- Previews ---
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, widthDp = 256, heightDp = 427)
 @Composable
 fun ConfigurationScreenPreview() {
     WPrimeExtensionTheme {
@@ -625,7 +625,7 @@ fun ConfigurationScreenPreview() {
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, widthDp = 256, heightDp = 427)
 @Composable
 fun ModelSelectionDropdownPreview() {
     WPrimeExtensionTheme {
