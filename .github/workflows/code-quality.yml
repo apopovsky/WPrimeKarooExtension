@@ -93,6 +93,9 @@ jobs:
   codeql:
     name: CodeQL Security Analysis
     runs-on: ubuntu-latest
+    # CodeQL 2.25.5 supports Kotlin versions below 2.3.30; the project uses 2.4.0.
+    # Re-enable when CodeQL adds Kotlin 2.4.0 support.
+    if: false
     permissions:
       security-events: write
       actions: read
