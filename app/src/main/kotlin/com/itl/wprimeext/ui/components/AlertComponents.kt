@@ -48,8 +48,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -64,8 +64,7 @@ private const val ThresholdStep = 5f
 private const val Karoo3WidthDp = 256
 private const val Karoo3HeightDp = 427
 
-private fun snapThreshold(value: Float): Float =
-    (value / ThresholdStep).roundToInt().times(ThresholdStep).coerceIn(0f, 100f)
+private fun snapThreshold(value: Float): Float = (value / ThresholdStep).roundToInt().times(ThresholdStep).coerceIn(0f, 100f)
 
 private fun thresholdPercentage(value: Float): Int = snapThreshold(value).roundToInt()
 
