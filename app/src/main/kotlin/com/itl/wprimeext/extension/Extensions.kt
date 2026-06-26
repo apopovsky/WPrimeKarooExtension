@@ -4,6 +4,7 @@ import io.hammerhead.karooext.KarooSystemService
 import io.hammerhead.karooext.models.KarooEvent
 import io.hammerhead.karooext.models.OnStreamState
 import io.hammerhead.karooext.models.StreamState
+import io.hammerhead.karooext.models.UserProfile
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
@@ -20,6 +21,16 @@ fun KarooSystemService.streamDataFlow(dataTypeId: String): Flow<StreamState> = c
 
 inline fun <reified T : KarooEvent> KarooSystemService.consumerFlow(): Flow<T> = callbackFlow {
     val listenerId = addConsumer<T> {
+        trySend(it)
+    }
+    awaitClose {
+        removeConsumer(listenerId)
+    }
+}
+
+fun KarooSystemService.userProfileFlow(): Flow<UserProfile?> = callbackFlow {
+    trySend(null)
+    val listenerId = addConsumer<UserProfile> {
         trySend(it)
     }
     awaitClose {

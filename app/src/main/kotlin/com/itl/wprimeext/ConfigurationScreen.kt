@@ -51,15 +51,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.itl.wprimeext.extension.AlertType
+import com.itl.wprimeext.extension.CriticalPowerSource
+import com.itl.wprimeext.extension.KAROO_FTP_TO_CRITICAL_POWER_FACTOR
 import com.itl.wprimeext.extension.WPrimeConfiguration
 import com.itl.wprimeext.extension.WPrimeModelType
 import com.itl.wprimeext.extension.WPrimeSettings
+import com.itl.wprimeext.extension.resolveCriticalPower
 import com.itl.wprimeext.ui.components.AlertItem
 import com.itl.wprimeext.ui.components.CompactSettingField
 import com.itl.wprimeext.ui.components.NewAlertDialog
 import com.itl.wprimeext.ui.theme.WPrimeExtensionTheme
 import com.itl.wprimeext.ui.viewmodel.WPrimeConfigViewModel
 import com.itl.wprimeext.ui.viewmodel.WPrimeConfigViewModelFactory
+import io.hammerhead.karooext.KarooSystemService
 
 /**
  * Stateful composable that provides the ViewModel and state to the stateless layout.
@@ -68,17 +72,21 @@ import com.itl.wprimeext.ui.viewmodel.WPrimeConfigViewModelFactory
 fun ConfigurationScreen() {
     val context = LocalContext.current
     val wPrimeSettings = WPrimeSettings(context)
+    val karooSystem = remember { KarooSystemService(context.applicationContext) }
     val viewModel: WPrimeConfigViewModel = viewModel(
-        factory = WPrimeConfigViewModelFactory(wPrimeSettings),
+        factory = WPrimeConfigViewModelFactory(wPrimeSettings, karooSystem),
     )
 
     val configuration by viewModel.configuration.collectAsState()
+    val karooFtp by viewModel.karooFtp.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
     ConfigurationScreenLayout(
         isLoading = isLoading,
         configuration = configuration,
+        karooFtp = karooFtp,
         onCriticalPowerChange = viewModel::updateCriticalPower,
+        onUseKarooFtpForCriticalPowerChange = viewModel::updateUseKarooFtpForCriticalPower,
         onAnaerobicCapacityChange = viewModel::updateAnaerobicCapacity,
         onTauRecoveryChange = viewModel::updateTauRecovery,
         onKInChange = viewModel::updateKIn,
@@ -113,7 +121,9 @@ fun ConfigurationScreen() {
 fun ConfigurationScreenLayout(
     isLoading: Boolean,
     configuration: WPrimeConfiguration,
+    karooFtp: Int?,
     onCriticalPowerChange: (Double) -> Unit,
+    onUseKarooFtpForCriticalPowerChange: (Boolean) -> Unit,
     onAnaerobicCapacityChange: (Double) -> Unit,
     onTauRecoveryChange: (Double) -> Unit,
     onKInChange: (Double) -> Unit,
@@ -180,8 +190,10 @@ fun ConfigurationScreenLayout(
                         when (selectedTabIndex) {
                             0 -> ConfigurationTab(
                                 configuration = configuration,
+                                karooFtp = karooFtp,
                                 requirements = requirements,
                                 onCriticalPowerChange = onCriticalPowerChange,
+                                onUseKarooFtpForCriticalPowerChange = onUseKarooFtpForCriticalPowerChange,
                                 onAnaerobicCapacityChange = onAnaerobicCapacityChange,
                                 onTauRecoveryChange = onTauRecoveryChange,
                                 onKInChange = onKInChange,
@@ -231,8 +243,10 @@ fun ConfigurationScreenLayout(
 @Composable
 fun ConfigurationTab(
     configuration: WPrimeConfiguration,
+    karooFtp: Int?,
     requirements: ModelParameterRequirements,
     onCriticalPowerChange: (Double) -> Unit,
+    onUseKarooFtpForCriticalPowerChange: (Boolean) -> Unit,
     onAnaerobicCapacityChange: (Double) -> Unit,
     onTauRecoveryChange: (Double) -> Unit,
     onKInChange: (Double) -> Unit,
@@ -255,11 +269,64 @@ fun ConfigurationTab(
             onModelSelected = onModelSelected,
         )
 
+        val usesKarooFtp = configuration.criticalPowerSource == CriticalPowerSource.KAROO_FTP
+        val effectiveCriticalPower = configuration.resolveCriticalPower(karooFtp)
+        val calculatedCriticalPower = karooFtp?.let { it * KAROO_FTP_TO_CRITICAL_POWER_FACTOR }
+        val criticalPowerDescription = when {
+            usesKarooFtp && calculatedCriticalPower != null ->
+                "Karoo FTP ${karooFtp}W x ${KAROO_FTP_TO_CRITICAL_POWER_FACTOR} = ${calculatedCriticalPower.toInt()}W"
+
+            usesKarooFtp ->
+                "Karoo FTP unavailable; using saved manual CP until profile data is available"
+
+            calculatedCriticalPower != null ->
+                "Karoo FTP would calculate ${calculatedCriticalPower.toInt()}W"
+
+            else ->
+                "Manual value"
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(modifier = Modifier.fillMaxWidth(0.75f)) {
+                    Text(
+                        text = "Use Karoo FTP",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = "Calculate CP from the Karoo profile FTP",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = usesKarooFtp,
+                    onCheckedChange = onUseKarooFtpForCriticalPowerChange,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.primary,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                    ),
+                )
+            }
+        }
+
         CompactSettingField(
             title = "Critical Power (CP)",
-            value = configuration.criticalPower,
+            description = criticalPowerDescription,
+            value = effectiveCriticalPower,
             unit = "W",
             onValueChange = onCriticalPowerChange,
+            enabled = !usesKarooFtp,
         )
         CompactSettingField(
             title = "Anaerobic Capacity (W')",
@@ -600,6 +667,7 @@ fun ConfigurationScreenPreview() {
             isLoading = false,
             configuration = WPrimeConfiguration(
                 criticalPower = 280.0,
+                criticalPowerSource = CriticalPowerSource.MANUAL,
                 anaerobicCapacity = 22000.0,
                 tauRecovery = 320.0,
                 kIn = 0.002,
@@ -608,7 +676,9 @@ fun ConfigurationScreenPreview() {
                 showArrow = true,
                 useColors = true,
             ),
+            karooFtp = 295,
             onCriticalPowerChange = {},
+            onUseKarooFtpForCriticalPowerChange = {},
             onAnaerobicCapacityChange = {},
             onTauRecoveryChange = {},
             onKInChange = {},
