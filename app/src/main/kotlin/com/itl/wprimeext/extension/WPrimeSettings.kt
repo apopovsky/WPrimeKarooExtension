@@ -20,6 +20,8 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 @Serializable
 enum class AlertType { DROP, REPLENISH }
 
+enum class CriticalPowerSource { MANUAL, KAROO_FTP }
+
 @Serializable
 data class WPrimeAlert(
     val id: String,
@@ -30,6 +32,7 @@ data class WPrimeAlert(
 
 data class WPrimeConfiguration(
     val criticalPower: Double = 250.0,
+    val criticalPowerSource: CriticalPowerSource = CriticalPowerSource.MANUAL,
     val anaerobicCapacity: Double = 12000.0,
     val tauRecovery: Double = 300.0,
     val kIn: Double = 0.002,
@@ -40,10 +43,13 @@ data class WPrimeConfiguration(
     val alerts: List<WPrimeAlert> = emptyList(),
 )
 
+const val KAROO_FTP_TO_CRITICAL_POWER_FACTOR = 0.95
+
 class WPrimeSettings(private val context: Context) {
 
     companion object {
         private val CRITICAL_POWER_KEY = doublePreferencesKey("critical_power")
+        private val CRITICAL_POWER_SOURCE_KEY = stringPreferencesKey("critical_power_source")
         private val ANAEROBIC_CAPACITY_KEY = doublePreferencesKey("anaerobic_capacity")
         private val TAU_RECOVERY_KEY = doublePreferencesKey("tau_recovery")
         private val K_IN_KEY = doublePreferencesKey("k_in")
@@ -74,6 +80,9 @@ class WPrimeSettings(private val context: Context) {
 
         val config = WPrimeConfiguration(
             criticalPower = preferences[CRITICAL_POWER_KEY] ?: 250.0,
+            criticalPowerSource = preferences[CRITICAL_POWER_SOURCE_KEY]
+                ?.let { runCatching { CriticalPowerSource.valueOf(it) }.getOrNull() }
+                ?: CriticalPowerSource.MANUAL,
             anaerobicCapacity = preferences[ANAEROBIC_CAPACITY_KEY] ?: 12000.0,
             tauRecovery = preferences[TAU_RECOVERY_KEY] ?: 300.0,
             kIn = preferences[K_IN_KEY] ?: 0.002,
@@ -92,7 +101,7 @@ class WPrimeSettings(private val context: Context) {
         }
         WPrimeLogger.d(
             WPrimeLogger.Module.SETTINGS,
-            "Loaded configuration - Model: ${config.modelType}, CP: ${config.criticalPower}, W': ${config.anaerobicCapacity}, Tau: ${config.tauRecovery}, kIn: ${config.kIn}, recordFit: ${config.recordFit}, showArrow: ${config.showArrow}, useColors: ${config.useColors}, alerts: ${config.alerts.size}",
+            "Loaded configuration - Model: ${config.modelType}, CP: ${config.criticalPower}, CP source: ${config.criticalPowerSource}, W': ${config.anaerobicCapacity}, Tau: ${config.tauRecovery}, kIn: ${config.kIn}, recordFit: ${config.recordFit}, showArrow: ${config.showArrow}, useColors: ${config.useColors}, alerts: ${config.alerts.size}",
         )
 
         config
@@ -104,6 +113,14 @@ class WPrimeSettings(private val context: Context) {
             preferences[CRITICAL_POWER_KEY] = power
         }
         WPrimeLogger.i(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_SAVED + " - Critical Power")
+    }
+
+    suspend fun updateCriticalPowerSource(source: CriticalPowerSource) {
+        WPrimeLogger.d(WPrimeLogger.Module.SETTINGS, "Updating CP source: ${source.name}")
+        context.dataStore.edit { preferences ->
+            preferences[CRITICAL_POWER_SOURCE_KEY] = source.name
+        }
+        WPrimeLogger.i(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_SAVED + " - Critical Power Source")
     }
 
     suspend fun updateAnaerobicCapacity(capacity: Double) {

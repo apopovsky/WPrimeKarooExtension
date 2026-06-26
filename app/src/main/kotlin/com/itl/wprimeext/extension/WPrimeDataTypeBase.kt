@@ -40,6 +40,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
@@ -125,19 +126,23 @@ abstract class WPrimeDataTypeBase(
             CoroutineScope(Dispatchers.IO).launch {
                 // Configure the calculator with persistent settings
                 launch {
-                    wprimeSettings.configuration.collect { config ->
-                        wprimeCalculator.updateConfiguration(
-                            config.criticalPower,
-                            config.anaerobicCapacity,
-                            config.tauRecovery,
-                            config.kIn,
-                            config.modelType,
-                        )
-                        WPrimeLogger.d(
-                            WPrimeLogger.Module.DATA_TYPE,
-                            "Setting Calculator Configuration for $typeId - Model: ${config.modelType}, CP: ${config.criticalPower}W, W': ${config.anaerobicCapacity}J, Tau: ${config.tauRecovery}s, kIn: ${config.kIn}",
-                        )
-                    }
+                    wprimeSettings.configuration
+                        .combine(karooSystem.userProfileFlow()) { config, userProfile ->
+                            Pair(config, config.resolveCriticalPower(userProfile?.ftp))
+                        }
+                        .collect { (config, criticalPower) ->
+                            wprimeCalculator.updateConfiguration(
+                                criticalPower,
+                                config.anaerobicCapacity,
+                                config.tauRecovery,
+                                config.kIn,
+                                config.modelType,
+                            )
+                            WPrimeLogger.d(
+                                WPrimeLogger.Module.DATA_TYPE,
+                                "Setting Calculator Configuration for $typeId - Model: ${config.modelType}, CP: ${criticalPower}W, CP source: ${config.criticalPowerSource}, W': ${config.anaerobicCapacity}J, Tau: ${config.tauRecovery}s, kIn: ${config.kIn}",
+                            )
+                        }
                 }
 
                 // Emit initial (full) W' in stream units (percent or Joules)

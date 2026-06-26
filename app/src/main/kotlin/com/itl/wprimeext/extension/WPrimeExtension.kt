@@ -100,7 +100,7 @@ class WPrimeExtension : KarooExtension("wprime-id", BuildConfig.VERSION_NAME) {
             val initialConfig = settings.configuration.first()
             var recordFitEnabled = initialConfig.recordFit
             val calculator = WPrimeCalculator(
-                criticalPower = initialConfig.criticalPower,
+                criticalPower = initialConfig.resolveCriticalPower(null),
                 anaerobicCapacity = initialConfig.anaerobicCapacity,
                 tauRecovery = initialConfig.tauRecovery,
                 kIn = initialConfig.kIn,
@@ -108,16 +108,20 @@ class WPrimeExtension : KarooExtension("wprime-id", BuildConfig.VERSION_NAME) {
             )
             // Keep calculator & toggle updated with config changes
             launch {
-                settings.configuration.collect { cfg ->
-                    calculator.updateConfiguration(
-                        cfg.criticalPower,
-                        cfg.anaerobicCapacity,
-                        cfg.tauRecovery,
-                        cfg.kIn,
-                        cfg.modelType,
-                    )
-                    recordFitEnabled = cfg.recordFit
-                }
+                settings.configuration
+                    .combine(karooSystem.userProfileFlow()) { cfg, userProfile ->
+                        Pair(cfg, cfg.resolveCriticalPower(userProfile?.ftp))
+                    }
+                    .collect { (cfg, criticalPower) ->
+                        calculator.updateConfiguration(
+                            criticalPower,
+                            cfg.anaerobicCapacity,
+                            cfg.tauRecovery,
+                            cfg.kIn,
+                            cfg.modelType,
+                        )
+                        recordFitEnabled = cfg.recordFit
+                    }
             }
 
             // Recovery ticker for FIT: when the power stream is silent (autopause / stop),
