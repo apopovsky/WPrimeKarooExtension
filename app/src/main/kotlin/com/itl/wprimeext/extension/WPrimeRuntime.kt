@@ -6,7 +6,6 @@ import com.itl.wprimeext.utils.WPrimeLogger
 import io.hammerhead.karooext.KarooSystemService
 import io.hammerhead.karooext.models.DataType
 import io.hammerhead.karooext.models.RideState
-import io.hammerhead.karooext.models.StreamState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -54,15 +53,14 @@ class WPrimeRuntime(context: Context, private val karooSystem: KarooSystemServic
         owner.launch {
             state.map { it.rideState != WPrimeRideState.IDLE }.distinctUntilChanged().collectLatest { riding ->
                 if (riding) {
-                    karooSystem.streamDataFlow(DataType.Type.POWER).collect { sample ->
+                    val input = WPrimePowerInput(engine)
+                    karooSystem.timedStreamDataFlow(DataType.Type.POWER).collect { sample ->
                         command {
-                            val now = SystemClock.elapsedRealtime()
-                            val power = (sample as? StreamState.Streaming)?.dataPoint?.singleValue
-                            if (power != null && power.isFinite() && power in 0.0..2000.0) {
-                                engine.updatePower(power, now)
-                            } else {
-                                engine.setSensorAvailable(false, now)
+                            val result = input.accept(sample)
+                            if (result.lostSamples > 0) {
+                                WPrimeLogger.w(WPrimeLogger.Module.EXTENSION, "Power queue lost ${result.lostSamples} samples; excluding unknown interval")
                             }
+                            result.snapshot ?: engine.snapshot()
                         }
                     }
                 }

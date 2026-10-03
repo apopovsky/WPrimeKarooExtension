@@ -1,6 +1,6 @@
 package com.itl.wprimeext.utils
 
-import com.itl.wprimeext.BuildConfig
+import com.itl.wprimeext.shared.BuildConfig
 import timber.log.Timber
 
 object WPrimeLogger {

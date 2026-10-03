@@ -2,21 +2,37 @@ name: CI/CD - Build and Release
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ main, master, develop, "ariel/**" ]
   pull_request:
     branches: [ main, master, develop ]
   release:
-    types: [ created ]
+    types: [ published ]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Beta release tag (e.g. v1.2.0-beta.1); blank runs checks only'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
-    name: Build APK
+    name: Verify production and simulator
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
+      with:
+        ref: ${{ github.sha }}
+        fetch-depth: 0
 
     - name: Set up JDK 17
       uses: actions/setup-java@v5
@@ -42,7 +58,7 @@ jobs:
         echo "gpr.key=${GPR_TOKEN:-${{ secrets.GITHUB_TOKEN }}}" >> ~/.gradle/gradle.properties
 
     - name: Verify and build debug
-      run: ./gradlew spotlessCheck :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --stacktrace
+      run: ./gradlew spotlessCheck :shared:testDebugUnitTest :simulator:testDebugUnitTest :shared:lintDebug :app:lintDebug :simulator:lintDebug :app:assembleDebug :simulator:assembleDebug --stacktrace
 
     - name: Upload verification reports
       if: always()
@@ -50,9 +66,13 @@ jobs:
       with:
         name: verification-reports
         path: |
-          app/build/test-results/**/*.xml
-          app/build/reports/tests/
+          shared/build/test-results/**/*.xml
+          shared/build/reports/tests/
+          simulator/build/test-results/**/*.xml
+          simulator/build/reports/tests/
+          shared/build/reports/lint-results*
           app/build/reports/lint-results*
+          simulator/build/reports/lint-results*
         retention-days: 7
 
     - name: Upload Debug APK
@@ -63,16 +83,20 @@ jobs:
         retention-days: 30
 
   release:
-    name: Create Release
+    name: Publish Karoo release
     needs: [build]
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' && github.event.action == 'created'
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.tag != '')
     permissions:
       contents: write
+      packages: read
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
+      with:
+        ref: ${{ github.sha }}
+        fetch-depth: 0
 
     - name: Set up JDK 17
       uses: actions/setup-java@v5
@@ -97,8 +121,24 @@ jobs:
         echo "gpr.user=${GPR_USER:-${{ github.actor }}}" >> ~/.gradle/gradle.properties
         echo "gpr.key=${GPR_TOKEN:-${{ secrets.GITHUB_TOKEN }}}" >> ~/.gradle/gradle.properties
 
-    - name: Build Release APK
-      run: ./gradlew assembleRelease --stacktrace
+    - name: Validate release tag
+      env:
+        RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        IS_DISPATCH: ${{ github.event_name == 'workflow_dispatch' }}
+      run: |
+        git check-ref-format "refs/tags/$RELEASE_TAG"
+        tag_commit=$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")
+        if [[ "$tag_commit" != "$GITHUB_SHA" ]]; then
+          echo "Release tag must point to the verified workflow commit"
+          exit 1
+        fi
+        if [[ "$IS_DISPATCH" == "true" && ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$ ]]; then
+          echo "Manual publication requires a beta tag such as v1.2.0-beta.1"
+          exit 1
+        fi
+
+    - name: Build Karoo release APK
+      run: ./gradlew :app:assembleRelease --stacktrace
 
     - name: Upload Release APK to GitHub Release
       uses: softprops/action-gh-release@v2
@@ -107,17 +147,13 @@ jobs:
           app/build/outputs/apk/release/WPrimeExtension-*.apk
           app/manifest.json
           assets/wprime-icon.png
-        body: |
-          ## W Prime Extension ${{ github.ref_name }}
-          
-          **Changes in this version:**
-          - See commit history for details
-          
-          **Installation:**
-          1. Download the APK file
-          2. Install on your Karoo device
-          3. Enable the extension in Karoo settings
+        tag_name: ${{ inputs.tag || github.event.release.tag_name }}
+        target_commitish: ${{ github.sha }}
         draft: false
-        prerelease: false
+        prerelease: ${{ github.event_name == 'workflow_dispatch' || github.event.release.prerelease }}
+        make_latest: ${{ (github.event_name == 'workflow_dispatch' || github.event.release.prerelease) && 'false' || 'legacy' }}
+        fail_on_unmatched_files: true
+        # Preserve the locally verified APK and its signing identity when already attached.
+        overwrite_files: false
         token: ${{ secrets.GITHUB_TOKEN }}
 

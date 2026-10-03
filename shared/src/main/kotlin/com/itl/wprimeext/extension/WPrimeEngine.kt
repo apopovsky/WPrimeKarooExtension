@@ -105,26 +105,20 @@ class WPrimeEngine(configuration: WPrimeConfiguration = WPrimeConfiguration()) {
 
     @Synchronized fun tick(timestampMs: Long): WPrimeSnapshot {
         require(timestampMs >= time) { "Time must be monotonic" }
-        time = timestampMs
         if (rideState == WPrimeRideState.IDLE) return state()
         if (rideState == WPrimeRideState.PAUSED || (available && lastSample?.let { timestampMs - it > 5000L } == true)) {
+            time = timestampMs
             power = 0.0
             return advance(0.0, timestampMs)
         }
-        // Explicit sensor loss holds the balance and excludes the unknown interval on reconnection.
-        if (rideState == WPrimeRideState.RECORDING && (
-                !available ||
-                    (
-                        calculator.getCurrentWPrime() == calculator.getAnaerobicCapacity() &&
-                            lastSample?.let { timestampMs - it > 5000L } == true
-                        )
-                )
-        ) {
+        // Explicit sensor loss excludes the unknown interval. Fresh-power ticks have no effect:
+        // do not publish a fabricated sample timestamp or discard an earlier queued real sample.
+        if (!available) {
+            time = timestampMs
             calculator.rebaseTime(timestampMs)
         }
         return state()
     }
-
     private fun advance(power: Double, timestampMs: Long): WPrimeSnapshot {
         val previous = calculator.getWPrimePercentage()
         calculator.updatePower(power, timestampMs)

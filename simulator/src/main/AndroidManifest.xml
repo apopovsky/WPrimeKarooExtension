@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:name=".SimulatorApplication" android:label="WPrime Simulator" android:icon="@drawable/ic_wprime" android:theme="@style/AppTheme" android:testOnly="true">
+        <activity android:name="com.itl.wprimeext.MainActivity" android:exported="false" />
+        <activity android:name=".WPrimeSimulatorActivity" android:exported="true" android:label="WPrime Simulator">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

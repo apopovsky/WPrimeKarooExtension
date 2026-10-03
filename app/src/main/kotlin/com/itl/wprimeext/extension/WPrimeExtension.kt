@@ -16,11 +16,12 @@
 
 package com.itl.wprimeext.extension
 
-import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.SystemClock
+import androidx.core.content.ContextCompat
 import com.itl.wprimeext.BuildConfig
 import com.itl.wprimeext.utils.LogConstants
 import com.itl.wprimeext.utils.WPrimeLogger
@@ -31,7 +32,6 @@ import io.hammerhead.karooext.internal.Emitter
 import io.hammerhead.karooext.models.DeveloperField
 import io.hammerhead.karooext.models.FieldValue
 import io.hammerhead.karooext.models.FitEffect
-import io.hammerhead.karooext.models.KarooEffect
 import io.hammerhead.karooext.models.WriteToRecordMesg
 import io.hammerhead.karooext.models.WriteToSessionMesg
 import kotlinx.coroutines.CoroutineScope
@@ -42,11 +42,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.math.roundToInt
-import kotlin.reflect.full.createInstance
-import kotlin.uuid.ExperimentalUuidApi
 
-@OptIn(ExperimentalUuidApi::class)
 @AndroidEntryPoint
 class WPrimeExtension : KarooExtension("wprime-id", BuildConfig.VERSION_NAME) {
     @Inject
@@ -57,8 +53,8 @@ class WPrimeExtension : KarooExtension("wprime-id", BuildConfig.VERSION_NAME) {
 
     override val types by lazy {
         listOf(
-            WPrimeDataType(karooSystem, this, extension, runtime),
-            WPrimeKjDataType(karooSystem, this, extension, runtime),
+            WPrimeDataType(extension, runtime),
+            WPrimeKjDataType(extension, runtime),
         )
     }
 
@@ -81,23 +77,18 @@ class WPrimeExtension : KarooExtension("wprime-id", BuildConfig.VERSION_NAME) {
 
     override fun startFit(emitter: Emitter<FitEffect>) {
         val job = CoroutineScope(Dispatchers.IO).launch {
+            val projection = WPrimeFitProjection()
             runtime.state.collect { snapshot ->
-                if (!snapshot.configuration.recordFit) return@collect
-                val fields = listOf(
-                    FieldValue(wPrimeJField, snapshot.wPrimeJoules.roundToInt().coerceAtLeast(0).toDouble()),
-                    FieldValue(wPrimePctField, snapshot.percentage.roundToInt().coerceIn(0, 100).toDouble()),
-                )
-                when (snapshot.rideState) {
-                    WPrimeRideState.IDLE -> Unit
-                    WPrimeRideState.PAUSED -> emitter.onNext(WriteToSessionMesg(fields))
-                    WPrimeRideState.RECORDING -> emitter.onNext(WriteToRecordMesg(fields))
+                val values = projection.next(snapshot) ?: return@collect
+                val fields = listOf(FieldValue(wPrimeJField, values.joules), FieldValue(wPrimePctField, values.percentage))
+                when (values.message) {
+                    WPrimeFitMessage.RECORD -> emitter.onNext(WriteToRecordMesg(fields))
+                    WPrimeFitMessage.SESSION -> emitter.onNext(WriteToSessionMesg(fields))
                 }
             }
         }
         emitter.setCancellable { job.cancel() }
     }
-
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate() {
         super.onCreate()
         WPrimeLogger.i(
@@ -115,71 +106,47 @@ class WPrimeExtension : KarooExtension("wprime-id", BuildConfig.VERSION_NAME) {
                 }
             }
             launch {
-                // Handle test alerts from configuration screen
-                callbackFlow {
-                    val intentFilter = IntentFilter("io.hammerhead.wprime.TEST_ALERT")
-                    val receiver = object : BroadcastReceiver() {
-                        override fun onReceive(context: Context, intent: Intent) {
-                            trySend(intent)
-                        }
-                    }
-                    registerReceiver(receiver, intentFilter)
-                    awaitClose { unregisterReceiver(receiver) }
+                val manager = WPrimeAlertManager(karooSystem)
+                var previousTest: Long? = null
+                broadcastFlow("io.hammerhead.wprime.TEST_ALERT", exported = BuildConfig.DEBUG).collect { intent ->
+                    val alert = runCatching {
+                        testAlertCommand(
+                            intent.getStringExtra("alertId"),
+                            intent.getIntExtra("threshold", -1),
+                            intent.getBooleanExtra("soundEnabled", false),
+                            intent.getStringExtra("alertType"),
+                        )
+                    }.getOrNull() ?: return@collect
+                    val now = SystemClock.elapsedRealtime()
+                    if (previousTest?.let { now - it < 1000L } == true) return@collect
+                    previousTest = now
+                    manager.testAlert(alert, alert.thresholdPercentage.toDouble())
                 }
-                    .collect { intent ->
-                        val alertId = intent.getStringExtra("alertId")
-                        val threshold = intent.getIntExtra("threshold", 0)
-                        val soundEnabled = intent.getBooleanExtra("soundEnabled", false)
-
-                        if (alertId != null) {
-                            WPrimeLogger.d(WPrimeLogger.Module.EXTENSION, "Testing alert: $alertId, threshold: $threshold%, sound: $soundEnabled")
-
-                            val alertTypeStr = intent.getStringExtra("alertType")
-                            val alertType = runCatching { AlertType.valueOf(alertTypeStr ?: "") }.getOrDefault(AlertType.DROP)
-                            val alert = WPrimeAlert(alertId, threshold, soundEnabled, alertType)
-                            val alertManager = WPrimeAlertManager(karooSystem)
-                            alertManager.testAlert(alert, threshold.toDouble())
-                        }
-                    }
             }
-            launch {
-                // Handle actions that can't be shown in MainActivity because
-                // they are for in-ride scenarios. Receiving these intents is like
-                // if an extension got a command from a sensor or API that maps to the in-ride actions.
-                //
-                // Test with: adb shell am broadcast -a io.hammerhead.wprime.IN_RIDE_ACTION --es action io.hammerhead.karooext.models.MarkLap
-                // Works with any KarooEffect that has no required parameters:
-                //  - MarkLap, PauseRide, ResumeRide, ShowMapPage, ZoomPage, TurnScreenOff, TurnScreenOn, and PerformHardwareActions
-                callbackFlow {
-                    val intentFilter = IntentFilter("io.hammerhead.wprime.IN_RIDE_ACTION")
-                    val receiver = object : BroadcastReceiver() {
-                        override fun onReceive(context: Context, intent: Intent) {
-                            trySend(intent)
-                        }
-                    }
-                    registerReceiver(receiver, intentFilter)
-                    awaitClose { unregisterReceiver(receiver) }
+            if (BuildConfig.DEBUG) {
+                launch {
+                    broadcastFlow("io.hammerhead.wprime.IN_RIDE_ACTION", exported = true)
+                        .mapNotNull { intent -> runCatching { debugRideEffect(intent.getStringExtra("action")) }.getOrNull() }
+                        .collect { effect -> karooSystem.dispatch(effect) }
                 }
-                    .mapNotNull {
-                        it.extras?.getString("action")?.let { action ->
-                            WPrimeLogger.d(WPrimeLogger.Module.EXTENSION, LogConstants.INTENT_RECEIVED + " - Action: $action")
-                            try {
-                                val clazz = Class.forName(action).kotlin
-                                (clazz.objectInstance ?: clazz.createInstance()) as? KarooEffect
-                            } catch (e: Exception) {
-                                WPrimeLogger.w(WPrimeLogger.Module.EXTENSION, e, "Unknown action $action")
-                                null
-                            }
-                        }
-                    }
-                    .collect { effect ->
-                        WPrimeLogger.d(WPrimeLogger.Module.EXTENSION, "Dispatching KarooEffect: ${effect::class.simpleName}")
-                        karooSystem.dispatch(effect)
-                    }
             }
         }
     }
 
+    private fun broadcastFlow(action: String, exported: Boolean) = callbackFlow {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                trySend(intent)
+            }
+        }
+        ContextCompat.registerReceiver(
+            this@WPrimeExtension,
+            receiver,
+            IntentFilter(action),
+            if (exported) ContextCompat.RECEIVER_EXPORTED else ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
+        awaitClose { unregisterReceiver(receiver) }
+    }
     override fun onDestroy() {
         WPrimeLogger.i(WPrimeLogger.Module.EXTENSION, LogConstants.EXTENSION_STOPPED)
         serviceJob?.cancel()

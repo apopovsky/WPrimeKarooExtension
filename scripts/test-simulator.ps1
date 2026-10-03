@@ -31,7 +31,7 @@ function Get-Status([xml]$Ui) {
     return $node.text
 }
 function Start-Scenario([string]$Layout, [string]$Field, [string]$Scenario = 'Intervals', [int]$Steps = 10) {
-    Invoke-Adb @('shell', 'am', 'start', '-S', '-n', 'com.itl.wprimeext/.simulator.WPrimeSimulatorActivity',
+    Invoke-Adb @('shell', 'am', 'start', '-S', '-n', 'com.itl.wprimeext.simulator/.WPrimeSimulatorActivity',
         '--es', 'layout', ('"' + $Layout + '"'), '--es', 'field', $Field,
         '--es', 'scenario', ('"' + $Scenario + '"'), '--ei', 'steps', "$Steps") | Out-Null
     Start-Sleep -Seconds 2

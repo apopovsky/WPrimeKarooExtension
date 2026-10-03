@@ -16,7 +16,7 @@
 
 package com.itl.wprimeext.extension
 
-import com.itl.wprimeext.R
+import com.itl.wprimeext.shared.R
 import com.itl.wprimeext.utils.WPrimeLogger
 import io.hammerhead.karooext.KarooSystemService
 import io.hammerhead.karooext.models.InRideAlert

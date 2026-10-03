@@ -7,24 +7,22 @@ plugins {
 }
 
 configure<com.android.build.api.dsl.ApplicationExtension> {
-    namespace = "com.itl.wprimeext"
+    namespace = "com.itl.wprimeext.simulator"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.itl.wprimeext"
+        applicationId = "com.itl.wprimeext.simulator"
         minSdk = 23
         targetSdk = 37
         versionCode = 13
         versionName = "1.2.0-beta.1"
-        base.archivesName.set("WPrimeExtension-v${versionName}")
+        base.archivesName.set("WPrimeSimulator-v${versionName}")
     }
 
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("debug")
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            isMinifyEnabled = false
         }
     }
     compileOptions {
@@ -40,8 +38,15 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
 
 dependencies {
     implementation(project(":shared"))
-    implementation(libs.karoo.ext)
+    testImplementation(libs.junit)
     implementation(libs.hilt.android)
     ksp(libs.kotlinMetadataJvm)
     ksp(libs.hilt.android.compiler)
+}
+// Installation must go through the launcher, which checks an explicit emulator serial.
+tasks.configureEach {
+    if (name.startsWith("install")) {
+        enabled = false
+        description = "Disabled: use scripts/start-simulator.ps1 with an emulator serial."
+    }
 }

@@ -13,7 +13,7 @@ Keep documents aligned with implementation. Do not create Markdown files for ind
 
 ## Source map
 
-Production paths are relative to `app/src/main/kotlin/com/itl/wprimeext/`.
+Paths below are relative to the module source package `src/main/kotlin/com/itl/wprimeext/`. `app` owns the Karoo service/runtime/fields; `shared` owns the engine, calculation, settings, presentation, Compose UI and callback helpers.
 
 | Path | Responsibility |
 | --- | --- |
@@ -30,7 +30,7 @@ Production paths are relative to `app/src/main/kotlin/com/itl/wprimeext/`.
 | `ui/WPrimeGlanceViews.kt`, `WPrimeColors.kt` | Actual field layout and palette |
 | `WPrimeApplication.kt`, `utils/` | Hilt application and debug-gated logging |
 
-Debug-only laboratory: `app/src/debug/kotlin/com/itl/wprimeext/simulator/`, debug manifest and CSV asset. It renders the actual Glance RemoteViews with a separate engine and real persisted settings. It has no Karoo host, FIT writer or real sensor dependency. Tests are under `src/test` and `src/testDebug`. The obsolete unregistered preview and unused ViewModelModule/ConfigurationCard were removed.
+Standalone laboratory: `simulator/src/main/kotlin/com/itl/wprimeext/simulator/`. Package `com.itl.wprimeext.simulator` is separate from production `com.itl.wprimeext`; configuration is stored independently. Both depend on `:shared`. The simulator renders actual Glance RemoteViews but has no Karoo extension service, FIT writer or real sensors. Its manifest is testOnly, install tasks are disabled, and the launcher validates emulator-only serials and APK identity. Shared tests are in `shared/src/test`; parser tests in `simulator/src/test`. The obsolete preview/provider/editor were removed.
 
 ## Architecture and policy
 
@@ -59,7 +59,7 @@ Debug-only laboratory: `app/src/debug/kotlin/com/itl/wprimeext/simulator/`, debu
 ## Verification workflow
 
 ```powershell
-.\gradlew.bat spotlessCheck :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleRelease --console=plain
+.\gradlew.bat spotlessCheck :shared:testDebugUnitTest :simulator:testDebugUnitTest :shared:lintDebug :app:lintDebug :simulator:lintDebug :app:assembleDebug :simulator:assembleDebug :app:assembleRelease --console=plain
 git diff --check
 .\scripts\start-simulator.ps1 -Serial emulator-5554
 ```
@@ -74,4 +74,4 @@ adb -s <serial> pull /sdcard/screen.png media/screen.png
 adb -s <serial> shell rm /sdcard/screen.png
 ```
 
-Karoo 3 reference: 480×800 px, Android12. Use explicit serials when multiple devices exist. Historical media are not new validation. Keep receiver hardening, scientific model validation, library migrations, signing/R8 and measured battery comparisons in the existing improvement plan. Never use `flow {}` with concurrent producers; use `channelFlow`.
+Karoo 3 reference: 480×800 px, Android12. Use explicit serials when multiple devices exist. Historical media are not new validation. Release receivers are non-exported; test inputs are validated/rate-limited, and debug ride actions use an allowlist. Power callback buffering is bounded to64 DROP_OLDEST with callback timestamps/sequences and overflow diagnostics. FIT suppresses duplicate same-timestamp records and unchanged rounded paused sessions. Karoo release enables R8/resource shrinking with conservative SDK/extension keeps; device certification remains pending. Keep scientific validation, further migrations, stable signing and measured battery comparisons in the existing improvement plan. Never use `flow {}` with concurrent producers; use `channelFlow`.

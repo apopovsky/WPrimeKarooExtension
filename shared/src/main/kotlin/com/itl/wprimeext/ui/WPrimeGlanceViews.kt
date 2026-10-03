@@ -31,7 +31,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
-import com.itl.wprimeext.R
+import com.itl.wprimeext.shared.R
 import io.hammerhead.karooext.models.ViewConfig
 import kotlin.math.roundToInt
 import androidx.glance.unit.ColorProvider as UnitColorProvider

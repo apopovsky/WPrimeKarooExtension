@@ -8,7 +8,6 @@ import androidx.glance.appwidget.ExperimentalGlanceRemoteViewsApi
 import androidx.glance.appwidget.GlanceRemoteViews
 import androidx.glance.unit.ColorProvider
 import com.itl.wprimeext.ui.WPrimeGlanceView
-import io.hammerhead.karooext.KarooSystemService
 import io.hammerhead.karooext.extension.DataTypeImpl
 import io.hammerhead.karooext.internal.Emitter
 import io.hammerhead.karooext.internal.ViewEmitter
@@ -31,11 +30,9 @@ import kotlin.math.roundToInt
 
 @OptIn(ExperimentalGlanceRemoteViewsApi::class)
 abstract class WPrimeDataTypeBase(
-    private val karooSystem: KarooSystemService,
-    context: Context,
     extension: String,
     typeId: String,
-    private val runtime: WPrimeRuntime? = null,
+    private val runtime: WPrimeRuntime,
 ) : DataTypeImpl(extension, typeId) {
     private val glance = GlanceRemoteViews()
 
@@ -49,7 +46,7 @@ abstract class WPrimeDataTypeBase(
     abstract fun getStreamValue(snapshot: WPrimeSnapshot): Double
 
     override fun startStream(emitter: Emitter<StreamState>) {
-        val shared = requireNotNull(runtime) { "Live fields require the extension runtime" }
+        val shared = runtime
         val job = CoroutineScope(Dispatchers.IO).launch {
             shared.state.map { snapshot ->
                 // Map using this snapshot's capacity, not a separately changing configuration.
@@ -65,7 +62,7 @@ abstract class WPrimeDataTypeBase(
     override fun startView(context: Context, config: ViewConfig, emitter: ViewEmitter) {
         val job = CoroutineScope(Dispatchers.IO).launch {
             emitter.onNext(UpdateGraphicConfig(showHeader = false))
-            val source = if (config.preview) previewDataFlow() else requireNotNull(runtime).state
+            val source = if (config.preview) previewDataFlow() else runtime.state
             var lastRenderMs: Long? = null
             source.map { snapshot ->
 

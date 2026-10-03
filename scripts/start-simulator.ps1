@@ -85,18 +85,26 @@ do {
     Start-Sleep -Seconds 2
 } while ($true)
 
+$hardware = & $adb -s $Serial shell getprop ro.hardware
+if ($LASTEXITCODE -ne 0 -or "$hardware".Trim() -notin @('ranchu', 'goldfish')) {
+    throw 'Target is not an Android SDK emulator. No APK was installed.'
+}
+
 Push-Location $repository
 try {
     if (-not $SkipBuild) {
-        Invoke-Checked (Join-Path $repository 'gradlew.bat') @(':app:assembleDebug', '--console=plain')
+        Invoke-Checked (Join-Path $repository 'gradlew.bat') @(':simulator:assembleDebug', '--console=plain')
     }
-    $outputMetadata = Join-Path $repository 'app/build/outputs/apk/debug/output-metadata.json'
+    $outputMetadata = Join-Path $repository 'simulator/build/outputs/apk/debug/output-metadata.json'
     if (-not (Test-Path -LiteralPath $outputMetadata)) { throw 'Debug APK metadata not found. Run without -SkipBuild.' }
     $apkMetadata = Get-Content -LiteralPath $outputMetadata -Raw | ConvertFrom-Json
+    if ($apkMetadata.applicationId -ne 'com.itl.wprimeext.simulator') {
+        throw 'Refusing to install an APK whose package is not the standalone simulator.'
+    }
     $apkFile = Join-Path (Split-Path -Parent $outputMetadata) $apkMetadata.elements[0].outputFile
-    Invoke-Checked $adb @('-s', $Serial, 'install', '-r', $apkFile)
+    Invoke-Checked $adb @('-s', $Serial, 'install', '-r', '-t', $apkFile)
     Invoke-Checked $adb @('-s', $Serial, 'shell', 'am', 'start', '-S', '-n',
-        'com.itl.wprimeext/.simulator.WPrimeSimulatorActivity',
+        'com.itl.wprimeext.simulator/.WPrimeSimulatorActivity',
         '--es', 'scenario', ('"' + $Scenario + '"'), '--ei', 'speed', "$Speed", '--ez', 'autoStart', "$($AutoStart.IsPresent)".ToLowerInvariant())
     Write-Host "W Prime simulator running on $Serial. No physical Karoo was modified."
 } finally {

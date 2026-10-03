@@ -1,6 +1,6 @@
 # W′ model implementation reference
 
-Reviewed against `app/src/main/kotlin/com/itl/wprimeext/extension/WPrimeCalculator.kt` on 2026-10-03. This describes the current code, not scientific certification of the named models. See [the technical audit and plan](../CONTRIBUTING.md#technical-audit--2026-10-03) before changing equations.
+Reviewed against `shared/src/main/kotlin/com/itl/wprimeext/extension/WPrimeCalculator.kt` on 2026-10-03. This describes the current code, not scientific certification of the named models. See [the technical audit and plan](../CONTRIBUTING.md#technical-audit--2026-10-03) before changing equations.
 
 ## Units and integration
 
@@ -8,7 +8,7 @@ Let P = input power (W), C = Critical Power (W), A = configured W′ capacity (J
 
 `WPrimeCalculator.updatePower(power, timestamp)` accepts milliseconds. The first update initializes time; later calls use current power over elapsed dt, with a 3600 s gap cap. Calculator calls at repeated/backwards timestamps do not integrate. The engine rejects backwards time, nonfinite power and samples outside 0–2000 W. Production uses monotonic elapsedRealtime; the lab supplies virtual timestamps.
 
-Configuration validates finite positive CP, capacity and tau, and finite nonnegative kIn. Equivalent/cosmetic updates preserve balance and integration time; physiological changes preserve the remaining fraction and rebase the interval. These protections do not correct the scientific equations below.
+Settings validate finite positive CP, capacity, tau and kIn; the engine also accepts finite zero kIn for deterministic domain scenarios. Equivalent/cosmetic updates preserve balance and integration time; physiological changes preserve the remaining fraction and rebase the interval. These protections do not correct the scientific equations below.
 ## Implemented equations
 
 All models deplete above CP by `(P − C) × dt`, with the balance bounded at zero. Recovery differences are below. The enum names are persisted API identifiers; renaming requires migration.
@@ -30,7 +30,7 @@ DataStore persists manual CP (250 W), CP source (MANUAL by default), capacity (1
 
 `CriticalPowerResolver.kt` uses valid Karoo FTP × 0.95 only when KAROO_FTP is selected; otherwise it falls back to stored manual CP. That factor is the application's heuristic, not proof that FTP and CP are physiologically interchangeable.
 
-One shared runtime consumes raw POWER and exposes the same immutable balance to numeric fields, graphics, alerts and FIT. Idle resets and does not integrate; paused activity recovers at 0 W. A gated 3 s ticker retains zero-power recovery after >5 s of silence. Explicit unavailable sensor during recording holds balance and excludes the unknown interval on reconnect; paused recovery remains enabled. The local debug lab uses this engine and the actual field rendering with synthetic power.
+One shared runtime consumes raw POWER and exposes the same immutable balance to numeric fields, graphics, alerts and FIT. Idle resets and does not integrate; paused activity recovers at 0 W. A gated 3 s ticker retains zero-power recovery after >5 s of silence. Explicit unavailable sensor during recording holds balance and excludes the unknown interval on reconnect; paused recovery remains enabled. The separate simulator application uses this engine and the actual field rendering with synthetic power.
 ## Required validation before model fixes
 
 Existing deterministic engine tests cover integration and lifecycle. Extend them for scientific reference validation: above/below/equal CP, full/empty balance, variable intervals, duplicate/backwards timestamps, long stops, zero/nonfinite parameters and equivalent elapsed-time partitioning. Add reference vectors derived from primary scientific publications before claiming fidelity to the model names. Preserve released enum IDs and explain numerical changes to users. Measure before optimizing exp/pow; repeated subscriptions, rendering and logging are stronger current battery candidates than a few arithmetic operations per sample.

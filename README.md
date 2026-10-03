@@ -170,8 +170,8 @@ adb logcat | grep WPrime
 
 ```bash
 ./gradlew :app:assembleDebug spotlessCheck
-./gradlew installDebug
-./gradlew :app:testDebugUnitTest :app:lintDebug
+./gradlew :app:installDebug
+./gradlew :shared:testDebugUnitTest :simulator:testDebugUnitTest :app:lintDebug :simulator:lintDebug
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md#development-setup) for SDK/JDK and GitHub Packages authentication. Deterministic tests cover the engine, settings persistence and debug replay parser.
@@ -188,9 +188,9 @@ app/build/outputs/apk/debug/WPrimeExtension-v<version>-debug.apk
 - The extension registers two graphical data fields via `extension_info.xml`.
 - One serialized ride runtime owns raw-power integration; both fields, alerts and FIT consume its immutable snapshot.
 - Cosmetic settings preserve W′. CP, capacity or model changes preserve the remaining fraction and start a new integration interval.
-- Pauses recover at 0 W; explicit sensor loss holds balance until reconnection. Silent streams retain stop recovery after five seconds.
+- Pauses recover at 0 W; explicit sensor loss holds balance until reconnection. Silent streams begin zero-power recovery after more than five seconds.
 - Alerts work independently of visible fields. Rendering filters unchanged presentation and limits graphical updates to 1 Hz.
-- Debug builds include a local Android simulator using the actual Glance field and the production calculation engine.
+- A separate simulator application uses the shared Glance field, settings UI and production engine; it is never included in the Karoo APK.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md#prioritized-improvement-plan) for completed work and remaining scientific, dependency, host and battery validation. Battery savings have not yet been measured on Karoo.
 
@@ -206,26 +206,18 @@ The default AVD is `Medium_Phone_API_35`; pass `-Avd <name>` or `-Serial emulato
 
 Choose **Full-width row**, **Half-row** or **Full-screen**, and percent or kJ. **Settings** opens the real app configuration: change CP or algorithm there and return to the lab. Use **Start**, **Pause ride**, **Reset** and power buttons **+1 / +10 / −1 / −10 / 0 / CP**. Pause continues zero-power recovery; **Freeze clock** stops virtual time. Speeds and CSV scenarios allow repeatable long efforts and sensor loss.
 
-This renders real Glance RemoteViews; it does not emulate Karoo firmware, host services, audible alerts or FIT-file generation. Those and battery usage still need final device checks. The laboratory is absent from release builds.
-Key source paths:
+This renders real Glance RemoteViews; it does not emulate Karoo firmware, host services, audible alerts or FIT-file generation. Those and battery usage still need final device checks. The laboratory has a separate package, configuration store and APK; its guarded launcher only installs on emulators.
+Modules: `app` contains the Karoo extension/runtime; `shared` contains the engine, settings and UI; `simulator` contains the laboratory and replay controls.
 
-```text
-app/src/main/kotlin/com/itl/wprimeext/
-├── extension/
-│   ├── WPrimeExtension.kt
-│   ├── WPrimeDataTypeBase.kt
-│   ├── WPrimeDataType.kt
-│   ├── WPrimeKjDataType.kt
-│   ├── WPrimeCalculator.kt
-│   ├── WPrimeSettings.kt
-│   └── WPrimeAlertManager.kt
-├── ui/
-│   ├── WPrimeGlanceViews.kt
-│   ├── WPrimeColors.kt
-│   └── viewmodel/WPrimeConfigViewModel.kt
-├── ConfigurationScreen.kt
-└── MainActivity.kt
-```
+## Beta 1.2.0-beta.1
+
+The beta retains the production package and FIT definitions, adds shared calculation ownership and bounded rendering, and enables release shrinking. Download the beta from its [specific release](https://github.com/apopovsky/WPrimeKarooExtension/releases/tag/v1.2.0-beta.1); `/releases/latest` continues to refer to stable releases.
+
+This release also adds optional Karoo FTP-derived CP, validated settings with visible save errors, sensor-loss handling, and a separate emulator laboratory that renders the actual fields and settings UI. The Karoo APK excludes the simulator. Requires KOS 1.634.2440 or later.
+
+The maintainer reported successful installation and basic operation on Karoo on 2026-10-03. Local verification covers 36 passing unit tests, formatting, debug lint and debug/release builds. Complete ride lifecycle, alerts/sound, decoded FIT and battery measurements remain pending.
+
+An update requires the same signing certificate as your installed APK. This beta publishes the locally built APK; its certificate differs from the previous stable certificate. Preserve your settings: do not uninstall automatically to bypass a signature mismatch. CI preserves existing release assets so it cannot replace this APK with a different signer. Reproducible signing-key management remains pending; see [release development](CONTRIBUTING.md#ci-beta-and-signing).
 
 ## Contributing
 

@@ -75,6 +75,11 @@ class WPrimeSimulatorActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (android.os.Build.HARDWARE !in listOf("ranchu", "goldfish") || (!android.os.Build.PRODUCT.startsWith("sdk") && !android.os.Build.MODEL.contains("sdk", ignoreCase = true) && !android.os.Build.MODEL.contains("Emulator"))) {
+            Toast.makeText(this, "WPrime Simulator runs only on Android emulators", Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
         width = if (intent.getStringExtra("layout") == "Half-row") 240 else 480
         height = if (intent.getStringExtra("layout") == "Full-screen") 800 else 240
         selectedField = if (intent.getStringExtra("field") == "kJ") "kJ" else "Percent"

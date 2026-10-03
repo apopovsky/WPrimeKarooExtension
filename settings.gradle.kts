@@ -61,4 +61,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "WPrimeExtension"
-include(":app")
+include(":app", ":shared", ":simulator")
