@@ -19,6 +19,7 @@ import androidx.glance.layout.Row
 import androidx.glance.layout.absolutePadding
 import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
@@ -164,9 +165,9 @@ fun WPrimeGlanceView(
 
             TitleRow(fieldLabel, textAlign, horizontalAlignment, textColor, titleRowHeight, titleIconSize, titleTextSize)
 
-            // Value area - Row with arrow column(s) and text column
+            // Value area occupies only the space left below the fixed title.
             Row(
-                modifier = GlanceModifier.fillMaxSize(),
+                modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // LEFT ARROW COLUMN (for RIGHT and CENTER alignment)
@@ -342,8 +343,8 @@ fun WPrimeNotAvailableGlanceView(
 }
 
 // Helper functions for dynamic text sizing
-private const val CHAR_WIDTH_FACTOR = 0.30f // Intentionally low vs actual ~0.6x; widthFactor per-case compensates
-private const val LINE_HEIGHT_FACTOR = 0.75f // Accounts for monospace cap height ≈ 70% of sp value
+private const val CHAR_WIDTH_FACTOR = 0.60f // Monospace glyph advance relative to font size.
+private const val LINE_HEIGHT_FACTOR = 1.20f // Reserve the TextView line box, not only glyph cap height.
 
 private fun pickTextSizeSp(
     value: String,
@@ -381,24 +382,6 @@ private fun pickTextSizeSp(
 
     val targetChars = fixedCharCount ?: value.length
 
-    // Use ACTUAL text length (not fixedCharCount) for width-factor decision so that
-    // short values (e.g. "9.4", 3 chars) are not penalised by a larger fixedCharCount,
-    // while longer values (e.g. "11.6", 4 chars) still get the protection they need.
-    val widthFactorChars = value.length
-    val widthFactorAdjustment = when {
-        widthFactorChars <= 2 -> 1.0f
-
-        widthFactorChars == 3 -> if (isWide) 1.0f else 1.85f
-
-        // Must fit "100" in narrow: ~47sp avoids truncation
-        widthFactorChars == 4 -> if (isWide) 1.0f else 1.6f
-
-        // Reduced from 2.0 → less aggressive for "10.3"-style values
-        widthFactorChars == 5 -> if (isWide) 1.05f else 1.7f
-
-        else -> if (isWide) 1.2f else 1.8f
-    }
-
     val avgUnitPerChar = 1.0f
     // When current text is shorter than fixedCharCount, use actual char count for width
     // so a 3-char "9.9" gets sized as 3 chars, not penalised by fixedCharCount=4
@@ -407,7 +390,7 @@ private fun pickTextSizeSp(
     } else {
         targetChars.toFloat()
     }
-    val units = effectiveCharsForWidth * avgUnitPerChar * widthFactorAdjustment
+    val units = effectiveCharsForWidth * avgUnitPerChar
 
     val fromWidth = if (units * CHAR_WIDTH_FACTOR > 0) (availW / (units * CHAR_WIDTH_FACTOR)) else safeMax.toFloat()
     // Increase height usage factor for better vertical space utilization

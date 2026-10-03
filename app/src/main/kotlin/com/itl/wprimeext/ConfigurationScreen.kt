@@ -37,7 +37,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +48,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.itl.wprimeext.extension.AlertType
 import com.itl.wprimeext.extension.CriticalPowerSource
@@ -71,18 +71,20 @@ import io.hammerhead.karooext.KarooSystemService
 @Composable
 fun ConfigurationScreen() {
     val context = LocalContext.current
-    val wPrimeSettings = WPrimeSettings(context)
+    val wPrimeSettings = remember { WPrimeSettings(context.applicationContext) }
     val karooSystem = remember { KarooSystemService(context.applicationContext) }
     val viewModel: WPrimeConfigViewModel = viewModel(
         factory = WPrimeConfigViewModelFactory(wPrimeSettings, karooSystem),
     )
 
-    val configuration by viewModel.configuration.collectAsState()
-    val karooFtp by viewModel.karooFtp.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
+    val configuration by viewModel.configuration.collectAsStateWithLifecycle()
+    val karooFtp by viewModel.karooFtp.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val saveError by viewModel.saveError.collectAsStateWithLifecycle()
 
     ConfigurationScreenLayout(
         isLoading = isLoading,
+        saveError = saveError,
         configuration = configuration,
         karooFtp = karooFtp,
         onCriticalPowerChange = viewModel::updateCriticalPower,
@@ -101,10 +103,11 @@ fun ConfigurationScreen() {
             val alert = configuration.alerts.find { it.id == alertId }
             if (alert != null) {
                 // Send broadcast to trigger test alert
-                val intent = android.content.Intent("io.hammerhead.wprime.TEST_ALERT")
+                val intent = android.content.Intent("io.hammerhead.wprime.TEST_ALERT").setPackage(context.packageName)
                 intent.putExtra("alertId", alertId)
                 intent.putExtra("threshold", alert.thresholdPercentage)
                 intent.putExtra("soundEnabled", alert.soundEnabled)
+                intent.putExtra("alertType", alert.alertType.name)
                 context.sendBroadcast(intent)
             }
         },
@@ -136,12 +139,18 @@ fun ConfigurationScreenLayout(
     onDeleteAlert: (String) -> Unit,
     onTestAlert: (String) -> Unit,
     onBackClick: () -> Unit,
+    saveError: String? = null,
 ) {
     val requirements = getModelRequirements(configuration.modelType)
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("Configuration", "Alerts")
 
     Scaffold(
+        bottomBar = {
+            saveError?.let { message ->
+                Text(message, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(12.dp))
+            }
+        },
         topBar = {
             TopAppBar(
                 title = {

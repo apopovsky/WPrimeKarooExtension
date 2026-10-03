@@ -28,24 +28,17 @@ import dagger.hilt.android.AndroidEntryPoint
 import io.hammerhead.karooext.KarooSystemService
 import io.hammerhead.karooext.extension.KarooExtension
 import io.hammerhead.karooext.internal.Emitter
-import io.hammerhead.karooext.models.DataType
 import io.hammerhead.karooext.models.DeveloperField
 import io.hammerhead.karooext.models.FieldValue
 import io.hammerhead.karooext.models.FitEffect
 import io.hammerhead.karooext.models.KarooEffect
-import io.hammerhead.karooext.models.RideState
-import io.hammerhead.karooext.models.StreamState
 import io.hammerhead.karooext.models.WriteToRecordMesg
 import io.hammerhead.karooext.models.WriteToSessionMesg
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -60,19 +53,12 @@ class WPrimeExtension : KarooExtension("wprime-id", BuildConfig.VERSION_NAME) {
     lateinit var karooSystem: KarooSystemService
 
     private var serviceJob: Job? = null
-
-    companion object {
-        /** How often the FIT recovery ticker fires to check for data gaps. */
-        private const val FIT_RECOVERY_TICK_INTERVAL_MS = 3_000L
-
-        /** Minimum silence before the FIT ticker injects a 0 W recovery step. */
-        private const val FIT_RECOVERY_STALE_THRESHOLD_MS = 5_000L
-    }
+    private val runtime by lazy { WPrimeRuntime(this, karooSystem) }
 
     override val types by lazy {
         listOf(
-            WPrimeDataType(karooSystem, this, extension),
-            WPrimeKjDataType(karooSystem, this, extension),
+            WPrimeDataType(karooSystem, this, extension, runtime),
+            WPrimeKjDataType(karooSystem, this, extension, runtime),
         )
     }
 
@@ -95,84 +81,18 @@ class WPrimeExtension : KarooExtension("wprime-id", BuildConfig.VERSION_NAME) {
 
     override fun startFit(emitter: Emitter<FitEffect>) {
         val job = CoroutineScope(Dispatchers.IO).launch {
-            // Initialize settings & calculator (mirror logic from data types)
-            val settings = WPrimeSettings(this@WPrimeExtension)
-            val initialConfig = settings.configuration.first()
-            var recordFitEnabled = initialConfig.recordFit
-            val calculator = WPrimeCalculator(
-                criticalPower = initialConfig.resolveCriticalPower(null),
-                anaerobicCapacity = initialConfig.anaerobicCapacity,
-                tauRecovery = initialConfig.tauRecovery,
-                kIn = initialConfig.kIn,
-                modelType = initialConfig.modelType,
-            )
-            // Keep calculator & toggle updated with config changes
-            launch {
-                settings.configuration
-                    .combine(karooSystem.userProfileFlow()) { cfg, userProfile ->
-                        Pair(cfg, cfg.resolveCriticalPower(userProfile?.ftp))
-                    }
-                    .collect { (cfg, criticalPower) ->
-                        calculator.updateConfiguration(
-                            criticalPower,
-                            cfg.anaerobicCapacity,
-                            cfg.tauRecovery,
-                            cfg.kIn,
-                            cfg.modelType,
-                        )
-                        recordFitEnabled = cfg.recordFit
-                    }
-            }
-
-            // Recovery ticker for FIT: when the power stream is silent (autopause / stop),
-            // inject 0 W updates so the FIT-recorded W' recovers physiologically.
-            var lastFitSampleMs = 0L
-            launch {
-                while (true) {
-                    delay(FIT_RECOVERY_TICK_INTERVAL_MS)
-                    if (!recordFitEnabled) continue
-                    val now = System.currentTimeMillis()
-                    if (lastFitSampleMs > 0L && (now - lastFitSampleMs) > FIT_RECOVERY_STALE_THRESHOLD_MS) {
-                        calculator.updatePower(0.0, now)
-                        WPrimeLogger.d(
-                            WPrimeLogger.Module.EXTENSION,
-                            "FIT recovery tick: W'=${calculator.getCurrentWPrime().toInt()}J " +
-                                "(${calculator.getWPrimePercentage().toInt()}%) " +
-                                "after ${(now - lastFitSampleMs) / 1000}s gap",
-                        )
-                    }
+            runtime.state.collect { snapshot ->
+                if (!snapshot.configuration.recordFit) return@collect
+                val fields = listOf(
+                    FieldValue(wPrimeJField, snapshot.wPrimeJoules.roundToInt().coerceAtLeast(0).toDouble()),
+                    FieldValue(wPrimePctField, snapshot.percentage.roundToInt().coerceIn(0, 100).toDouble()),
+                )
+                when (snapshot.rideState) {
+                    WPrimeRideState.IDLE -> Unit
+                    WPrimeRideState.PAUSED -> emitter.onNext(WriteToSessionMesg(fields))
+                    WPrimeRideState.RECORDING -> emitter.onNext(WriteToRecordMesg(fields))
                 }
             }
-
-            karooSystem.streamDataFlow(DataType.Type.POWER)
-                .combine(karooSystem.consumerFlow<RideState>()) { powerState, rideState ->
-                    Pair(powerState, rideState)
-                }
-                .collectLatest { (powerState, rideState) ->
-                    if (!recordFitEnabled) return@collectLatest // Skip all FIT writes if disabled
-                    val streaming = powerState as? StreamState.Streaming
-                    val power = streaming?.dataPoint?.singleValue ?: 0.0
-                    val now = System.currentTimeMillis()
-                    // Track real sample arrival so the recovery ticker knows when data is stale
-                    if (streaming != null) lastFitSampleMs = now
-                    // Update calculator with 3s smoothed power for more stable W' calculations
-                    calculator.updatePower(power, now)
-                    val wPrimeJ = calculator.getCurrentWPrime().roundToInt().coerceAtLeast(0)
-                    val wPrimePct = calculator.getWPrimePercentage().roundToInt().coerceIn(0, 100)
-                    val fieldJ = FieldValue(wPrimeJField, wPrimeJ.toDouble())
-                    val fieldPct = FieldValue(wPrimePctField, wPrimePct.toDouble())
-                    when (rideState) {
-                        is RideState.Idle -> { /* no write */ }
-
-                        is RideState.Paused -> {
-                            emitter.onNext(WriteToSessionMesg(listOf(fieldJ, fieldPct)))
-                        }
-
-                        is RideState.Recording -> {
-                            emitter.onNext(WriteToRecordMesg(listOf(fieldJ, fieldPct)))
-                        }
-                    }
-                }
         }
         emitter.setCancellable { job.cancel() }
     }
@@ -185,6 +105,7 @@ class WPrimeExtension : KarooExtension("wprime-id", BuildConfig.VERSION_NAME) {
             LogConstants.EXTENSION_STARTED + " - Version ${BuildConfig.VERSION_NAME}",
         )
 
+        runtime.start()
         serviceJob = CoroutineScope(Dispatchers.IO).launch {
             karooSystem.connect { connected ->
                 if (connected) {
@@ -263,6 +184,7 @@ class WPrimeExtension : KarooExtension("wprime-id", BuildConfig.VERSION_NAME) {
         WPrimeLogger.i(WPrimeLogger.Module.EXTENSION, LogConstants.EXTENSION_STOPPED)
         serviceJob?.cancel()
         serviceJob = null
+        runtime.stop()
         karooSystem.disconnect()
         WPrimeLogger.i(WPrimeLogger.Module.EXTENSION, LogConstants.SERVICE_DISCONNECTED)
         super.onDestroy()

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -19,8 +20,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -73,23 +76,32 @@ fun CompactSettingField(
         }
 
         var textValue by remember(value) { mutableStateOf(value.toString()) }
-        var showSaved by remember { mutableStateOf(false) }
+        val focusManager = LocalFocusManager.current
+        val saveValue = {
+            textValue.toDoubleOrNull()?.takeIf { enabled && it.isFinite() && it > 0 && it != value }?.let(onValueChange)
+            Unit
+        }
+        LaunchedEffect(textValue, enabled) {
+            val parsed = textValue.toDoubleOrNull()
+            if (enabled && parsed != null && parsed.isFinite() && parsed > 0 && parsed != value) {
+                delay(600)
+                onValueChange(parsed)
+            }
+        }
 
         OutlinedTextField(
             value = textValue,
             onValueChange = { newValue ->
                 textValue = newValue
-                newValue.toDoubleOrNull()?.let { valid ->
-                    if (valid > 0) {
-                        onValueChange(valid)
-                        showSaved = true
-                    }
-                }
             },
             enabled = enabled,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = {
+                saveValue()
+                focusManager.clearFocus()
+            }),
             singleLine = true,
-            modifier = Modifier.width(110.dp),
+            modifier = Modifier.width(110.dp).onFocusChanged { if (!it.isFocused) saveValue() },
             textStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
         )
 
@@ -105,19 +117,5 @@ fun CompactSettingField(
                 MaterialTheme.colorScheme.primary.copy(alpha = 0.38f)
             },
         )
-
-        if (showSaved && enabled) {
-            LaunchedEffect(showSaved) {
-                delay(1200)
-                showSaved = false
-            }
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = "✓",
-                color = Color(0xFF4CAF50),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-            )
-        }
     }
 }

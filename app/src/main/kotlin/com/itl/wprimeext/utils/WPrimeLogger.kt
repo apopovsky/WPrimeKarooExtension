@@ -1,5 +1,6 @@
 package com.itl.wprimeext.utils
 
+import com.itl.wprimeext.BuildConfig
 import timber.log.Timber
 
 object WPrimeLogger {
@@ -15,11 +16,15 @@ object WPrimeLogger {
     }
 
     fun d(module: String, message: String) {
-        Timber.tag("$APP_TAG:$module").d(message)
+        if (BuildConfig.DEBUG) Timber.tag("$APP_TAG:$module").d(message)
+    }
+
+    fun d(module: String, message: () -> String) {
+        if (BuildConfig.DEBUG) d(module, message())
     }
 
     fun i(module: String, message: String) {
-        Timber.tag("$APP_TAG:$module").i(message)
+        if (BuildConfig.DEBUG) Timber.tag("$APP_TAG:$module").i(message)
     }
 
     fun w(module: String, message: String) {
@@ -39,23 +44,6 @@ object WPrimeLogger {
     }
 
     fun logPowerUpdate(module: String, power: Double, currentWPrime: Double, percentRemaining: Double) {
-        d(module, "Power: ${power}W -> W': ${currentWPrime.toInt()}J (${percentRemaining.toInt()}%)")
-    }
-
-    fun logDataTypeUpdate(module: String, dataSource: String, power: Double, smoothedPower: Double, currentWPrime: Double, percentRemaining: Double) {
-        d(module, "$dataSource Power: ${power}W (smoothed: ${"%.1f".format(smoothedPower)}W), W': ${currentWPrime.toInt()}J, W'%: ${"%.1f".format(percentRemaining)}%")
-    }
-
-    fun logStateChange(module: String, from: String, to: String) {
-        i(module, "State change: $from -> $to")
-    }
-
-    fun logDataFlow(module: String, operation: String, value: Any? = null) {
-        val valueStr = value?.let { " - Value: $it" } ?: ""
-        d(module, "Data flow: $operation$valueStr")
-    }
-
-    fun logError(module: String, operation: String, error: Throwable) {
-        e(module, error, "Error during $operation: ${error.message}")
+        d(module) { "Power: ${power}W -> W': ${currentWPrime.toInt()}J (${percentRemaining.toInt()}%)" }
     }
 }

@@ -16,6 +16,7 @@ interface IWPrimeModel {
     fun getCurrentWPrime(): Double
     fun getWPrimePercentage(): Double
     fun reset()
+    fun restoreBalance(joules: Double)
 }
 
 /**
@@ -33,6 +34,10 @@ abstract class BaseWPrimeModel(
 
     override fun reset() {
         wBal = wPrime
+    }
+
+    override fun restoreBalance(joules: Double) {
+        wBal = joules.coerceIn(0.0, wPrime)
     }
 
     protected fun logDepletion() {
@@ -190,7 +195,7 @@ class WPrimeCalculator(
 ) {
     private var model: IWPrimeModel = WPrimeFactory.create(modelType, criticalPower, anaerobicCapacity, tauRecovery, kIn)
 
-    @Volatile private var lastUpdateTime: Long = 0
+    private var lastUpdateTime: Long? = null
 
     companion object {
         private const val MILLISECONDS_TO_SECONDS = 1000.0
@@ -202,7 +207,10 @@ class WPrimeCalculator(
     }
 
     init {
-        WPrimeLogger.i(WPrimeLogger.Module.CALCULATOR, "WPrimeCalculator initialized with model: $modelType")
+        require(criticalPower.isFinite() && criticalPower > 0)
+        require(anaerobicCapacity.isFinite() && anaerobicCapacity > 0)
+        require(tauRecovery.isFinite() && tauRecovery > 0)
+        require(kIn.isFinite() && kIn >= 0)
     }
 
     fun updateConfiguration(
@@ -212,14 +220,22 @@ class WPrimeCalculator(
         kIn: Double,
         modelType: WPrimeModelType,
     ) {
-        require(criticalPower > 0) { "Critical Power must be positive" }
-        require(anaerobicCapacity >= 0) { "Anaerobic Capacity must be non-negative" }
+        require(criticalPower.isFinite() && criticalPower > 0) { "Critical Power must be positive" }
+        require(anaerobicCapacity.isFinite() && anaerobicCapacity > 0) { "Anaerobic Capacity must be finite and positive" }
+        require(tauRecovery.isFinite() && tauRecovery > 0) { "Tau must be finite and positive" }
+        require(kIn.isFinite() && kIn >= 0) { "kIn must be finite and non-negative" }
+        if (this.criticalPower == criticalPower && this.anaerobicCapacity == anaerobicCapacity &&
+            this.tauRecovery == tauRecovery && this.kIn == kIn && this.modelType == modelType
+        ) {
+            return
+        }
 
         WPrimeLogger.d(
             WPrimeLogger.Module.CALCULATOR,
             "${LogConstants.WPRIME_CONFIG_UPDATING} - Model: $modelType, CP: $criticalPower, W': $anaerobicCapacity",
         )
 
+        val previousFraction = model.getWPrimePercentage() / 100.0
         this.criticalPower = criticalPower
         this.anaerobicCapacity = anaerobicCapacity
         this.tauRecovery = tauRecovery
@@ -227,19 +243,17 @@ class WPrimeCalculator(
         this.modelType = modelType
 
         this.model = WPrimeFactory.create(modelType, criticalPower, anaerobicCapacity, tauRecovery, kIn)
+        model.restoreBalance(previousFraction * anaerobicCapacity)
+        lastUpdateTime = null
 
         WPrimeLogger.i(WPrimeLogger.Module.CALCULATOR, LogConstants.WPRIME_CONFIG_UPDATED)
     }
 
     fun updatePower(power: Double, timestamp: Long): Double {
-        val validatedPower = if (power < MIN_POWER || power > MAX_POWER) {
-            WPrimeLogger.w(WPrimeLogger.Module.CALCULATOR, "Invalid power value: $power. Using 0W")
-            0.0
-        } else {
-            power
-        }
+        require(power.isFinite() && power in MIN_POWER..MAX_POWER) { "Power must be finite and in 0..2000 W" }
+        val validatedPower = power
 
-        if (lastUpdateTime == 0L) {
+        if (lastUpdateTime == null) {
             lastUpdateTime = timestamp
             WPrimeLogger.i(WPrimeLogger.Module.CALCULATOR, LogConstants.WPRIME_INITIALIZED)
             return model.getCurrentWPrime()
@@ -257,7 +271,7 @@ class WPrimeCalculator(
     }
 
     private fun validateDeltaTime(timestamp: Long): Double {
-        val deltaTime = (timestamp - lastUpdateTime) / MILLISECONDS_TO_SECONDS
+        val deltaTime = (timestamp - requireNotNull(lastUpdateTime)) / MILLISECONDS_TO_SECONDS
         return when {
             deltaTime < 0 -> {
                 WPrimeLogger.w(WPrimeLogger.Module.CALCULATOR, "Negative deltaTime: $deltaTime. Ignoring.")
@@ -287,6 +301,10 @@ class WPrimeCalculator(
         }
     }
 
+    fun rebaseTime(timestamp: Long) {
+        lastUpdateTime = timestamp
+    }
+
     fun getCurrentWPrime(): Double = model.getCurrentWPrime()
     fun getWPrimePercentage(): Double = model.getWPrimePercentage()
     fun getCriticalPower(): Double = criticalPower
@@ -298,7 +316,7 @@ class WPrimeCalculator(
      */
     fun reset() {
         model.reset()
-        lastUpdateTime = 0
+        lastUpdateTime = null
         WPrimeLogger.i(WPrimeLogger.Module.CALCULATOR, "WPrimeCalculator reset to full capacity")
     }
 }

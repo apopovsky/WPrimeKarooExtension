@@ -6,14 +6,18 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.itl.wprimeext.utils.LogConstants
 import com.itl.wprimeext.utils.WPrimeLogger
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.io.IOException
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "wprime_settings")
 
@@ -45,7 +49,9 @@ data class WPrimeConfiguration(
 
 const val KAROO_FTP_TO_CRITICAL_POWER_FACTOR = 0.95
 
-class WPrimeSettings(private val context: Context) {
+class WPrimeSettings(private val dataStore: DataStore<Preferences>) {
+
+    constructor(context: Context) : this(context.dataStore)
 
     companion object {
         private val CRITICAL_POWER_KEY = doublePreferencesKey("critical_power")
@@ -62,30 +68,22 @@ class WPrimeSettings(private val context: Context) {
         private val json = Json { ignoreUnknownKeys = true }
     }
 
-    val configuration: Flow<WPrimeConfiguration> = context.dataStore.data.map { preferences ->
+    val configuration: Flow<WPrimeConfiguration> = dataStore.data.catch { error ->
+        if (error is IOException) emit(emptyPreferences()) else throw error
+    }.map { preferences ->
         val modelName = preferences[MODEL_TYPE_KEY] ?: WPrimeModelType.SKIBA_DIFFERENTIAL.name
-        val modelType = WPrimeModelType.valueOf(modelName)
+        val modelType = WPrimeModelType.entries.firstOrNull { it.name == modelName } ?: WPrimeModelType.SKIBA_DIFFERENTIAL
 
-        val alertsJson = preferences[ALERTS_KEY]
-        val alerts = if (alertsJson != null) {
-            try {
-                json.decodeFromString<List<WPrimeAlert>>(alertsJson)
-            } catch (e: Exception) {
-                WPrimeLogger.w(WPrimeLogger.Module.SETTINGS, e, "Failed to parse alerts")
-                emptyList()
-            }
-        } else {
-            emptyList()
-        }
+        val alerts = decodeAlerts(preferences[ALERTS_KEY])
 
         val config = WPrimeConfiguration(
-            criticalPower = preferences[CRITICAL_POWER_KEY] ?: 250.0,
+            criticalPower = preferences[CRITICAL_POWER_KEY]?.takeIf { it.isFinite() && it > 0.0 } ?: 250.0,
             criticalPowerSource = preferences[CRITICAL_POWER_SOURCE_KEY]
                 ?.let { runCatching { CriticalPowerSource.valueOf(it) }.getOrNull() }
                 ?: CriticalPowerSource.MANUAL,
-            anaerobicCapacity = preferences[ANAEROBIC_CAPACITY_KEY] ?: 12000.0,
-            tauRecovery = preferences[TAU_RECOVERY_KEY] ?: 300.0,
-            kIn = preferences[K_IN_KEY] ?: 0.002,
+            anaerobicCapacity = preferences[ANAEROBIC_CAPACITY_KEY]?.takeIf { it.isFinite() && it > 0.0 } ?: 12000.0,
+            tauRecovery = preferences[TAU_RECOVERY_KEY]?.takeIf { it.isFinite() && it > 0.0 } ?: 300.0,
+            kIn = preferences[K_IN_KEY]?.takeIf { it.isFinite() && it > 0.0 } ?: 0.002,
             recordFit = preferences[RECORD_FIT_KEY] ?: true,
             modelType = modelType,
             showArrow = preferences[SHOW_ARROW_KEY] ?: true,
@@ -93,23 +91,13 @@ class WPrimeSettings(private val context: Context) {
             alerts = alerts,
         )
 
-        val isDefault = preferences[CRITICAL_POWER_KEY] == null
-        if (isDefault) {
-            WPrimeLogger.i(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_DEFAULT)
-        } else {
-            WPrimeLogger.d(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_LOADED)
-        }
-        WPrimeLogger.d(
-            WPrimeLogger.Module.SETTINGS,
-            "Loaded configuration - Model: ${config.modelType}, CP: ${config.criticalPower}, CP source: ${config.criticalPowerSource}, W': ${config.anaerobicCapacity}, Tau: ${config.tauRecovery}, kIn: ${config.kIn}, recordFit: ${config.recordFit}, showArrow: ${config.showArrow}, useColors: ${config.useColors}, alerts: ${config.alerts.size}",
-        )
-
         config
-    }
+    }.distinctUntilChanged()
 
     suspend fun updateCriticalPower(power: Double) {
+        require(power.isFinite() && power > 0.0) { "Value must be finite and positive" }
         WPrimeLogger.d(WPrimeLogger.Module.SETTINGS, "Updating CP: ${power}W")
-        context.dataStore.edit { preferences ->
+        dataStore.edit { preferences ->
             preferences[CRITICAL_POWER_KEY] = power
         }
         WPrimeLogger.i(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_SAVED + " - Critical Power")
@@ -117,31 +105,34 @@ class WPrimeSettings(private val context: Context) {
 
     suspend fun updateCriticalPowerSource(source: CriticalPowerSource) {
         WPrimeLogger.d(WPrimeLogger.Module.SETTINGS, "Updating CP source: ${source.name}")
-        context.dataStore.edit { preferences ->
+        dataStore.edit { preferences ->
             preferences[CRITICAL_POWER_SOURCE_KEY] = source.name
         }
         WPrimeLogger.i(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_SAVED + " - Critical Power Source")
     }
 
     suspend fun updateAnaerobicCapacity(capacity: Double) {
+        require(capacity.isFinite() && capacity > 0.0) { "Value must be finite and positive" }
         WPrimeLogger.d(WPrimeLogger.Module.SETTINGS, "Updating W': ${capacity}J")
-        context.dataStore.edit { preferences ->
+        dataStore.edit { preferences ->
             preferences[ANAEROBIC_CAPACITY_KEY] = capacity
         }
         WPrimeLogger.i(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_SAVED + " - Anaerobic Capacity")
     }
 
     suspend fun updateTauRecovery(tau: Double) {
+        require(tau.isFinite() && tau > 0.0) { "Value must be finite and positive" }
         WPrimeLogger.d(WPrimeLogger.Module.SETTINGS, "Updating Tau: ${tau}s")
-        context.dataStore.edit { preferences ->
+        dataStore.edit { preferences ->
             preferences[TAU_RECOVERY_KEY] = tau
         }
         WPrimeLogger.i(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_SAVED + " - Tau Recovery")
     }
 
     suspend fun updateKIn(kIn: Double) {
+        require(kIn.isFinite() && kIn > 0.0) { "Value must be finite and positive" }
         WPrimeLogger.d(WPrimeLogger.Module.SETTINGS, "Updating kIn: $kIn")
-        context.dataStore.edit { preferences ->
+        dataStore.edit { preferences ->
             preferences[K_IN_KEY] = kIn
         }
         WPrimeLogger.i(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_SAVED + " - kIn Parameter")
@@ -149,7 +140,7 @@ class WPrimeSettings(private val context: Context) {
 
     suspend fun updateRecordFit(enabled: Boolean) {
         WPrimeLogger.d(WPrimeLogger.Module.SETTINGS, "Updating recordFit: $enabled")
-        context.dataStore.edit { preferences ->
+        dataStore.edit { preferences ->
             preferences[RECORD_FIT_KEY] = enabled
         }
         WPrimeLogger.i(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_SAVED + " - Record Fit")
@@ -157,7 +148,7 @@ class WPrimeSettings(private val context: Context) {
 
     suspend fun updateShowArrow(enabled: Boolean) {
         WPrimeLogger.d(WPrimeLogger.Module.SETTINGS, "Updating showArrow: $enabled")
-        context.dataStore.edit { preferences ->
+        dataStore.edit { preferences ->
             preferences[SHOW_ARROW_KEY] = enabled
         }
         WPrimeLogger.i(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_SAVED + " - Show Arrow")
@@ -165,7 +156,7 @@ class WPrimeSettings(private val context: Context) {
 
     suspend fun updateUseColors(enabled: Boolean) {
         WPrimeLogger.d(WPrimeLogger.Module.SETTINGS, "Updating useColors: $enabled")
-        context.dataStore.edit { preferences ->
+        dataStore.edit { preferences ->
             preferences[USE_COLORS_KEY] = enabled
         }
         WPrimeLogger.i(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_SAVED + " - Use Colors")
@@ -173,17 +164,45 @@ class WPrimeSettings(private val context: Context) {
 
     suspend fun updateModelType(modelType: WPrimeModelType) {
         WPrimeLogger.d(WPrimeLogger.Module.SETTINGS, "Updating Model: ${modelType.name}")
-        context.dataStore.edit { preferences ->
+        dataStore.edit { preferences ->
             preferences[MODEL_TYPE_KEY] = modelType.name
         }
         WPrimeLogger.i(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_SAVED + " - Model Type")
     }
 
     suspend fun updateAlerts(alerts: List<WPrimeAlert>) {
+        require(alerts.all { it.id.isNotBlank() && it.thresholdPercentage in 0..100 })
+        require(alerts.map { it.id }.distinct().size == alerts.size)
         WPrimeLogger.d(WPrimeLogger.Module.SETTINGS, "Updating Alerts: ${alerts.size} alerts")
-        context.dataStore.edit { preferences ->
+        dataStore.edit { preferences ->
             preferences[ALERTS_KEY] = json.encodeToString(alerts)
         }
         WPrimeLogger.i(WPrimeLogger.Module.SETTINGS, LogConstants.SETTINGS_SAVED + " - Alerts")
     }
+
+    suspend fun useKarooFtp(enabled: Boolean, ftp: Int?) {
+        dataStore.edit { preferences ->
+            if (!enabled && preferences[CRITICAL_POWER_SOURCE_KEY] == CriticalPowerSource.KAROO_FTP.name) {
+                ftp?.takeIf { it > 0 }?.let { preferences[CRITICAL_POWER_KEY] = it * KAROO_FTP_TO_CRITICAL_POWER_FACTOR }
+            }
+            preferences[CRITICAL_POWER_SOURCE_KEY] = if (enabled) CriticalPowerSource.KAROO_FTP.name else CriticalPowerSource.MANUAL.name
+        }
+    }
+
+    suspend fun addAlert(alert: WPrimeAlert) = mutateAlerts { current -> current.filterNot { it.id == alert.id } + alert }
+
+    suspend fun updateAlert(alert: WPrimeAlert) = mutateAlerts { current -> current.map { if (it.id == alert.id) alert else it } }
+
+    suspend fun deleteAlert(id: String) = mutateAlerts { current -> current.filterNot { it.id == id } }
+
+    private suspend fun mutateAlerts(transform: (List<WPrimeAlert>) -> List<WPrimeAlert>) {
+        dataStore.edit { preferences ->
+            val alerts = transform(decodeAlerts(preferences[ALERTS_KEY]))
+            require(alerts.all { it.id.isNotBlank() && it.thresholdPercentage in 0..100 })
+            preferences[ALERTS_KEY] = json.encodeToString(alerts)
+        }
+    }
+
+    private fun decodeAlerts(encoded: String?): List<WPrimeAlert> = encoded?.let { runCatching { json.decodeFromString<List<WPrimeAlert>>(it) }.getOrNull() }
+        .orEmpty().filter { it.id.isNotBlank() && it.thresholdPercentage in 0..100 }.distinctBy { it.id }
 }

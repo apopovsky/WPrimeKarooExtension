@@ -1,7 +1,6 @@
 # W Prime Extension for Hammerhead Karoo 3
 
 [![CI/CD - Build and Release](https://github.com/apopovsky/WPrimeKarooExtension/actions/workflows/ci.yml/badge.svg)](https://github.com/apopovsky/WPrimeKarooExtension/actions/workflows/ci.yml)
-[![Code Quality](https://github.com/apopovsky/WPrimeKarooExtension/actions/workflows/code-quality.yml/badge.svg)](https://github.com/apopovsky/WPrimeKarooExtension/actions/workflows/code-quality.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Karoo%203-orange.svg)](https://www.hammerhead.io/)
 
@@ -21,6 +20,7 @@ W' is your finite anaerobic energy reserve: it depletes when you ride above Crit
   - **W Prime (kJ)** for absolute energy
 - Six selectable W' models, with **Skiba Differential (2014)** as the default
 - Configurable Critical Power, W' capacity, tau recovery, and kIn
+- Manual Critical Power or Karoo profile FTP × 0.95, with manual fallback if FTP is unavailable
 - Optional trend arrow and power-ratio color coding
 - Configurable in-ride threshold alerts for W' drop and replenishment
 - FIT developer fields for post-ride analysis:
@@ -33,7 +33,7 @@ W' is your finite anaerobic energy reserve: it depletes when you ride above Crit
 
 - Hammerhead Karoo 3
 - Power meter connected to the Karoo
-- Karoo firmware with sideloading support
+- Karoo firmware with sideloading support; the declared karoo-ext 1.1.9 release specifies KOS 1.634.2440 or later ([official release](https://github.com/hammerheadnav/karoo-ext/releases/tag/1.1.9))
 - Hammerhead Companion App for the easiest install path, or ADB for manual install
 
 ## Install
@@ -64,7 +64,7 @@ adb install WPrimeExtension-vX.X.X.apk
 
 1. Open the **W Prime** app from the Karoo app drawer.
 2. Set your physiological values:
-   - **Critical Power (CP)**: a practical starting point is FTP x 0.95.
+   - **Critical Power (CP)**: enter a measured value manually, or enable the Karoo FTP source (FTP × 0.95). This factor is an application heuristic; unavailable FTP falls back to the stored manual value.
    - **W' capacity**: start around 12,000-20,000 J if you do not know your measured value.
    - **Model**: start with **Skiba Differential (2014)**.
 3. Optional: enable/disable FIT recording, trend arrow, colors, and alerts.
@@ -112,16 +112,16 @@ During a ride:
 
 ## Choosing a Model
 
-Most riders should start with **Skiba Differential (2014)**. It is the default and is a good general-purpose model for racing, group rides, climbs, and intervals.
+**Skiba Differential (2014)** is the default. The six choices below name the current implementations; they have not been scientifically certified by this project. Several implementations have known discrepancies documented in the technical audit.
 
-| Model | Best for | Notes |
+| Model | Implementation status | Notes |
 | --- | --- | --- |
-| Skiba Differential (2014) | Most riders | Default, simple, broadly useful |
-| Skiba 2012 Monoexponential | Structured workouts | Conservative recovery behavior |
-| Bartram 2018 | Lab-informed setup | Uses a configurable tau recovery value |
-| Caen/Lievens Domain | Repeated surges | Recovery changes by power domain |
-| Chorley 2023 Bi-Exponential | Physiological experimentation | Fast and slow recovery components |
-| Weigend 2022 Hydraulic | Experimental use | Uses configurable kIn inflow |
+| Skiba Differential (2014) | Default | Differential update with bounded balance |
+| Skiba 2012 Monoexponential | Needs correction | Currently uses differential recovery; documented tau is not applied |
+| Bartram 2018 | Needs validation | App uses configured tau rather than the formula fallback |
+| Caen/Lievens Domain | Needs validation | Hardcoded domain recovery constants |
+| Chorley 2023 Bi-Exponential | Simplified | Repartitions the deficit at each update; results depend on update cadence |
+| Weigend 2022 Hydraulic | Simplified | Configurable kIn inflow |
 
 For formulas and implementation notes, see [docs/wprime-algorithms.md](docs/wprime-algorithms.md).
 
@@ -145,9 +145,9 @@ You can configure alerts from the **Alerts** tab in the W Prime app.
 
 ## Troubleshooting
 
-### The data field shows `--`
+### Power is unavailable
 
-- Make sure a power meter is connected.
+- Make sure a power meter is connected. Explicit sensor loss holds the balance and hides the trend arrow while recording.
 - Open the W Prime app and confirm CP and W' are configured.
 - Confirm the extension is enabled in Karoo settings.
 
@@ -155,7 +155,7 @@ You can configure alerts from the **Alerts** tab in the W Prime app.
 
 - Re-check Critical Power. A common starting point is FTP x 0.95.
 - Re-check W' capacity. Many riders land somewhere around 10-25 kJ.
-- Try Skiba Differential first, then Caen/Lievens if your rides include lots of short surges.
+- Use the default Skiba Differential while checking settings and the known model limitations below.
 
 ### The extension does not appear after install
 
@@ -169,10 +169,12 @@ adb logcat | grep WPrime
 ## Build from Source
 
 ```bash
-./gradlew clean assembleDebug
+./gradlew :app:assembleDebug spotlessCheck
 ./gradlew installDebug
-./gradlew test
+./gradlew :app:testDebugUnitTest :app:lintDebug
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md#development-setup) for SDK/JDK and GitHub Packages authentication. Deterministic tests cover the engine, settings persistence and debug replay parser.
 
 Debug APK output:
 
@@ -184,11 +186,27 @@ app/build/outputs/apk/debug/WPrimeExtension-v<version>-debug.apk
 
 - Kotlin Android app using MVVM, Hilt, Jetpack Compose, Glance, DataStore, and karoo-ext.
 - The extension registers two graphical data fields via `extension_info.xml`.
-- Each active data field has its own calculator instance.
-- FIT recording runs a separate calculator in the extension service.
-- Settings are exposed as a Flow and hot-reloaded by active stream/FIT coroutines.
-- Recovery continues during silent power periods using a 0 W recovery ticker.
+- One serialized ride runtime owns raw-power integration; both fields, alerts and FIT consume its immutable snapshot.
+- Cosmetic settings preserve W′. CP, capacity or model changes preserve the remaining fraction and start a new integration interval.
+- Pauses recover at 0 W; explicit sensor loss holds balance until reconnection. Silent streams retain stop recovery after five seconds.
+- Alerts work independently of visible fields. Rendering filters unchanged presentation and limits graphical updates to 1 Hz.
+- Debug builds include a local Android simulator using the actual Glance field and the production calculation engine.
 
+See [CONTRIBUTING.md](CONTRIBUTING.md#prioritized-improvement-plan) for completed work and remaining scientific, dependency, host and battery validation. Battery savings have not yet been measured on Karoo.
+
+## Local simulator without a Karoo
+
+Create an Android Virtual Device in Android Studio, then run on Windows:
+
+```powershell
+.\scripts\start-simulator.ps1
+```
+
+The default AVD is `Medium_Phone_API_35`; pass `-Avd <name>` or `-Serial emulator-5554` for another emulator. The script builds and installs only on an emulator. Use `-SkipBuild` to reopen an existing debug APK.
+
+Choose **Full-width row**, **Half-row** or **Full-screen**, and percent or kJ. **Settings** opens the real app configuration: change CP or algorithm there and return to the lab. Use **Start**, **Pause ride**, **Reset** and power buttons **+1 / +10 / −1 / −10 / 0 / CP**. Pause continues zero-power recovery; **Freeze clock** stops virtual time. Speeds and CSV scenarios allow repeatable long efforts and sensor loss.
+
+This renders real Glance RemoteViews; it does not emulate Karoo firmware, host services, audible alerts or FIT-file generation. Those and battery usage still need final device checks. The laboratory is absent from release builds.
 Key source paths:
 
 ```text

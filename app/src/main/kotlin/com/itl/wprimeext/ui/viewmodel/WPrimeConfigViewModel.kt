@@ -4,18 +4,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.itl.wprimeext.extension.AlertType
-import com.itl.wprimeext.extension.CriticalPowerSource
 import com.itl.wprimeext.extension.WPrimeAlert
 import com.itl.wprimeext.extension.WPrimeConfiguration
 import com.itl.wprimeext.extension.WPrimeModelType
 import com.itl.wprimeext.extension.WPrimeSettings
-import com.itl.wprimeext.extension.resolveCriticalPower
 import com.itl.wprimeext.extension.userProfileFlow
+import com.itl.wprimeext.utils.WPrimeLogger
 import io.hammerhead.karooext.KarooSystemService
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -32,13 +31,18 @@ class WPrimeConfigViewModel(
     private val _karooFtp = MutableStateFlow<Int?>(null)
     val karooFtp: StateFlow<Int?> = _karooFtp.asStateFlow()
 
+    private val _saveError = MutableStateFlow<String?>(null)
+    val saveError: StateFlow<String?> = _saveError.asStateFlow()
+
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     init {
         viewModelScope.launch {
-            _configuration.value = settings.configuration.first()
-            _isLoading.value = false
+            settings.configuration.collect { configuration ->
+                _configuration.value = configuration
+                _isLoading.value = false
+            }
         }
         runCatching { karooSystem.connect() }
         viewModelScope.launch {
@@ -48,116 +52,95 @@ class WPrimeConfigViewModel(
         }
     }
 
-    fun updateCriticalPower(power: Double) {
+    private fun persist(update: suspend () -> Unit) {
         viewModelScope.launch {
+            try {
+                update()
+                _saveError.value = null
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                _saveError.value = "Unable to save settings. Please try again."
+                WPrimeLogger.e(WPrimeLogger.Module.SETTINGS, error, "Unable to save settings")
+            }
+        }
+    }
+
+    fun updateCriticalPower(power: Double) {
+        persist {
             settings.updateCriticalPower(power)
-            _configuration.value = _configuration.value.copy(criticalPower = power)
         }
     }
 
     fun updateUseKarooFtpForCriticalPower(enabled: Boolean) {
-        viewModelScope.launch {
-            val currentConfig = _configuration.value
-            val source = if (enabled) CriticalPowerSource.KAROO_FTP else CriticalPowerSource.MANUAL
-            val manualCriticalPower = if (enabled) {
-                currentConfig.criticalPower
-            } else {
-                currentConfig.resolveCriticalPower(_karooFtp.value)
-            }
-
-            if (!enabled) {
-                settings.updateCriticalPower(manualCriticalPower)
-            }
-            settings.updateCriticalPowerSource(source)
-            _configuration.value = currentConfig.copy(
-                criticalPower = manualCriticalPower,
-                criticalPowerSource = source,
-            )
+        persist {
+            settings.useKarooFtp(enabled, _karooFtp.value)
         }
     }
 
     fun updateAnaerobicCapacity(capacity: Double) {
-        viewModelScope.launch {
+        persist {
             settings.updateAnaerobicCapacity(capacity)
-            _configuration.value = _configuration.value.copy(anaerobicCapacity = capacity)
         }
     }
 
     fun updateTauRecovery(tau: Double) {
-        viewModelScope.launch {
+        persist {
             settings.updateTauRecovery(tau)
-            _configuration.value = _configuration.value.copy(tauRecovery = tau)
         }
     }
 
     fun updateKIn(kIn: Double) {
-        viewModelScope.launch {
+        persist {
             settings.updateKIn(kIn)
-            _configuration.value = _configuration.value.copy(kIn = kIn)
         }
     }
 
     fun updateRecordFit(enabled: Boolean) {
-        viewModelScope.launch {
+        persist {
             settings.updateRecordFit(enabled)
-            _configuration.value = _configuration.value.copy(recordFit = enabled)
         }
     }
 
     fun updateShowArrow(enabled: Boolean) {
-        viewModelScope.launch {
+        persist {
             settings.updateShowArrow(enabled)
-            _configuration.value = _configuration.value.copy(showArrow = enabled)
         }
     }
 
     fun updateUseColors(enabled: Boolean) {
-        viewModelScope.launch {
+        persist {
             settings.updateUseColors(enabled)
-            _configuration.value = _configuration.value.copy(useColors = enabled)
         }
     }
 
     fun updateModelType(modelType: WPrimeModelType) {
-        viewModelScope.launch {
+        persist {
             settings.updateModelType(modelType)
-            _configuration.value = _configuration.value.copy(modelType = modelType)
         }
     }
 
     fun addAlert(thresholdPercentage: Int, soundEnabled: Boolean, alertType: AlertType = AlertType.DROP) {
-        viewModelScope.launch {
+        persist {
             val newAlert = WPrimeAlert(
                 id = Uuid.random().toString(),
                 thresholdPercentage = thresholdPercentage,
                 soundEnabled = soundEnabled,
                 alertType = alertType,
             )
-            val updatedAlerts = _configuration.value.alerts + newAlert
-            settings.updateAlerts(updatedAlerts)
-            _configuration.value = _configuration.value.copy(alerts = updatedAlerts)
+            settings.addAlert(newAlert)
         }
     }
 
     fun updateAlert(alertId: String, thresholdPercentage: Int, soundEnabled: Boolean, alertType: AlertType) {
-        viewModelScope.launch {
-            val updatedAlerts = _configuration.value.alerts.map { alert ->
-                if (alert.id == alertId) {
-                    alert.copy(thresholdPercentage = thresholdPercentage, soundEnabled = soundEnabled, alertType = alertType)
-                } else {
-                    alert
-                }
-            }
-            settings.updateAlerts(updatedAlerts)
-            _configuration.value = _configuration.value.copy(alerts = updatedAlerts)
+        persist {
+            settings.updateAlert(WPrimeAlert(alertId, thresholdPercentage, soundEnabled, alertType))
         }
     }
 
     fun deleteAlert(alertId: String) {
-        viewModelScope.launch {
-            val updatedAlerts = _configuration.value.alerts.filter { it.id != alertId }
-            settings.updateAlerts(updatedAlerts)
-            _configuration.value = _configuration.value.copy(alerts = updatedAlerts)
+        persist {
+            settings.deleteAlert(alertId)
         }
     }
 

@@ -24,16 +24,12 @@ import io.hammerhead.karooext.models.PlayBeepPattern
 
 /**
  * Manages W' threshold alerts with cooldown logic to prevent alert spam.
- * Alerts fire when W' percentage crosses downward through configured thresholds.
+ * Crossing and cooldown ownership belongs to WPrimeEngine; this class dispatches host effects.
  */
 class WPrimeAlertManager(
     private val karooSystem: KarooSystemService,
 ) {
-    private val lastAlertTimestamps = mutableMapOf<String, Long>()
-    private var previousWPrimePercentage: Double? = null
-
     companion object {
-        private const val ALERT_COOLDOWN_MS = 300_000L // 5 minutes – avoids spam during repeated short efforts
         private const val ALERT_AUTO_DISMISS_MS = 10_000L // 10 seconds
 
         // Higher, more pleasant frequencies
@@ -47,71 +43,7 @@ class WPrimeAlertManager(
         private const val BEEP_GAP_LONG = 150 // ms
     }
 
-    /**
-     * Check if any alerts should be triggered based on current W' percentage.
-     *
-     * Alert triggering logic:
-     * - Alerts ONLY fire when crossing DOWNWARD through a threshold
-     * - NO alerts when W' is recovering (going up)
-     * - 30-second cooldown per alert between triggers
-     *
-     * Examples with threshold = 99%:
-     * 1. W' goes 100% → 98%: ✅ Alert fires (crossed down through 99%)
-     * 2. W' goes 98% → 97%: ❌ No alert (already below threshold)
-     * 3. W' goes 97% → 100%: ❌ No alert (going up)
-     * 4. W' goes 100% → 99%: ✅ Alert fires IF 30+ seconds since last alert
-     * 5. W' goes 99% → 100%: ❌ No alert (going up)
-     * 6. W' oscillates 98% ↔ 100% quickly: Only fires once per 30 seconds
-     */
-    fun checkAlerts(
-        currentWPrimePercentage: Double,
-        alerts: List<WPrimeAlert>,
-    ) {
-        val previousPct = previousWPrimePercentage
-        previousWPrimePercentage = currentWPrimePercentage
-
-        // Need previous value to detect downward crossing
-        if (previousPct == null) return
-
-        val now = System.currentTimeMillis()
-
-        // Sort alerts by threshold (highest to lowest) to fire most critical first
-        val sortedAlerts = alerts.sortedByDescending { it.thresholdPercentage }
-
-        for (alert in sortedAlerts) {
-            val threshold = alert.thresholdPercentage.toDouble()
-
-            val triggered = when (alert.alertType) {
-                AlertType.DROP ->
-                    // Fire when W' crosses DOWNWARD through threshold
-                    previousPct > threshold && currentWPrimePercentage <= threshold
-
-                AlertType.REPLENISH ->
-                    // Fire when W' crosses UPWARD through threshold
-                    previousPct < threshold && currentWPrimePercentage >= threshold
-            }
-
-            if (triggered) {
-                val lastAlertTime = lastAlertTimestamps[alert.id] ?: 0L
-                val timeSinceLastAlert = now - lastAlertTime
-
-                if (timeSinceLastAlert >= ALERT_COOLDOWN_MS) {
-                    dispatchAlert(alert, currentWPrimePercentage)
-                    lastAlertTimestamps[alert.id] = now
-
-                    // Only fire one alert per update to avoid overwhelming the rider
-                    break
-                } else {
-                    WPrimeLogger.d(
-                        WPrimeLogger.Module.DATA_TYPE,
-                        "Alert ${alert.id} in cooldown (${(ALERT_COOLDOWN_MS - timeSinceLastAlert) / 1000}s remaining)",
-                    )
-                }
-            }
-        }
-    }
-
-    private fun dispatchAlert(alert: WPrimeAlert, currentPercentage: Double) {
+    fun dispatchAlert(alert: WPrimeAlert, currentPercentage: Double) {
         WPrimeLogger.i(
             WPrimeLogger.Module.DATA_TYPE,
             "Dispatching W' alert - Type: ${alert.alertType}, Threshold: ${alert.thresholdPercentage}%, Current: ${"%.1f".format(currentPercentage)}%, Sound: ${alert.soundEnabled}",
