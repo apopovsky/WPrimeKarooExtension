@@ -120,6 +120,7 @@ jobs:
         echo "gpr.key=${GPR_TOKEN:-${{ secrets.GITHUB_TOKEN }}}" >> ~/.gradle/gradle.properties
 
     - name: Validate release tag
+      id: release_source
       env:
         RELEASE_TAG: ${{ inputs.tag }}
       run: |
@@ -129,6 +130,7 @@ jobs:
           echo "Release tag must point to the verified workflow commit"
           exit 1
         fi
+        echo "commit=$tag_commit" >> "$GITHUB_OUTPUT"
         if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
           echo "Publication requires a stable tag such as v1.2.0"
           exit 1
@@ -218,7 +220,7 @@ jobs:
           app/manifest.json
           assets/wprime-icon.png
         tag_name: ${{ inputs.tag }}
-        target_commitish: ${{ inputs.tag }}
+        target_commitish: ${{ steps.release_source.outputs.commit }}
         draft: false
         prerelease: false
         make_latest: true
