@@ -39,9 +39,10 @@ Publish a stable release through `workflow_dispatch`, selecting the release tag 
 
 Version 1.2.0/code 14 and manifest download URLs must match the APK and concrete tag. Release enables R8/resource shrinking with conservative extension/SDK keeps. Successful minification is build evidence; Glance/Hilt/serialization/FIT host certification still requires device testing.
 
-Configure repository Actions secrets `RELEASE_STORE_BASE64`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS` and `RELEASE_KEY_PASSWORD` using the original release keystore. The pipeline restores it in the runner's temporary directory, signs without Gradle configuration caching, verifies the APK package/version and checks its certificate against stable 1.1.2 before publication. Missing credentials or a different signer stop publication. The temporary key is removed after the build; never commit a private key or password.
+Configure repository Actions secrets `RELEASE_STORE_BASE64`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS` and `RELEASE_KEY_PASSWORD` using the persistent release keystore introduced in 1.2.0. The pipeline restores it in the runner's temporary directory, signs without Gradle configuration caching, verifies the APK package/version and checks its certificate against the pinned release identity before publication. Missing credentials or a different signer stop publication. The temporary key is removed after the build; never commit a private key or password.
 
-Local `:app:assembleRelease` builds an unsigned APK when signing credentials are absent. To sign locally, provide `RELEASE_STORE_FILE`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS` and `RELEASE_KEY_PASSWORD`; or an ignored root `keystore.properties` containing `storeFile`, `storePassword`, `keyAlias` and `keyPassword`. Relative keystore paths resolve from the repository root. Environment variables override local properties. Do not use the debug keystore for production distribution. The public SHA-256 certificate fingerprint expected for upgrades from 1.1.2 is `42c794a08395ad5dc355032dbdc1b90b226bac28634cdc035c2d8751fbe5bfe7`.
+Local `:app:assembleRelease` builds an unsigned APK when signing credentials are absent. To sign locally, provide `RELEASE_STORE_FILE`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS` and `RELEASE_KEY_PASSWORD`, or an ignored root `keystore.properties` containing `storeFile`, `storePassword`, `keyAlias` and `keyPassword`. Relative keystore paths resolve from the repository root. Environment variables override local properties. Use `--no-configuration-cache` for signed builds. Keep a secure backup of the keystore and credentials; GitHub secrets cannot be downloaded. Do not use the debug keystore for production distribution. The public SHA-256 certificate fingerprint for 1.2.0 and subsequent releases is `426ef0b5e196bc3088112ce7dec780526218ba23723e1b24a44211a30044ff4a`.
+
 ## Technical audit — 2026-10-03
 
 Implemented improvements:
@@ -66,7 +67,7 @@ Applied: [Core 1.19.1](https://developer.android.com/jetpack/androidx/releases/c
 
 | Priority | Remaining work | Evidence required |
 | --- | --- | --- |
-| P 1 | Provision original release signing key in Actions | Certificate match against stable 1.1.2 and configuration-preserving device update |
+| P 1 | Certify installation and subsequent updates using the persistent release key | Device installation and same-certificate update preserving settings |
 | P 1 | Karoo certification: both fields, recording/pause/resume/Idle, page navigation, loss, alerts and decoded FIT | Screenshots, sound observation, decoded values and lifecycle logs from target KOS |
 | P 1 | Scientific equations/reference vectors | Primary publications, CP boundaries, cadence partitioning and numerical expectations |
 | P 1 | Measure energy changes against baseline | Controlled CPU/frame/IPC/battery runs using protocol below |
@@ -83,4 +84,4 @@ Capture `adb shell dumpsys batterystats com.itl.wprimeext` before/after comparab
 
 ## Current local verification
 
-Verification on 2026-10-03 after integrating master and local AGP 9.4.1 / Gradle 9.8.0 updates: 36 unit tests passed with zero failures (Engine 15, Settings 5, Input 5, FIT 6, Commands 2, Scenario 3). Spotless, all module debug lint, production debug/unsigned release and simulator debug builds passed. Lint has zero errors and 1 shared / 9 app / 11 simulator warnings. Workflow YAML, Bash/Python syntax, version/URL checks and missing-secret rejection were verified locally. A signed release build and compatible upgrade remain pending provisioning of the original release key. The maintainer reported basic operation on Karoo; full lifecycle, alert sound, decoded FIT and battery certification remain pending.
+Verification on 2026-10-03 after integrating master and local AGP 9.4.1 / Gradle 9.8.0 updates: 36 unit tests passed with zero failures (Engine 15, Settings 5, Input 5, FIT 6, Commands 2, Scenario 3). Spotless, all module debug lint, production debug/signed release and simulator debug builds passed. Lint has zero errors and 1 shared / 9 app / 11 simulator warnings. Workflow YAML, Bash/Python syntax, version/URL checks and missing-secret rejection were verified locally. The new persistent signing key is provisioned in Actions. The signed APK passed apksigner verification and its certificate matches the pinned release identity. The maintainer reported basic operation on Karoo; full lifecycle, alert sound, decoded FIT and battery certification remain pending.

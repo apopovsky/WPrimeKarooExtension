@@ -175,18 +175,18 @@ jobs:
         RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
       run: RELEASE_STORE_FILE="$RUNNER_TEMP/wprime-release.keystore" ./gradlew :app:assembleRelease --no-configuration-cache --stacktrace
 
-    - name: Verify upgrade signing certificate and APK identity
+    - name: Verify release signing certificate and APK identity
       env:
         RELEASE_TAG: ${{ inputs.tag }}
-        # Public SHA-256 certificate fingerprint extracted from the stable 1.1.2 APK.
-        EXPECTED_CERTIFICATE: 42c794a08395ad5dc355032dbdc1b90b226bac28634cdc035c2d8751fbe5bfe7
+        # Public SHA-256 fingerprint of the persistent release key introduced in 1.2.0.
+        EXPECTED_CERTIFICATE: 426ef0b5e196bc3088112ce7dec780526218ba23723e1b24a44211a30044ff4a
       run: |
         build_tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)
         apk="app/build/outputs/apk/release/WPrimeExtension-${RELEASE_TAG}-release.apk"
         "$build_tools/apksigner" verify --print-certs "$apk" > "$RUNNER_TEMP/wprime-certificate.txt"
         certificate=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/wprime-certificate.txt")
         if [[ "$certificate" != "$EXPECTED_CERTIFICATE" ]]; then
-          echo "Release certificate must match the stable 1.1.2 signing identity"
+          echo "Release certificate differs from the persistent release signing identity"
           exit 1
         fi
         "$build_tools/aapt" dump badging "$apk" > "$RUNNER_TEMP/wprime-apk.txt"

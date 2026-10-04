@@ -217,6 +217,8 @@ The standalone emulator laboratory renders the actual fields and settings UI and
 
 Production releases are built and signed through GitHub Actions. Install updates through the Hammerhead Companion App or ADB.
 
+Version 1.2.0 introduces a permanent release signing identity. Upgrading from 1.1.x requires a one-time reinstall: note your settings first. Subsequent releases use the same key and support normal updates.
+
 ## Contributing
 
 Contributions are welcome. Useful areas include:
