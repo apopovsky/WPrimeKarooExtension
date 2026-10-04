@@ -29,7 +29,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v7
       with:
-        ref: ${{ inputs.tag || github.sha }}
+        ref: ${{ github.sha }}
         fetch-depth: 0
 
     - name: Set up JDK 17
@@ -93,7 +93,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v7
       with:
-        ref: ${{ inputs.tag || github.sha }}
+        ref: ${{ github.sha }}
         fetch-depth: 0
 
     - name: Set up JDK 17
@@ -123,11 +123,18 @@ jobs:
       id: release_source
       env:
         RELEASE_TAG: ${{ inputs.tag }}
+        DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       run: |
         git check-ref-format "refs/tags/$RELEASE_TAG"
         tag_commit=$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")
-        if [[ "$tag_commit" != "$(git rev-parse HEAD)" ]]; then
-          echo "Release tag must point to the verified workflow commit"
+        if [[ "$tag_commit" != "$GITHUB_SHA" || "$tag_commit" != "$(git rev-parse HEAD)" ]]; then
+          echo "Release tag must point to GITHUB_SHA; select the same tag as the workflow ref"
+          exit 1
+        fi
+        # GitHub requires Workflows: write when target workflows differ from the default branch.
+        # GITHUB_TOKEN cannot receive that permission; integrate CI changes before releasing.
+        if ! git diff --quiet "refs/remotes/origin/$DEFAULT_BRANCH" HEAD -- .github/workflows; then
+          echo "Release workflows differ from $DEFAULT_BRANCH; integrate workflow changes before releasing"
           exit 1
         fi
         echo "commit=$tag_commit" >> "$GITHUB_OUTPUT"
@@ -213,25 +220,58 @@ jobs:
       run: rm -f "$RUNNER_TEMP/wprime-release.keystore"
 
     - name: Upload Release APK to GitHub Release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: |
-          app/build/outputs/apk/release/WPrimeExtension-${{ inputs.tag }}-release.apk
-          app/manifest.json
-          assets/wprime-icon.png
-        tag_name: ${{ inputs.tag }}
-        target_commitish: ${{ steps.release_source.outputs.commit }}
-        draft: false
-        prerelease: false
-        make_latest: true
-        fail_on_unmatched_files: true
-        overwrite_files: false
-        name: W Prime Extension ${{ inputs.tag }}
-        body: |
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        RELEASE_TAG: ${{ inputs.tag }}
+        RELEASE_COMMIT: ${{ steps.release_source.outputs.commit }}
+        RELEASE_NOTES: |
           Shared W′ calculation for percent/kJ fields, alerts and FIT; optional Karoo FTP-derived CP; validated settings; isolated emulator simulator; bounded rendering and input handling; release shrinking and dependency updates.
 
           Built and signed by GitHub Actions with the stable signing identity. Install the APK through the Hammerhead Companion App or ADB. Requires KOS 1.634.2440 or later.
 
           See README.md for setup and docs/wprime-algorithms.md for model limitations.
-        token: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        python3 - <<'PY'
+        import hashlib, json, os, subprocess
+        from pathlib import Path
+
+        def gh(*args):
+            return subprocess.check_output(['gh', *args], text=True)
+
+        tag = os.environ['RELEASE_TAG']
+        repo = os.environ['GITHUB_REPOSITORY']
+        files = [Path(f'app/build/outputs/apk/release/WPrimeExtension-{tag}-release.apk'),
+                 Path('app/manifest.json'), Path('assets/wprime-icon.png')]
+        # Validate every local asset before making changes to the release.
+        digests = {path.name: 'sha256:' + hashlib.sha256(path.read_bytes()).hexdigest() for path in files}
+        pages = json.loads(gh('api', '--paginate', '--slurp', f'repos/{repo}/releases'))
+        matches = [release for page in pages for release in page if release['tag_name'] == tag]
+        if len(matches) > 1:
+            raise SystemExit('Multiple releases use this tag; resolve duplicate drafts before publication')
+        release = matches[0] if matches else None
+        assets = {asset['name']: asset for asset in release['assets']} if release else {}
+        missing = [path for path in files if path.name not in assets]
+        for path in files:
+            if path.name in assets and assets[path.name].get('digest') != digests[path.name]:
+                raise SystemExit('Existing asset differs from verified build: ' + path.name)
+        if release and not release['draft']:
+            if missing:
+                raise SystemExit('Published release is incomplete; refusing to modify published assets')
+            print('Release already published with matching assets')
+        else:
+            notes = Path(os.environ['RUNNER_TEMP']) / 'wprime-release-notes.txt'
+            notes.write_text(os.environ['RELEASE_NOTES'])
+            metadata = ['--repo', repo, '--target', os.environ['RELEASE_COMMIT'],
+                        '--title', f'W Prime Extension {tag}', '--notes-file', str(notes)]
+            if release:
+                # CLI resolves drafts as well as published releases. Update the old draft target
+                # to the verified commit before finalization, without moving the existing tag.
+                gh('release', 'edit', tag, *metadata)
+            else:
+                gh('release', 'create', tag, '--draft', '--verify-tag', *metadata)
+            if missing:
+                gh('release', 'upload', tag, '--repo', repo, *(str(path) for path in missing))
+            gh('release', 'edit', tag, '--repo', repo, '--draft=false', '--prerelease=false', '--latest')
+            print('Published verified release: ' + tag)
+        PY
 
