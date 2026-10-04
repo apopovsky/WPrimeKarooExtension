@@ -29,7 +29,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v7
       with:
-        ref: ${{ github.sha }}
+        ref: ${{ inputs.tag || github.sha }}
         fetch-depth: 0
 
     - name: Set up JDK 17
@@ -93,7 +93,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v7
       with:
-        ref: ${{ github.sha }}
+        ref: ${{ inputs.tag || github.sha }}
         fetch-depth: 0
 
     - name: Set up JDK 17
@@ -125,7 +125,7 @@ jobs:
       run: |
         git check-ref-format "refs/tags/$RELEASE_TAG"
         tag_commit=$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")
-        if [[ "$tag_commit" != "$GITHUB_SHA" ]]; then
+        if [[ "$tag_commit" != "$(git rev-parse HEAD)" ]]; then
           echo "Release tag must point to the verified workflow commit"
           exit 1
         fi
@@ -184,11 +184,16 @@ jobs:
         build_tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)
         apk="app/build/outputs/apk/release/WPrimeExtension-${RELEASE_TAG}-release.apk"
         "$build_tools/apksigner" verify --print-certs "$apk" > "$RUNNER_TEMP/wprime-certificate.txt"
-        certificate=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/wprime-certificate.txt")
-        if [[ "$certificate" != "$EXPECTED_CERTIFICATE" ]]; then
-          echo "Release certificate differs from the persistent release signing identity"
-          exit 1
-        fi
+        python3 - <<'PY'
+        import os, re
+        from pathlib import Path
+        report = (Path(os.environ['RUNNER_TEMP']) / 'wprime-certificate.txt').read_text()
+        certificates = {value.lower() for value in re.findall(r'certificate SHA-256 digest:\s*([0-9a-fA-F]{64})', report)}
+        expected = os.environ['EXPECTED_CERTIFICATE'].lower()
+        print('APK certificate SHA-256:', ', '.join(sorted(certificates)) or 'not found')
+        if certificates != {expected}:
+            raise SystemExit('Release certificate differs from the persistent release signing identity')
+        PY
         "$build_tools/aapt" dump badging "$apk" > "$RUNNER_TEMP/wprime-apk.txt"
         python3 - <<'PY'
         import json, os, re
@@ -213,7 +218,7 @@ jobs:
           app/manifest.json
           assets/wprime-icon.png
         tag_name: ${{ inputs.tag }}
-        target_commitish: ${{ github.sha }}
+        target_commitish: ${{ inputs.tag }}
         draft: false
         prerelease: false
         make_latest: true
