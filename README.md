@@ -209,6 +209,12 @@ Choose **Full-width row**, **Half-row** or **Full-screen**, and percent or kJ. *
 This renders real Glance RemoteViews; it does not emulate Karoo firmware, host services, audible alerts or FIT-file generation. Those and battery usage still need final device checks. The laboratory has a separate package, configuration store and APK; its guarded launcher only installs on emulators.
 Modules: `app` contains the Karoo extension/runtime; `shared` contains the engine, settings and UI; `simulator` contains the laboratory and replay controls.
 
+## What's new in 1.2.1
+
+W′ fields use larger regular-weight numbers, a 25% smaller battery icon and safe vertical margins. Full-width fields keep the same number size for 1–4 characters. Half-width fields fit the displayed value and move the trend arrow beside the header to leave more room for percent and kJ values. The layout was visually verified on Karoo 3.
+
+Updates from 1.2.0 preserve the release signing identity and support normal installation without uninstalling.
+
 ## What's new in 1.2.0
 
 One shared ride calculation powers both fields, alerts and FIT. This version adds optional Karoo FTP-derived CP, validated settings with visible save errors, sensor-loss handling, bounded graphical updates and release shrinking.

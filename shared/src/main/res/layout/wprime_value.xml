@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+    <TextView
+        android:id="@+id/wprime_value"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fontFamily="sans-serif-condensed-light"
+        android:textStyle="normal"
+        android:textFontWeight="300"
+        android:includeFontPadding="false"
+        android:gravity="center"
+        android:maxLines="1"
+        android:singleLine="true" />
+</FrameLayout>

@@ -225,8 +225,6 @@ jobs:
         RELEASE_TAG: ${{ inputs.tag }}
         RELEASE_COMMIT: ${{ steps.release_source.outputs.commit }}
         RELEASE_NOTES: |
-          Shared W′ calculation for percent/kJ fields, alerts and FIT; optional Karoo FTP-derived CP; validated settings; isolated emulator simulator; bounded rendering and input handling; release shrinking and dependency updates.
-
           Built and signed by GitHub Actions with the stable signing identity. Install the APK through the Hammerhead Companion App or ADB. Requires KOS 1.634.2440 or later.
 
           See README.md for setup and docs/wprime-algorithms.md for model limitations.
@@ -260,7 +258,8 @@ jobs:
             print('Release already published with matching assets')
         else:
             notes = Path(os.environ['RUNNER_TEMP']) / 'wprime-release-notes.txt'
-            notes.write_text(os.environ['RELEASE_NOTES'])
+            changes = json.loads(Path('app/manifest.json').read_text())['releaseNotes']
+            notes.write_text(changes + '\n\n' + os.environ['RELEASE_NOTES'])
             metadata = ['--repo', repo, '--target', os.environ['RELEASE_COMMIT'],
                         '--title', f'W Prime Extension {tag}', '--notes-file', str(notes)]
             if release:

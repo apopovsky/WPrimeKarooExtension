@@ -1,8 +1,15 @@
 package com.itl.wprimeext.ui
 
 import android.annotation.SuppressLint
+import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.Typeface
+import android.util.TypedValue
+import android.view.Gravity
+import android.widget.RemoteViews
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -10,6 +17,8 @@ import androidx.glance.ColorFilter
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
+import androidx.glance.LocalContext
+import androidx.glance.appwidget.AndroidRemoteViews
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.background
 import androidx.glance.layout.Alignment
@@ -109,7 +118,12 @@ fun WPrimeGlanceView(
     val arrowColWidthDp = iconSizeDp
 
     // Reservar espacio para el cálculo de texto - reducido para dar más espacio al texto
-    val sizingReservedHorizontal = if (showArrow) (iconSizeDp + 2.dp) else 0.dp
+    val showValueArrow = showArrow && isWide
+    val sizingReservedHorizontal = if (showValueArrow) {
+        if (alignment == ViewConfig.Alignment.CENTER) iconSizeDp * 2 else iconSizeDp
+    } else {
+        0.dp
+    }
 
     // Escalar maxSp según el tamaño del campo
     val scaledMaxSp = when (fieldSize) {
@@ -140,9 +154,7 @@ fun WPrimeGlanceView(
         },
         fixedCharCount = fixedCharCount,
     )
-    // Reduce text 10% for single-column (SMALL) fields to avoid oversized 2-char values
-    val columnScaleFactor = if (fieldSize == "SMALL") 0.90f else 1.0f
-    val autoTextSp = (baseAutoSp * sizeScale * columnScaleFactor).toInt().coerceAtLeast(8)
+    val autoTextSp = (baseAutoSp * sizeScale).toInt().coerceAtLeast(8)
 
     Box(
         modifier = GlanceModifier
@@ -156,14 +168,28 @@ fun WPrimeGlanceView(
             verticalAlignment = Alignment.Top,
             modifier = GlanceModifier.fillMaxSize(),
         ) {
-            // Title sizing: near-constant so it looks the same regardless of field size.
-            // Wide (full-width, >400 px wide) is the base; narrow (single-column) is 0.90×.
+            // Match native Karoo header glyph heights and leave the value more room.
             val isWidePx = viewSize.first > 400
-            val titleIconSize = if (isWidePx) 30.dp else 26.dp
-            val titleRowHeight = if (isWidePx) 32.dp else 28.dp
-            val titleTextSize = if (isWidePx) 20 else 18
+            val titleIconSize = if (isWidePx) 22.5.dp else 19.5.dp
+            val titleRowHeight = 26.dp
+            val titleTextSize = if (isWidePx) 18 else 17
 
-            TitleRow(fieldLabel, textAlign, horizontalAlignment, textColor, titleRowHeight, titleIconSize, titleTextSize)
+            Box(
+                modifier = GlanceModifier.fillMaxWidth().height(titleRowHeight),
+                contentAlignment = Alignment.Center,
+            ) {
+                TitleRow(fieldLabel, textAlign, horizontalAlignment, textColor, titleRowHeight, titleIconSize, titleTextSize)
+                // A narrow value needs the entire row for "100" and "12.0".
+                // Keep the trend visible beside the header instead of shrinking digits.
+                if (showArrow && !isWidePx) {
+                    Box(
+                        modifier = GlanceModifier.fillMaxSize(),
+                        contentAlignment = if (alignment == ViewConfig.Alignment.LEFT) Alignment.CenterEnd else Alignment.CenterStart,
+                    ) {
+                        ArrowColumn(rotationDegrees, 20.dp, 22.dp, textColor)
+                    }
+                }
+            }
 
             // Value area occupies only the space left below the fixed title.
             Row(
@@ -171,42 +197,80 @@ fun WPrimeGlanceView(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // LEFT ARROW COLUMN (for RIGHT and CENTER alignment)
-                if ((alignment == ViewConfig.Alignment.RIGHT || alignment == ViewConfig.Alignment.CENTER) && showArrow) {
+                if ((alignment == ViewConfig.Alignment.RIGHT || alignment == ViewConfig.Alignment.CENTER) && showValueArrow) {
                     ArrowColumn(rotationDegrees, iconSizeDp, arrowColWidthDp, textColor)
                 }
 
-                // TEXT COLUMN (bottom-aligned, texto pegado al fondo)
+                // Center the visible digits in the remaining value area.
                 Box(
                     modifier = GlanceModifier
                         .fillMaxHeight()
                         .defaultWeight()
-                        .padding(bottom = 2.dp),
+                        .padding(vertical = 2.dp),
                     contentAlignment = when (alignment) {
-                        ViewConfig.Alignment.LEFT -> Alignment.BottomStart
-                        ViewConfig.Alignment.RIGHT -> Alignment.BottomEnd
-                        else -> Alignment.BottomCenter
+                        ViewConfig.Alignment.LEFT -> Alignment.CenterStart
+                        ViewConfig.Alignment.RIGHT -> Alignment.CenterEnd
+                        else -> Alignment.Center
                     },
                 ) {
-                    Text(
-                        text = value,
-                        style = TextStyle(
-                            color = textColor,
-                            fontSize = autoTextSp.sp,
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Normal,
-                            textAlign = textAlign,
-                        ),
-                        maxLines = 1,
+                    val context = LocalContext.current
+                    val bodyHeightPx = viewSize.second - (titleRowHeight.value + 4f) * context.resources.displayMetrics.density
+                    val referenceBounds = Rect().also { valuePaint.getTextBounds("0123456789", 0, 10, it) }
+                    val requestedFontPx = TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_SP,
+                        autoTextSp.toFloat(),
+                        context.resources.displayMetrics,
+                    )
+                    val requestedGlyphHeight = referenceBounds.height() * requestedFontPx / valuePaint.textSize
+                    val fittedTextSp = if (requestedGlyphHeight > bodyHeightPx - 2f) {
+                        autoTextSp * ((bodyHeightPx - 2f).coerceAtLeast(1f) / requestedGlyphHeight)
+                    } else {
+                        autoTextSp.toFloat()
+                    }
+                    val numberPaint = Paint(valuePaint).apply {
+                        this.textSize = TypedValue.applyDimension(
+                            TypedValue.COMPLEX_UNIT_SP,
+                            fittedTextSp,
+                            context.resources.displayMetrics,
+                        )
+                    }
+                    val glyphBounds = Rect().also { numberPaint.getTextBounds(value, 0, value.length, it) }
+                    val metrics = numberPaint.fontMetrics
+                    val lineHeightPx = kotlin.math.ceil(metrics.descent - metrics.ascent)
+                    val naturalBaseline = -metrics.ascent
+                    val centeredBaseline = (bodyHeightPx - glyphBounds.height()) / 2f - glyphBounds.top
+                    AndroidRemoteViews(
+                        remoteViews = RemoteViews(context.packageName, R.layout.wprime_value).apply {
+                            setTextViewText(R.id.wprime_value, value)
+                            setTextViewTextSize(R.id.wprime_value, TypedValue.COMPLEX_UNIT_SP, fittedTextSp)
+                            setTextColor(R.id.wprime_value, textColor.getColor(context).toArgb())
+                            if (android.os.Build.VERSION.SDK_INT >= 31) {
+                                setViewLayoutHeight(R.id.wprime_value, lineHeightPx, TypedValue.COMPLEX_UNIT_PX)
+                            }
+                            // Android clamps vertical gravity when the line box is taller
+                            // than the field. Center visible digits rather than that box.
+                            setFloat(R.id.wprime_value, "setTranslationY", centeredBaseline - naturalBaseline)
+                            setInt(
+                                R.id.wprime_value,
+                                "setGravity",
+                                Gravity.CENTER_VERTICAL or when (alignment) {
+                                    ViewConfig.Alignment.LEFT -> Gravity.START
+                                    ViewConfig.Alignment.RIGHT -> Gravity.END
+                                    else -> Gravity.CENTER_HORIZONTAL
+                                },
+                            )
+                        },
+                        modifier = GlanceModifier.fillMaxSize(),
                     )
                 }
 
                 // RIGHT ARROW COLUMN (for LEFT alignment only)
-                if (alignment == ViewConfig.Alignment.LEFT && showArrow) {
+                if (alignment == ViewConfig.Alignment.LEFT && showValueArrow) {
                     ArrowColumn(rotationDegrees, iconSizeDp, arrowColWidthDp, textColor)
                 }
 
                 // RIGHT SPACER for CENTER alignment (balances left arrow to keep text centered)
-                if (alignment == ViewConfig.Alignment.CENTER && showArrow) {
+                if (alignment == ViewConfig.Alignment.CENTER && showValueArrow) {
                     SpacerColumn(arrowColWidthDp)
                 }
             }
@@ -280,7 +344,7 @@ private fun TitleRow(
     horizontalAlignment: Alignment.Horizontal,
     textColor: UnitColorProvider,
     heightDp: Dp = 26.dp,
-    iconSizeDp: Dp = 26.dp,
+    iconSizeDp: Dp = 19.5.dp,
     textSizeSp: Int = 18,
 ) {
     Row(
@@ -293,7 +357,7 @@ private fun TitleRow(
         Image(
             provider = ImageProvider(R.drawable.ic_wprime_battery),
             contentDescription = "W' Icon",
-            modifier = GlanceModifier.size(iconSizeDp).absolutePadding(top = 4.dp),
+            modifier = GlanceModifier.size(iconSizeDp).absolutePadding(top = 3.dp),
         )
         Text(
             text = text,
@@ -343,8 +407,11 @@ fun WPrimeNotAvailableGlanceView(
 }
 
 // Helper functions for dynamic text sizing
-private const val CHAR_WIDTH_FACTOR = 0.60f // Monospace glyph advance relative to font size.
-private const val LINE_HEIGHT_FACTOR = 1.20f // Reserve the TextView line box, not only glyph cap height.
+private val valuePaint = Paint().apply {
+    // Karoo maps weight 300 to IBM Plex Sans Regular; 400 resolves to Medium.
+    typeface = Typeface.create("sans-serif-condensed-light", Typeface.NORMAL)
+    textSize = 100f
+}
 
 private fun pickTextSizeSp(
     value: String,
@@ -368,34 +435,27 @@ private fun pickTextSizeSp(
     // Subtract reserved space (arrow) only once
     val availW = (widgetWidth - reservedHorizontal - 4.dp).coerceAtLeast(0.dp).value
 
-    val fieldArea = widgetWidth.value * widgetHeight.value
     val isWide = widgetWidth.value > 200
 
-    // Title row height mirrors WPrimeGlanceView: wide = 32 dp, narrow = 28 dp.
+    // Title row height and vertical padding mirror WPrimeGlanceView.
     // Keep in sync with the titleRowHeight block above or text sizing will be off.
-    val titleRowHeight = if (isWide) 32.dp else 28.dp
-    val verticalMargins = if (fieldArea > 20000) 4.dp else 2.dp
+    val titleRowHeight = 26.dp
+    val verticalMargins = 4.dp
     val availH = (widgetHeight - titleRowHeight - verticalMargins).coerceAtLeast(0.dp).value
     if (availW <= 0f || availH <= 0f) {
         return safeMax
     }
 
-    val targetChars = fixedCharCount ?: value.length
-
-    val avgUnitPerChar = 1.0f
-    // When current text is shorter than fixedCharCount, use actual char count for width
-    // so a 3-char "9.9" gets sized as 3 chars, not penalised by fixedCharCount=4
-    val effectiveCharsForWidth = if (fixedCharCount != null && value.length < fixedCharCount) {
-        value.length.toFloat()
-    } else {
-        targetChars.toFloat()
-    }
-    val units = effectiveCharsForWidth * avgUnitPerChar
-
-    val fromWidth = if (units * CHAR_WIDTH_FACTOR > 0) (availW / (units * CHAR_WIDTH_FACTOR)) else safeMax.toFloat()
+    // Measure the actual font, including the narrower decimal point, against
+    // both arrow columns for centered fields. The displayed string is authoritative.
+    val widthText = if (isWide && value.length <= 4) "8888" else value
+    val textWidthFactor = valuePaint.measureText(widthText) / valuePaint.textSize
+    val fromWidth = if (textWidthFactor > 0) availW / textWidthFactor else safeMax.toFloat()
     // Increase height usage factor for better vertical space utilization
     val adjustedFraction = targetHeightFraction.coerceIn(0.5f, 0.95f) // Aumentado de 0.9 a 0.95
-    val fromHeight = (availH * adjustedFraction) / LINE_HEIGHT_FACTOR
+    // Measured against native 3S POWER (wide) and SPEED (half-width) on Karoo 3.
+    val lineHeightFactor = if (isWide) 0.61f else 0.72f
+    val fromHeight = (availH * adjustedFraction) / lineHeightFactor
     val raw = fromWidth.coerceAtMost(fromHeight)
     val clamped = raw.coerceIn(minSp.toFloat(), safeMax.toFloat())
 

@@ -1,11 +1,11 @@
 {
   "label": "W Prime Extension",
   "packageName": "com.itl.wprimeext",
-  "iconUrl": "https://github.com/apopovsky/WPrimeKarooExtension/releases/download/v1.2.0/wprime-icon.png",
-  "latestApkUrl": "https://github.com/apopovsky/WPrimeKarooExtension/releases/download/v1.2.0/WPrimeExtension-v1.2.0-release.apk",
-  "latestVersion": "1.2.0",
-  "latestVersionCode": 14,
+  "iconUrl": "https://github.com/apopovsky/WPrimeKarooExtension/releases/download/v1.2.1/wprime-icon.png",
+  "latestApkUrl": "https://github.com/apopovsky/WPrimeKarooExtension/releases/download/v1.2.1/WPrimeExtension-v1.2.1-release.apk",
+  "latestVersion": "1.2.1",
+  "latestVersionCode": 15,
   "developer": "ITL",
   "description": "W Prime Extension for Hammerhead Karoo that calculates anaerobic energy balance in real-time during rides.",
-  "releaseNotes": "One shared ride calculation for fields, FIT and alerts; optional Karoo FTP-derived CP; validated settings; isolated emulator simulator; bounded rendering and input handling; smaller release APK and updated dependencies."
+  "releaseNotes": "Improved W′ field readability: larger regular-weight numbers, a 25% smaller battery icon, safe vertical margins, stable sizing for 1-4 characters in full-width fields and better use of half-width space with the trend arrow beside the header. Visual layout verified on Karoo 3."
 }

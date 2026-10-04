@@ -14,8 +14,8 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
         applicationId = "com.itl.wprimeext.simulator"
         minSdk = 23
         targetSdk = 37
-        versionCode = 14
-        versionName = "1.2.0"
+        versionCode = 15
+        versionName = "1.2.1"
         base.archivesName.set("WPrimeSimulator-v${versionName}")
     }
 
