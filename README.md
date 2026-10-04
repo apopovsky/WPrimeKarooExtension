@@ -209,15 +209,13 @@ Choose **Full-width row**, **Half-row** or **Full-screen**, and percent or kJ. *
 This renders real Glance RemoteViews; it does not emulate Karoo firmware, host services, audible alerts or FIT-file generation. Those and battery usage still need final device checks. The laboratory has a separate package, configuration store and APK; its guarded launcher only installs on emulators.
 Modules: `app` contains the Karoo extension/runtime; `shared` contains the engine, settings and UI; `simulator` contains the laboratory and replay controls.
 
-## Beta 1.2.0-beta.1
+## What's new in 1.2.0
 
-The beta retains the production package and FIT definitions, adds shared calculation ownership and bounded rendering, and enables release shrinking. Download the beta from its [specific release](https://github.com/apopovsky/WPrimeKarooExtension/releases/tag/v1.2.0-beta.1); `/releases/latest` continues to refer to stable releases.
+One shared ride calculation powers both fields, alerts and FIT. This version adds optional Karoo FTP-derived CP, validated settings with visible save errors, sensor-loss handling, bounded graphical updates and release shrinking.
 
-This release also adds optional Karoo FTP-derived CP, validated settings with visible save errors, sensor-loss handling, and a separate emulator laboratory that renders the actual fields and settings UI. The Karoo APK excludes the simulator. Requires KOS 1.634.2440 or later.
+The standalone emulator laboratory renders the actual fields and settings UI and is excluded from the Karoo APK. Requires KOS 1.634.2440 or later.
 
-The maintainer reported successful installation and basic operation on Karoo on 2026-10-03. Local verification covers 36 passing unit tests, formatting, debug lint and debug/release builds. Complete ride lifecycle, alerts/sound, decoded FIT and battery measurements remain pending.
-
-An update requires the same signing certificate as your installed APK. This beta publishes the locally built APK; its certificate differs from the previous stable certificate. Preserve your settings: do not uninstall automatically to bypass a signature mismatch. CI preserves existing release assets so it cannot replace this APK with a different signer. Reproducible signing-key management remains pending; see [release development](CONTRIBUTING.md#ci-beta-and-signing).
+Production releases are built and signed through GitHub Actions. Install updates through the Hammerhead Companion App or ADB.
 
 ## Contributing
 

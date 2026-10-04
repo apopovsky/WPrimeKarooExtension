@@ -5,12 +5,10 @@ on:
     branches: [ main, master, develop, "ariel/**" ]
   pull_request:
     branches: [ main, master, develop ]
-  release:
-    types: [ published ]
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Beta release tag (e.g. v1.2.0-beta.1); blank runs checks only'
+        description: 'Stable release tag (e.g. v1.2.0); blank runs checks only'
         required: false
         type: string
 
@@ -86,7 +84,7 @@ jobs:
     name: Publish Karoo release
     needs: [build]
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.tag != '')
+    if: github.event_name == 'workflow_dispatch' && inputs.tag != ''
     permissions:
       contents: write
       packages: read
@@ -123,8 +121,7 @@ jobs:
 
     - name: Validate release tag
       env:
-        RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
-        IS_DISPATCH: ${{ github.event_name == 'workflow_dispatch' }}
+        RELEASE_TAG: ${{ inputs.tag }}
       run: |
         git check-ref-format "refs/tags/$RELEASE_TAG"
         tag_commit=$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")
@@ -132,28 +129,102 @@ jobs:
           echo "Release tag must point to the verified workflow commit"
           exit 1
         fi
-        if [[ "$IS_DISPATCH" == "true" && ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$ ]]; then
-          echo "Manual publication requires a beta tag such as v1.2.0-beta.1"
+        if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Publication requires a stable tag such as v1.2.0"
           exit 1
         fi
+        python3 - <<'PY'
+        import json, os, re
+        from pathlib import Path
+        manifest = json.loads(Path('app/manifest.json').read_text())
+        build = Path('app/build.gradle.kts').read_text()
+        version = re.search(r'versionName = "([^"]+)"', build).group(1)
+        code = int(re.search(r'versionCode = (\d+)', build).group(1))
+        tag = os.environ['RELEASE_TAG']
+        assert tag == 'v' + version, 'Tag and Android version differ'
+        assert manifest['latestVersion'] == version, 'Manifest version differs'
+        assert manifest['latestVersionCode'] == code, 'Manifest version code differs'
+        prefix = f'https://github.com/{os.environ["GITHUB_REPOSITORY"]}/releases/download/{tag}/'
+        assert manifest['latestApkUrl'] == prefix + f'WPrimeExtension-v{version}-release.apk'
+        assert manifest['iconUrl'] == prefix + 'wprime-icon.png'
+        PY
+
+    - name: Restore release signing key
+      env:
+        RELEASE_STORE_BASE64: ${{ secrets.RELEASE_STORE_BASE64 }}
+        RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+        RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+        RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+      run: |
+        python3 - <<'PY'
+        import base64, os
+        from pathlib import Path
+        names = ('RELEASE_STORE_BASE64', 'RELEASE_STORE_PASSWORD', 'RELEASE_KEY_ALIAS', 'RELEASE_KEY_PASSWORD')
+        missing = [name for name in names if not os.environ.get(name)]
+        if missing:
+            raise SystemExit('Missing release signing secrets: ' + ', '.join(missing))
+        path = Path(os.environ['RUNNER_TEMP']) / 'wprime-release.keystore'
+        path.write_bytes(base64.b64decode(os.environ['RELEASE_STORE_BASE64'], validate=True))
+        path.chmod(0o600)
+        PY
 
     - name: Build Karoo release APK
-      run: ./gradlew :app:assembleRelease --stacktrace
+      env:
+        RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+        RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+        RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+      run: RELEASE_STORE_FILE="$RUNNER_TEMP/wprime-release.keystore" ./gradlew :app:assembleRelease --no-configuration-cache --stacktrace
+
+    - name: Verify upgrade signing certificate and APK identity
+      env:
+        RELEASE_TAG: ${{ inputs.tag }}
+        # Public SHA-256 certificate fingerprint extracted from the stable 1.1.2 APK.
+        EXPECTED_CERTIFICATE: 42c794a08395ad5dc355032dbdc1b90b226bac28634cdc035c2d8751fbe5bfe7
+      run: |
+        build_tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)
+        apk="app/build/outputs/apk/release/WPrimeExtension-${RELEASE_TAG}-release.apk"
+        "$build_tools/apksigner" verify --print-certs "$apk" > "$RUNNER_TEMP/wprime-certificate.txt"
+        certificate=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/wprime-certificate.txt")
+        if [[ "$certificate" != "$EXPECTED_CERTIFICATE" ]]; then
+          echo "Release certificate must match the stable 1.1.2 signing identity"
+          exit 1
+        fi
+        "$build_tools/aapt" dump badging "$apk" > "$RUNNER_TEMP/wprime-apk.txt"
+        python3 - <<'PY'
+        import json, os, re
+        from pathlib import Path
+        manifest = json.loads(Path('app/manifest.json').read_text())
+        metadata = (Path(os.environ['RUNNER_TEMP']) / 'wprime-apk.txt').read_text()
+        package, code, version = re.search(r"package: name='([^']+)' versionCode='([^']+)' versionName='([^']+)'", metadata).groups()
+        assert package == manifest['packageName']
+        assert int(code) == manifest['latestVersionCode']
+        assert version == manifest['latestVersion']
+        PY
+
+    - name: Remove temporary signing key
+      if: always()
+      run: rm -f "$RUNNER_TEMP/wprime-release.keystore"
 
     - name: Upload Release APK to GitHub Release
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          app/build/outputs/apk/release/WPrimeExtension-*.apk
+          app/build/outputs/apk/release/WPrimeExtension-${{ inputs.tag }}-release.apk
           app/manifest.json
           assets/wprime-icon.png
-        tag_name: ${{ inputs.tag || github.event.release.tag_name }}
+        tag_name: ${{ inputs.tag }}
         target_commitish: ${{ github.sha }}
         draft: false
-        prerelease: ${{ github.event_name == 'workflow_dispatch' || github.event.release.prerelease }}
-        make_latest: ${{ (github.event_name == 'workflow_dispatch' || github.event.release.prerelease) && 'false' || 'legacy' }}
+        prerelease: false
+        make_latest: true
         fail_on_unmatched_files: true
-        # Preserve the locally verified APK and its signing identity when already attached.
         overwrite_files: false
+        name: W Prime Extension ${{ inputs.tag }}
+        body: |
+          Shared W′ calculation for percent/kJ fields, alerts and FIT; optional Karoo FTP-derived CP; validated settings; isolated emulator simulator; bounded rendering and input handling; release shrinking and dependency updates.
+
+          Built and signed by GitHub Actions with the stable signing identity. Install the APK through the Hammerhead Companion App or ADB. Requires KOS 1.634.2440 or later.
+
+          See README.md for setup and docs/wprime-algorithms.md for model limitations.
         token: ${{ secrets.GITHUB_TOKEN }}
 

@@ -4,7 +4,7 @@
 
 Use [AGENTS.md](AGENTS.md) for constraints and [README.md](README.md) for rider setup. `:app` is the production Karoo APK; `:shared` is an Android library containing calculation, settings and UI; `:simulator` is a standalone testOnly emulator application. The simulator package/configuration store is independent from the installed Karoo app. The SDK remains an external authenticated GitHub Packages dependency, including shared UI types.
 
-AGP 9.2.1 supplies built-in Kotlin; plugin aliases/metadata use Kotlin 2.4.0. Wrapper 9.5.1, compile/target 37, min 23 and Java compatibility 11 are declared. Daemon criteria request OracleJDK 24; CI bootstrap uses Temurin 17. Check actual Gradle compiler/daemon versions rather than treating aliases as the effective compiler.
+AGP 9.4.1 supplies built-in Kotlin; plugin aliases/metadata use Kotlin 2.4.0. Wrapper 9.8.0, compile/target 37, min 23 and Java compatibility 11 are declared. Daemon criteria request OracleJDK 24; CI bootstrap uses Temurin 17. Check actual Gradle compiler/daemon versions rather than treating aliases as the effective compiler.
 
 Configure ignored `local.properties` or user Gradle properties:
 
@@ -31,16 +31,17 @@ The laboratory renders shared WPrimeGlanceView RemoteViews in full-width 480×24
 
 CSV uses time_s,power_w,event, starts at 0 and requires increasing times; blank power means silence. Events include RECORDING,PAUSED,IDLE,LOST,FOUND. Import limits are 5 MB/100000 samples. Alerts and FIT values are diagnostics, not Karoo IPC or an exported FIT file. The simulator cannot certify host lifecycle, KOS layout quirks, audible alerts or real battery use.
 
-## CI, beta and signing
+## CI, releases and signing
 
-ci.yml requires Spotless, shared/simulator unit tests, all module debug lint, Karoo debug and simulator debug builds. Reports upload after failures. CodeQL remains disabled pending compatibility validation; no active security scan is claimed. Dependabot proposals require authenticated resolution and compatibility testing.
+`ci.yml` requires Spotless, shared/simulator unit tests, all module debug lint, Karoo debug and simulator debug builds. Reports upload after failures. CodeQL remains disabled pending compatibility validation; no active security scan is claimed. Dependabot proposals require authenticated resolution and compatibility testing.
 
-Publishing a GitHub release, or workflow_dispatch with tag v1.2.0-beta.1, verifies code before building `:app:assembleRelease`. The tag must match the verified commit SHA. Dispatch without tag runs checks only. Beta publication preserves existing release notes, sets prerelease and leaves stable latest unchanged. Only the Karoo APK, app/manifest.json and icon are release assets; simulator APKs are excluded. Existing assets are never overwritten by CI. For a locally verified APK, create a draft release, attach the local APK, manifest and icon, then publish it; this preserves the verified signing identity.
+Publish a stable release through `workflow_dispatch`, selecting the release tag as the workflow ref and passing that same tag as the `tag` input. The tag must point to the verified workflow commit and match Android/manifest versions. Dispatch without a tag runs checks only. Only the signed Karoo APK, `app/manifest.json` and icon are release assets; simulator APKs are excluded. CI publishes the release as stable/latest after verification and preserves existing assets.
 
-Version 1.2.0-beta.1/code 13 and manifest download URLs must match the APK and concrete tag. Release enables R8/resource shrinking with conservative extension/SDK keeps. Successful minification is build evidence; Glance/Hilt/serialization/FIT host certification still requires device testing.
+Version 1.2.0/code 14 and manifest download URLs must match the APK and concrete tag. Release enables R8/resource shrinking with conservative extension/SDK keeps. Successful minification is build evidence; Glance/Hilt/serialization/FIT host certification still requires device testing.
 
-Release continues to use debug signing. The installed stable certificate differs from the local development certificate. An upgrade with a mismatched signer fails; uninstalling loses app settings and requires the user's explicit decision. CI's ephemeral debug keystore is not a reproducible release identity. Stable signing-key management and a configuration-preserving update path remain unresolved; do not silently change identities or uninstall the production app.
+Configure repository Actions secrets `RELEASE_STORE_BASE64`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS` and `RELEASE_KEY_PASSWORD` using the original release keystore. The pipeline restores it in the runner's temporary directory, signs without Gradle configuration caching, verifies the APK package/version and checks its certificate against stable 1.1.2 before publication. Missing credentials or a different signer stop publication. The temporary key is removed after the build; never commit a private key or password.
 
+Local `:app:assembleRelease` builds an unsigned APK when signing credentials are absent. To sign locally, provide `RELEASE_STORE_FILE`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS` and `RELEASE_KEY_PASSWORD`; or an ignored root `keystore.properties` containing `storeFile`, `storePassword`, `keyAlias` and `keyPassword`. Relative keystore paths resolve from the repository root. Environment variables override local properties. Do not use the debug keystore for production distribution. The public SHA-256 certificate fingerprint expected for upgrades from 1.1.2 is `42c794a08395ad5dc355032dbdc1b90b226bac28634cdc035c2d8751fbe5bfe7`.
 ## Technical audit — 2026-10-03
 
 Implemented improvements:
@@ -65,7 +66,7 @@ Applied: [Core 1.19.1](https://developer.android.com/jetpack/androidx/releases/c
 
 | Priority | Remaining work | Evidence required |
 | --- | --- | --- |
-| P 1 | Signing identity and configuration-preserving beta installation | Compatible certificate or explicit user-approved migration; reproducible CI key |
+| P 1 | Provision original release signing key in Actions | Certificate match against stable 1.1.2 and configuration-preserving device update |
 | P 1 | Karoo certification: both fields, recording/pause/resume/Idle, page navigation, loss, alerts and decoded FIT | Screenshots, sound observation, decoded values and lifecycle logs from target KOS |
 | P 1 | Scientific equations/reference vectors | Primary publications, CP boundaries, cadence partitioning and numerical expectations |
 | P 1 | Measure energy changes against baseline | Controlled CPU/frame/IPC/battery runs using protocol below |
@@ -82,4 +83,4 @@ Capture `adb shell dumpsys batterystats com.itl.wprimeext` before/after comparab
 
 ## Current local verification
 
-Verification on 2026-10-03: 36 tests passed with zero failures: Engine 15, Settings 5, Input 5, FIT 6, Commands 2 and Scenario 3. Shared lint reported no issues; app lint had 0 errors / 15 warnings and simulator lint 0 errors / 11 warnings. Spotless and production debug/release plus simulator debug builds passed. Production R8 beta APK is 3,218,366 bytes; the installed stable APK is 18,352,281 bytes. This is packaging-size evidence, not measured battery improvement. The maintainer reported successful installation and basic operation on Karoo. That report does not complete lifecycle/alerts/decoded FIT certification. The published beta uses the local signing certificate; upgrading from the previous stable signer and reproducible CI signing remain unresolved.
+Verification on 2026-10-03 after integrating master and local AGP 9.4.1 / Gradle 9.8.0 updates: 36 unit tests passed with zero failures (Engine 15, Settings 5, Input 5, FIT 6, Commands 2, Scenario 3). Spotless, all module debug lint, production debug/unsigned release and simulator debug builds passed. Lint has zero errors and 1 shared / 9 app / 11 simulator warnings. Workflow YAML, Bash/Python syntax, version/URL checks and missing-secret rejection were verified locally. A signed release build and compatible upgrade remain pending provisioning of the original release key. The maintainer reported basic operation on Karoo; full lifecycle, alert sound, decoded FIT and battery certification remain pending.
