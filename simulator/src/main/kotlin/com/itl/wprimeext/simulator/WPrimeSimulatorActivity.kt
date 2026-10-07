@@ -1,7 +1,9 @@
 package com.itl.wprimeext.simulator
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
@@ -73,6 +75,13 @@ class WPrimeSimulatorActivity : Activity() {
     private var renders = 0
     private val events = ArrayDeque<String>()
 
+    override fun attachBaseContext(newBase: Context) {
+        // Laboratory dimensions use the renderer's /2 layout convention. Keep
+        // them actual pixels regardless of the emulator's phone density.
+        val previewConfiguration = Configuration(newBase.resources.configuration).apply { densityDpi = 320 }
+        super.attachBaseContext(newBase.createConfigurationContext(previewConfiguration))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (android.os.Build.HARDWARE !in listOf("ranchu", "goldfish") || (!android.os.Build.PRODUCT.startsWith("sdk") && !android.os.Build.MODEL.contains("sdk", ignoreCase = true) && !android.os.Build.MODEL.contains("Emulator"))) {
@@ -80,8 +89,13 @@ class WPrimeSimulatorActivity : Activity() {
             finish()
             return
         }
-        width = if (intent.getStringExtra("layout") == "Half-row") 240 else 480
-        height = if (intent.getStringExtra("layout") == "Full-screen") 800 else 240
+        width = if (intent.getStringExtra("layout")?.contains("Half-row") == true) 240 else 480
+        height = when {
+            intent.getStringExtra("layout") == "Full-screen" -> 800
+            intent.getStringExtra("layout")?.startsWith("Compact") == true -> 148
+            else -> 240
+        }
+        alignment = ViewConfig.Alignment.entries.firstOrNull { it.name == intent.getStringExtra("alignment") } ?: ViewConfig.Alignment.RIGHT
         selectedField = if (intent.getStringExtra("field") == "kJ") "kJ" else "Percent"
         root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -95,12 +109,16 @@ class WPrimeSimulatorActivity : Activity() {
         }
         label("WPrime Lab")
         status = label("")
-        val layoutNames = listOf("Full-width row", "Half-row", "Full-screen")
+        val layoutNames = listOf("Full-width row", "Half-row", "Full-screen", "Compact full-width row", "Compact Half-row")
         val fieldNames = listOf("Percent", "kJ")
         row {
             choice(layoutNames, intent.getStringExtra("layout"), this) {
-                this@WPrimeSimulatorActivity.width = if (it == "Half-row") 240 else 480
-                this@WPrimeSimulatorActivity.height = if (it == "Full-screen") 800 else 240
+                this@WPrimeSimulatorActivity.width = if (it.contains("Half-row")) 240 else 480
+                this@WPrimeSimulatorActivity.height = when {
+                    it == "Full-screen" -> 800
+                    it.startsWith("Compact") -> 148
+                    else -> 240
+                }
                 renderFields()
             }
             choice(fieldNames, selectedField, this) {
@@ -315,7 +333,14 @@ class WPrimeSimulatorActivity : Activity() {
                             textColor = ColorProvider(presentation.textColor),
                             currentPower = s.currentPower.toInt(), criticalPower = s.criticalPower.toInt(),
                             wPrimeJoules = s.wPrimeJoules, anaerobicCapacity = s.anaerobicCapacity,
-                            textSize = 56, alignment = alignment, fixedCharCount = if (kj) 4 else 3,
+                            textSize = if (width <= 400) {
+                                50
+                            } else if (height == 148) {
+                                69
+                            } else {
+                                96
+                            },
+                            alignment = alignment,
                             showArrow = presentation.showArrow, viewSize = Pair(width, height),
                         )
                     }.remoteViews

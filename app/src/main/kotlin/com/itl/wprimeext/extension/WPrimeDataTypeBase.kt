@@ -40,9 +40,6 @@ abstract class WPrimeDataTypeBase(
 
     abstract fun getFieldLabel(): String
 
-    open fun getFixedCharCount(): Int? = null
-    open fun getSizeScale(): Float = 1f
-
     abstract fun getStreamValue(snapshot: WPrimeSnapshot): Double
 
     override fun startStream(emitter: Emitter<StreamState>) {
@@ -82,7 +79,6 @@ abstract class WPrimeDataTypeBase(
                             currentPower = data.currentPower.toInt(), criticalPower = data.criticalPower.toInt(),
                             wPrimeJoules = data.wPrimeJoules, anaerobicCapacity = data.anaerobicCapacity,
                             textSize = config.textSize, alignment = config.alignment,
-                            fixedCharCount = getFixedCharCount(), sizeScale = getSizeScale(),
                             showArrow = presentation.showArrow, viewSize = config.viewSize,
                         )
                     }.remoteViews

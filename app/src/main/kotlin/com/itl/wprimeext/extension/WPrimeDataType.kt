@@ -7,5 +7,4 @@ class WPrimeDataType(
     override fun getDisplayText(snapshot: WPrimeSnapshot): String = snapshot.percentage.toInt().toString()
     override fun getStreamValue(snapshot: WPrimeSnapshot): Double = snapshot.percentage
     override fun getFieldLabel(): String = "%W'"
-    override fun getFixedCharCount(): Int = 3
 }

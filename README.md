@@ -204,14 +204,14 @@ Create an Android Virtual Device in Android Studio, then run on Windows:
 
 The default AVD is `Medium_Phone_API_35`; pass `-Avd <name>` or `-Serial emulator-5554` for another emulator. The script builds and installs only on an emulator. Use `-SkipBuild` to reopen an existing debug APK.
 
-Choose **Full-width row**, **Half-row** or **Full-screen**, and percent or kJ. **Settings** opens the real app configuration: change CP or algorithm there and return to the lab. Use **Start**, **Pause ride**, **Reset** and power buttons **+1 / +10 / −1 / −10 / 0 / CP**. Pause continues zero-power recovery; **Freeze clock** stops virtual time. Speeds and CSV scenarios allow repeatable long efforts and sensor loss.
+Choose **Full-width row**, **Half-row**, **Compact full-width row**, **Compact Half-row** (148 px high) or **Full-screen**, and percent or kJ. **Settings** opens the real app configuration: change CP or algorithm there and return to the lab. Use **Start**, **Pause ride**, **Reset** and power buttons **+1 / +10 / −1 / −10 / 0 / CP**. Pause continues zero-power recovery; **Freeze clock** stops virtual time. Speeds and CSV scenarios allow repeatable long efforts and sensor loss.
 
 This renders real Glance RemoteViews; it does not emulate Karoo firmware, host services, audible alerts or FIT-file generation. Those and battery usage still need final device checks. The laboratory has a separate package, configuration store and APK; its guarded launcher only installs on emulators.
 Modules: `app` contains the Karoo extension/runtime; `shared` contains the engine, settings and UI; `simulator` contains the laboratory and replay controls.
 
-## What's new in 1.2.1
+## What's new in 1.2.2
 
-W′ fields use larger regular-weight numbers, a 25% smaller battery icon and safe vertical margins. Full-width fields keep the same number size for 1–4 characters. Half-width fields fit the displayed value and move the trend arrow beside the header to leave more room for percent and kJ values. The layout was visually verified on Karoo 3.
+W′ fields follow native Karoo typography: Relative regular numbers with -0.04 em letter spacing and IBM Plex Sans Condensed Medium titles. Numeric size starts from the host’s `ViewConfig.textSize` and only shrinks when needed to fit. The trend arrow keeps a reserved column beside the value, on the side selected by field alignment, including half-width fields. Half-width headers also keep the battery aligned with the title. The layout was verified on Karoo 3 and in the RemoteViews laboratory.
 
 Updates from 1.2.0 preserve the release signing identity and support normal installation without uninstalling.
 
