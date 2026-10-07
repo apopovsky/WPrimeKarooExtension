@@ -4,7 +4,7 @@
 
 Use [AGENTS.md](AGENTS.md) for constraints and [README.md](README.md) for rider setup. `:app` is the production Karoo APK; `:shared` is an Android library containing calculation, settings and UI; `:simulator` is a standalone testOnly emulator application. The simulator package/configuration store is independent from the installed Karoo app. The SDK remains an external authenticated GitHub Packages dependency, including shared UI types.
 
-AGP 9.4.1 supplies built-in Kotlin; plugin aliases/metadata use Kotlin 2.4.0. Wrapper 9.8.0, compile/target 37, min 23 and Java compatibility 11 are declared. Daemon criteria request OracleJDK 24; CI bootstrap uses Temurin 17. Check actual Gradle compiler/daemon versions rather than treating aliases as the effective compiler.
+AGP 9.4.1 supplies built-in Kotlin; plugin aliases/metadata use Kotlin 2.4.0. Wrapper 9.8.0, compile/target 37, min 23 and Java compatibility 11 are declared. Daemon criteria request OracleJDK 24; CI installs OracleJDK 24.0.2 directly from its archive to satisfy daemon criteria without the obsolete Foojay redirect. Check actual Gradle compiler/daemon versions rather than treating aliases as the effective compiler.
 
 Configure ignored `local.properties` or user Gradle properties:
 
