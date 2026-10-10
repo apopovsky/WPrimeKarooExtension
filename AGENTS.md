@@ -59,7 +59,7 @@ Standalone laboratory: `simulator/src/main/kotlin/com/itl/wprimeext/simulator/`.
 ## Verification workflow
 
 ```powershell
-.\gradlew.bat spotlessCheck :shared:testDebugUnitTest :simulator:testDebugUnitTest :shared:lintDebug :app:lintDebug :simulator:lintDebug :app:assembleDebug :simulator:assembleDebug :app:assembleRelease --console=plain
+.\gradlew.bat spotlessCheck :shared:testDebugUnitTest :app:testDebugUnitTest :simulator:testDebugUnitTest :shared:lintDebug :app:lintDebug :simulator:lintDebug :app:assembleDebug :simulator:assembleDebug :app:assembleRelease --console=plain
 git diff --check
 .\scripts\start-simulator.ps1 -Serial emulator-5554
 ```

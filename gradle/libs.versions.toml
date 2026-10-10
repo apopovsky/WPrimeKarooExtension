@@ -11,6 +11,9 @@ hilt = "2.60.1"
 datastore = "1.2.1"
 ksp = "2.3.12"
 karooExt = "1.1.9"
+karooExtTesting = "0.1.0"
+robolectric = "4.17"
+androidxTestCore = "1.6.1"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity" }
@@ -43,6 +46,7 @@ androidx-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview
 # hilt
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }
 hilt-android-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
+hilt-android-testing = { module = "com.google.dagger:hilt-android-testing", version.ref = "hilt" }
 
 junit = { group = "junit", name = "junit", version = "4.13.2" }
 kotlinMetadataJvm = { module = "org.jetbrains.kotlin:kotlin-metadata-jvm", version.ref = "kotlin" }
@@ -57,6 +61,10 @@ androidx-datastore-preferences = { module = "androidx.datastore:datastore-prefer
 
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.11.0" }
 timber = { module = "com.jakewharton.timber:timber", version = "5.0.1" }
+
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
+karoo-ext-testing-robolectric = { module = "com.github.nikosavola.karoo-ext-testing:karoo-ext-testing-robolectric", version.ref = "karooExtTesting" }
 
 karoo-ext = { group = "io.hammerhead", name = "karoo-ext", version.ref = "karooExt" }
 

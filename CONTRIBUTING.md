@@ -16,7 +16,7 @@ gpr.key=YOUR_READ_PACKAGES_TOKEN
 Settings also accepts GPR_USER/GPR_API_KEY and GitHub fallbacks. CI maps GPR_TOKEN to gpr.key. Never commit credentials.
 
 ```powershell
-.\gradlew.bat spotlessCheck :shared:testDebugUnitTest :simulator:testDebugUnitTest :shared:lintDebug :app:lintDebug :simulator:lintDebug :app:assembleDebug :simulator:assembleDebug :app:assembleRelease --console=plain
+.\gradlew.bat spotlessCheck :shared:testDebugUnitTest :app:testDebugUnitTest :simulator:testDebugUnitTest :shared:lintDebug :app:lintDebug :simulator:lintDebug :app:assembleDebug :simulator:assembleDebug :app:assembleRelease --console=plain
 git diff --check
 .\scripts\start-simulator.ps1 -Serial emulator-5554
 ```
@@ -33,7 +33,7 @@ CSV uses time_s,power_w,event, starts at 0 and requires increasing times; blank 
 
 ## CI, releases and signing
 
-`ci.yml` requires Spotless, shared/simulator unit tests, all module debug lint, Karoo debug and simulator debug builds. Reports upload after failures. CodeQL remains disabled pending compatibility validation; no active security scan is claimed. Dependabot proposals require authenticated resolution and compatibility testing.
+`ci.yml` requires Spotless, shared/app/simulator unit tests, all module debug lint, Karoo debug and simulator debug builds. Reports upload after failures. CodeQL remains disabled pending compatibility validation; no active security scan is claimed. Dependabot proposals require authenticated resolution and compatibility testing.
 
 Publish a stable release through `workflow_dispatch`, selecting the release tag as the workflow ref and passing that same tag as the `tag` input. Both jobs check out the immutable `github.sha`; the tag must point to that exact verified workflow commit and match Android/manifest versions. Integrate workflow changes into the default branch before creating the release tag: GitHub requires `Workflows: write` when the target's workflow files differ from the default branch, and `GITHUB_TOKEN` cannot receive that permission ([GitHub API contract](https://docs.github.com/en/rest/releases/releases#create-a-release)). Dispatch without a tag runs checks only. Only the signed Karoo APK, `app/manifest.json` and icon are release assets; simulator APKs are excluded.
 

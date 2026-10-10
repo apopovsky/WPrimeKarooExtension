@@ -66,6 +66,10 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
         buildConfig = true
         compose = true
     }
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
 }
 
 dependencies {
@@ -74,4 +78,11 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.kotlinMetadataJvm)
     ksp(libs.hilt.android.compiler)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.hilt.android.testing)
+    testImplementation(libs.karoo.ext.testing.robolectric)
+    kspTest(libs.hilt.android.compiler)
 }
