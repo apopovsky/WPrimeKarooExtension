@@ -171,7 +171,7 @@ adb logcat | grep WPrime
 ```bash
 ./gradlew :app:assembleDebug spotlessCheck
 ./gradlew :app:installDebug
-./gradlew :shared:testDebugUnitTest :simulator:testDebugUnitTest :app:lintDebug :simulator:lintDebug
+./gradlew :shared:testDebugUnitTest :app:testDebugUnitTest :simulator:testDebugUnitTest :app:lintDebug :simulator:lintDebug
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md#development-setup) for SDK/JDK and GitHub Packages authentication. Deterministic tests cover the engine, settings persistence and debug replay parser.

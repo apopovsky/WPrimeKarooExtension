@@ -56,7 +56,7 @@ jobs:
         echo "gpr.key=${GPR_TOKEN:-${{ secrets.GITHUB_TOKEN }}}" >> ~/.gradle/gradle.properties
 
     - name: Verify and build debug
-      run: ./gradlew spotlessCheck :shared:testDebugUnitTest :simulator:testDebugUnitTest :shared:lintDebug :app:lintDebug :simulator:lintDebug :app:assembleDebug :simulator:assembleDebug --stacktrace
+      run: ./gradlew spotlessCheck :shared:testDebugUnitTest :app:testDebugUnitTest :simulator:testDebugUnitTest :shared:lintDebug :app:lintDebug :simulator:lintDebug :app:assembleDebug :simulator:assembleDebug --stacktrace
 
     - name: Upload verification reports
       if: always()
@@ -64,6 +64,8 @@ jobs:
       with:
         name: verification-reports
         path: |
+          app/build/test-results/**/*.xml
+          app/build/reports/tests/
           shared/build/test-results/**/*.xml
           shared/build/reports/tests/
           simulator/build/test-results/**/*.xml
