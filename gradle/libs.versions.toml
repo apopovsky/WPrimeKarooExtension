@@ -11,7 +11,7 @@ hilt = "2.60.1"
 datastore = "1.2.1"
 ksp = "2.3.12"
 karooExt = "1.1.9"
-karooExtTesting = "0.1.0"
+karooExtTesting = "0.1.1"
 robolectric = "4.17"
 androidxTestCore = "1.6.1"
 
